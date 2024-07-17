@@ -1,0 +1,68 @@
+{
+    "Identification": {
+        "Gender": "Female",
+        "Age": 24,
+        "Marital status": false,
+        "Siblings": "One older brother",
+        "Birthplace": "Seoul, South Korea",
+        "Residence": "Seoul, South Korea",
+        "Occupation": "Graphic designer"
+    },
+    "Chief Complaints": {
+        "symptom 1": {
+            "name": "Depressed mood",
+            "remote onset": "2021-06-01",
+            "recent onset": "2023-09-15",
+            "duration(week)": 12
+        },
+        "symptom 2": {
+            "name": "Anhedonia",
+            "remote onset": "2021-08-01",
+            "recent onset": "2023-09-15",
+            "duration(week)": 10
+        }
+    },
+    "Past History": {
+        "Medical history": "No significant medical history",
+        "Neurological history": "No neurological issues",
+        "Drug history": "Currently taking SSRIs, no history of substance abuse",
+        "Social history": "Casual alcohol consumption, non-smoker"
+    },
+    "Family History": "Mother has a history of anxiety disorder, father has hypertension",
+    "Mental Status Examination": {
+        "General description": {
+            "Appearance": "Well-groomed, casual attire",
+            "Overt behavior": "Cooperative but appears tired",
+            "Psychomotor activity": {
+                "Psychomotor retardation": true,
+                "Psychomotor agitation": false
+            },
+            "Attitude towards examiner": "Respectful and cooperative"
+        },
+        "Speech": "Soft, slow-paced",
+        "Mood": "Depressed",
+        "Affect": "Blunted",
+        "Thought": {
+            "Process": "Linear but slow",
+            "Content": "Preoccupied with feelings of worthlessness"
+        },
+        "Perception": {
+            "Hallucination": false,
+            "Illusion": false,
+            "Depersonalization": false,
+            "Derealization": false
+        },
+        "Insight": "Partial insight into her condition",
+        "Suicidal ideation": false
+    },
+    "Psychodynamic formulation": {
+        "Defense mechanisms": [
+            "Repression",
+            "Denial"
+        ],
+        "Attachment": [
+            "Insecure attachment",
+            "Fearful-avoidant attachment"
+        ]
+    }
+}

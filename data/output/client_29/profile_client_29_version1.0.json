@@ -1,0 +1,74 @@
+{
+  "Identification": {
+    "Gender": "Female",
+    "Age": 24,
+    "Marital status": false,
+    "Siblings": "One older brother",
+    "Birthplace": "Seoul, South Korea",
+    "Residence": "Seoul, South Korea",
+    "Occupation": "Software Engineer"
+  },
+  "Chief Complaints": {
+    "symptom 1": {
+      "name": "Depressed mood",
+      "remote onset": "2023-01-01",
+      "recent onset": "2023-12-01",
+      "duration(week)": 52
+    },
+    "symptom 2": {
+      "name": "Insomnia",
+      "remote onset": "2023-03-01",
+      "recent onset": "2023-12-20",
+      "duration(week)": 43
+    },
+    "symptom 3": {
+      "name": "Loss of interest in activities",
+      "remote onset": "2023-05-01",
+      "recent onset": "2023-12-15",
+      "duration(week)": 35
+    }
+  },
+  "Past History": {
+    "Medical history": "No significant medical history",
+    "Neurological history": "No known neurological conditions",
+    "Drug history": "Occasional use of over-the-counter sleep aids",
+    "Social history": "Non-smoker, occasional alcohol use"
+  },
+  "Family History": "Father diagnosed with depression, mother has anxiety disorder",
+  "Mental Status Examination": {
+    "General description": {
+      "Appearance": "Well-groomed, casual attire",
+      "Overt behavior": "Appears tired, limited eye contact",
+      "Psychomotor activity": {
+        "Psychomotor retardation": true,
+        "Psychomotor agitation": false
+      },
+      "Attitude towards examiner": "Cooperative but reserved"
+    },
+    "Speech": "Soft-spoken, slow rate",
+    "Mood": "Depressed",
+    "Affect": "Restricted",
+    "Thought": {
+      "Process": "Linear and goal-directed",
+      "Content": "Preoccupied with feelings of worthlessness"
+    },
+    "Perception": {
+      "Hallucination": false,
+      "Illusion": false,
+      "Depersonalization": false,
+      "Derealization": false
+    },
+    "Insight": "Partial",
+    "Suicidal ideation": false
+  },
+  "Psychodynamic formulation": {
+    "Defense mechanisms": [
+      "Repression",
+      "Intellectualization"
+    ],
+    "Attachment": [
+      "Insecure attachment",
+      "Avoidant attachment"
+    ]
+  }
+}

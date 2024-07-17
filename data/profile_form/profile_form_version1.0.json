@@ -1,0 +1,74 @@
+{
+    "Identification": {
+        "Gender": "string",
+        "Age": "number",
+        "Marital status": "boolean",
+        "Siblings": "string",
+        "Birthplace": "string",
+        "Residence": "string",
+        "Occupation": "string"
+    },
+    "Chief Complaints": {
+        "symptom 1": {
+            "name": "string",
+            "remote onset": "date",
+            "recent onset": "data",
+            "duration(week)": "number"
+        },
+        "symptom 2": {
+            "name": "string",
+            "remote onset": "date",
+            "recent onset": "data",
+            "duration(week)": "number"
+        },
+        "symptom 3 (If it no longer exists, this key:value can be omitted.)": {
+            "name": "string",
+            "remote onset": "date",
+            "recent onset": "data",
+            "duration(week)": "number"
+        }
+    },
+    "Past History": {
+        "Medical history": "string",
+        "Neurological history": "string",
+        "Drug history": "string",
+        "Social history": "string(e.g. Smoking, Alcohol)"
+    },
+    "Family History": "string",
+    "Mental Status Examination": {
+        "General description": {
+            "Appearance": "string",
+            "Overt behavior": "string",
+            "Psychomotor activity": {
+                "Psychomotor retardation": "boolean",
+                "Psychomotor agitation": "boolean"
+            },
+            "Attitude towards examiner": "string"
+        },
+        "Speech": "string",
+        "Mood": "string",
+        "Affect": "string",
+        "Thought": {
+            "Process": "string",
+            "Content": "string"
+        },
+        "Perception": {
+            "Hallucination": "boolean",
+            "Illusion": "boolean",
+            "Depersonalization": "boolean",
+            "Derealization": "boolean"
+        },
+        "Insight": "string",
+        "Suicidal ideation": "boolean"
+    },
+    "Psychodynamic formulation": {
+        "Defense mechanisms": [
+            "string",
+            "string(There can be many. If so, you can write several.)"
+        ],
+        "Attachment": [
+            "string",
+            "string(There can be many. If so, you can write several.)"
+        ]
+    }
+}

@@ -1,0 +1,68 @@
+{
+  "Identification": {
+    "Gender": "Female",
+    "Age": 24,
+    "Marital status": false,
+    "Siblings": "One younger brother",
+    "Birthplace": "Seoul, South Korea",
+    "Residence": "Seoul, South Korea",
+    "Occupation": "Graduate student"
+  },
+  "Chief Complaints": {
+    "symptom 1": {
+      "name": "Depressed mood",
+      "remote onset": "2021-01-01",
+      "recent onset": "2024-01-01",
+      "duration(week)": 156
+    },
+    "symptom 2": {
+      "name": "Insomnia",
+      "remote onset": "2022-06-01",
+      "recent onset": "2024-01-01",
+      "duration(week)": 84
+    }
+  },
+  "Past History": {
+    "Medical history": "Asthma diagnosed at age 12",
+    "Neurological history": "No significant history",
+    "Drug history": "On antidepressants since 2023",
+    "Social history": "Occasional alcohol consumption, non-smoker"
+  },
+  "Family History": "Mother has a history of depression, father has hypertension",
+  "Mental Status Examination": {
+    "General description": {
+      "Appearance": "Neatly dressed, slightly disheveled hair",
+      "Overt behavior": "Appears withdrawn and avoids eye contact",
+      "Psychomotor activity": {
+        "Psychomotor retardation": true,
+        "Psychomotor agitation": false
+      },
+      "Attitude towards examiner": "Cooperative but reserved"
+    },
+    "Speech": "Soft, slow, and hesitant",
+    "Mood": "Depressed",
+    "Affect": "Blunted",
+    "Thought": {
+      "Process": "Slow and deliberate",
+      "Content": "Themes of worthlessness and hopelessness"
+    },
+    "Perception": {
+      "Hallucination": false,
+      "Illusion": false,
+      "Depersonalization": false,
+      "Derealization": false
+    },
+    "Insight": "Partial insight into her condition",
+    "Suicidal ideation": true
+  },
+  "Psychodynamic formulation": {
+    "Defense mechanisms": [
+      "Repression",
+      "Denial"
+    ],
+    "Attachment": [
+      "Anxious-preoccupied attachment",
+      "Difficulty trusting others"
+    ]
+  }
+}

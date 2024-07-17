@@ -1,0 +1,68 @@
+{
+  "Identification": {
+    "Gender": "Female",
+    "Age": 24,
+    "Marital status": false,
+    "Siblings": "One younger brother",
+    "Birthplace": "Seoul, South Korea",
+    "Residence": "Seoul, South Korea",
+    "Occupation": "University student"
+  },
+  "Chief Complaints": {
+    "symptom 1": {
+      "name": "Depressed mood",
+      "remote onset": "2022-01-01",
+      "recent onset": "2024-01-05",
+      "duration(week)": 104
+    },
+    "symptom 2": {
+      "name": "Anhedonia",
+      "remote onset": "2022-06-01",
+      "recent onset": "2024-01-05",
+      "duration(week)": 83
+    }
+  },
+  "Past History": {
+    "Medical history": "No significant medical history",
+    "Neurological history": "No neurological conditions",
+    "Drug history": "No current medications",
+    "Social history": "Occasional alcohol use, non-smoker"
+  },
+  "Family History": "No known family history of psychiatric disorders",
+  "Mental Status Examination": {
+    "General description": {
+      "Appearance": "Casually dressed, appears older than stated age",
+      "Overt behavior": "Appears fatigued and withdrawn",
+      "Psychomotor activity": {
+        "Psychomotor retardation": true,
+        "Psychomotor agitation": false
+      },
+      "Attitude towards examiner": "Cooperative but minimally communicative"
+    },
+    "Speech": "Soft, slow, and monotonous",
+    "Mood": "Depressed",
+    "Affect": "Flat",
+    "Thought": {
+      "Process": "Impoverished and slow",
+      "Content": "Preoccupied with feelings of worthlessness and guilt"
+    },
+    "Perception": {
+      "Hallucination": false,
+      "Illusion": false,
+      "Depersonalization": false,
+      "Derealization": false
+    },
+    "Insight": "Poor",
+    "Suicidal ideation": false
+  },
+  "Psychodynamic formulation": {
+    "Defense mechanisms": [
+      "Repression",
+      "Denial"
+    ],
+    "Attachment": [
+      "Insecure attachment",
+      "Avoidant attachment"
+    ]
+  }
+}

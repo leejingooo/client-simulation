@@ -1,0 +1,68 @@
+{
+  "Identification": {
+    "Gender": "Female",
+    "Age": 24,
+    "Marital status": false,
+    "Siblings": "One older brother",
+    "Birthplace": "Seoul, South Korea",
+    "Residence": "Seoul, South Korea",
+    "Occupation": "University student"
+  },
+  "Chief Complaints": {
+    "symptom 1": {
+      "name": "Depressed mood",
+      "remote onset": "2023-01-01",
+      "recent onset": "Slight improvement in the last month but still persistent",
+      "duration(week)": 52
+    },
+    "symptom 2": {
+      "name": "Loss of interest in activities",
+      "remote onset": "2023-02-01",
+      "recent onset": "No significant change",
+      "duration(week)": 48
+    }
+  },
+  "Past History": {
+    "Medical history": "No significant past medical history",
+    "Neurological history": "No known neurological conditions",
+    "Drug history": "Currently taking SSRIs (Selective Serotonin Reuptake Inhibitors)",
+    "Social history": "Occasional alcohol use, non-smoker"
+  },
+  "Family History": "Mother has a history of anxiety disorder, father has hypertension",
+  "Mental Status Examination": {
+    "General description": {
+      "Appearance": "Well-groomed, casual attire",
+      "Overt behavior": "Cooperative but looks fatigued",
+      "Psychomotor activity": {
+        "Psychomotor retardation": true,
+        "Psychomotor agitation": false
+      },
+      "Attitude towards examiner": "Engaged but somewhat reserved"
+    },
+    "Speech": "Slow and soft",
+    "Mood": "Depressed",
+    "Affect": "Restricted",
+    "Thought": {
+      "Process": "Goal-directed but slow",
+      "Content": "Themes of worthlessness and hopelessness, no delusions"
+    },
+    "Perception": {
+      "Hallucination": false,
+      "Illusion": false,
+      "Depersonalization": false,
+      "Derealization": false
+    },
+    "Insight": "Good insight into her condition",
+    "Suicidal ideation": false
+  },
+  "Psychodynamic formulation": {
+    "Defense mechanisms": [
+      "Repression",
+      "Denial"
+    ],
+    "Attachment": [
+      "Anxious-preoccupied",
+      "Insecure"
+    ]
+  }
+}

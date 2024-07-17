@@ -1,0 +1,68 @@
+{
+  "Identification": {
+    "Gender": "Female",
+    "Age": 24,
+    "Marital status": false,
+    "Siblings": "One older brother",
+    "Birthplace": "Seoul, South Korea",
+    "Residence": "Seoul, South Korea",
+    "Occupation": "University student"
+  },
+  "Chief Complaints": {
+    "symptom 1": {
+      "name": "Depressed mood",
+      "remote onset": "2022-01-01",
+      "recent onset": "2023-11-15",
+      "duration(week)": 8
+    },
+    "symptom 2": {
+      "name": "Anhedonia",
+      "remote onset": "2022-03-01",
+      "recent onset": "2023-11-15",
+      "duration(week)": 8
+    }
+  },
+  "Past History": {
+    "Medical history": "No significant medical history",
+    "Neurological history": "No significant neurological history",
+    "Drug history": "Currently on SSRIs since December 2023",
+    "Social history": "Occasional alcohol use, non-smoker"
+  },
+  "Family History": "Mother has a history of major depressive disorder.",
+  "Mental Status Examination": {
+    "General description": {
+      "Appearance": "Appears her stated age, dressed appropriately for the weather, good hygiene",
+      "Overt behavior": "Generally cooperative but appears fatigued",
+      "Psychomotor activity": {
+        "Psychomotor retardation": true,
+        "Psychomotor agitation": false
+      },
+      "Attitude towards examiner": "Open but somewhat reserved"
+    },
+    "Speech": "Slow, low volume",
+    "Mood": "Depressed",
+    "Affect": "Blunted",
+    "Thought": {
+      "Process": "Linear but slowed",
+      "Content": "Preoccupied with feelings of worthlessness and guilt"
+    },
+    "Perception": {
+      "Hallucination": false,
+      "Illusion": false,
+      "Depersonalization": false,
+      "Derealization": false
+    },
+    "Insight": "Partial; acknowledges symptoms but minimizes their impact",
+    "Suicidal ideation": true
+  },
+  "Psychodynamic formulation": {
+    "Defense mechanisms": [
+      "Denial",
+      "Intellectualization"
+    ],
+    "Attachment": [
+      "Insecure attachment",
+      "Fearful-avoidant attachment style"
+    ]
+  }
+}

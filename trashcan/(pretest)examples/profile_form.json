@@ -1,0 +1,66 @@
+{
+    "Identification": {
+        "Gender": "string",
+        "Age": "number",
+        
+        
+        "Marital status": "string(single_answer), single/married/divorced/widowed",
+        
+        
+        "Siblings": "string",
+        "Birthplace": "string",
+        "Residence": "string",
+        "Occupation": "string"
+    },
+    
+    
+    
+    "Chief Complaints": "string(guide_based), Describe in the patient's words",
+    
+    
+    
+    
+    "Past History": {
+        "Medical history": "string",
+        "Neurological history": "string",
+        "Drug history": "string",
+        "Social history": "string(e.g. Smoking, Alcohol)"
+    },
+    "Family History": "string",
+    "Mental Status Examination": {
+        "General description": {
+            "Appearance": "string",
+            "Overt behavior": "string",
+            "Psychomotor activity": {
+                "Psychomotor retardation": "boolean",
+                "Psychomotor agitation": "boolean"
+            },
+            "Attitude towards examiner": "string"
+        },
+        "Speech": "string",
+        "Mood": "string",
+        "Affect": "string",
+        "Thought": {
+            "Process": "string",
+            "Content": "string"
+        },
+        "Perception": {
+            "Hallucination": "boolean",
+            "Illusion": "boolean",
+            "Depersonalization": "boolean",
+            "Derealization": "boolean"
+        },
+        "Insight": "string",
+        "Suicidal ideation": "boolean"
+    },
+    "Psychodynamic formulation": {
+        "Defense mechanisms": [
+            "string",
+            "string(There can be many. If so, you can write several.)"
+        ],
+        "Attachment": [
+            "string",
+            "string(There can be many. If so, you can write several.)"
+        ]
+    }
+}

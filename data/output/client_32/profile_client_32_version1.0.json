@@ -1,0 +1,68 @@
+{
+  "Identification": {
+    "Gender": "Female",
+    "Age": 24,
+    "Marital status": false,
+    "Siblings": "One younger brother",
+    "Birthplace": "Seoul, South Korea",
+    "Residence": "Seoul, South Korea",
+    "Occupation": "University student"
+  },
+  "Chief Complaints": {
+    "symptom 1": {
+      "name": "Depressed mood",
+      "remote onset": "2023-01-01",
+      "recent onset": "2023-12-01",
+      "duration(week)": 52
+    },
+    "symptom 2": {
+      "name": "Loss of interest in activities",
+      "remote onset": "2023-01-01",
+      "recent onset": "2023-12-01",
+      "duration(week)": 52
+    }
+  },
+  "Past History": {
+    "Medical history": "No significant medical history",
+    "Neurological history": "No significant neurological history",
+    "Drug history": "No history of substance abuse",
+    "Social history": "Occasional social drinking, non-smoker"
+  },
+  "Family History": "Mother has a history of depression",
+  "Mental Status Examination": {
+    "General description": {
+      "Appearance": "Disheveled appearance, poor eye contact",
+      "Overt behavior": "Lethargic movements, withdrawn",
+      "Psychomotor activity": {
+        "Psychomotor retardation": true,
+        "Psychomotor agitation": false
+      },
+      "Attitude towards examiner": "Cooperative but reserved"
+    },
+    "Speech": "Soft, slow, and monotonous",
+    "Mood": "Depressed",
+    "Affect": "Blunted",
+    "Thought": {
+      "Process": "Slowed thought process",
+      "Content": "Pervasive negative thoughts, feelings of hopelessness"
+    },
+    "Perception": {
+      "Hallucination": false,
+      "Illusion": false,
+      "Depersonalization": false,
+      "Derealization": false
+    },
+    "Insight": "Limited insight into her condition",
+    "Suicidal ideation": true
+  },
+  "Psychodynamic formulation": {
+    "Defense mechanisms": [
+      "Repression",
+      "Isolation of affect"
+    ],
+    "Attachment": [
+      "Insecure attachment",
+      "Avoidant attachment style"
+    ]
+  }
+}

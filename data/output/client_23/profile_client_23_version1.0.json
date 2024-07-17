@@ -1,0 +1,68 @@
+{
+  "Identification": {
+    "Gender": "Female",
+    "Age": 24,
+    "Marital status": false,
+    "Siblings": "One younger brother",
+    "Birthplace": "Seoul, South Korea",
+    "Residence": "Seoul, South Korea",
+    "Occupation": "University student"
+  },
+  "Chief Complaints": {
+    "symptom 1": {
+      "name": "Depressed mood",
+      "remote onset": "2023-01-01",
+      "recent onset": "Persistent low mood, worsened over the past month",
+      "duration(week)": 52
+    },
+    "symptom 2": {
+      "name": "Insomnia",
+      "remote onset": "2023-01-15",
+      "recent onset": "Difficulty falling asleep and frequent awakenings",
+      "duration(week)": 50
+    }
+  },
+  "Past History": {
+    "Medical history": "No significant medical history",
+    "Neurological history": "No significant neurological history",
+    "Drug history": "Currently taking fluoxetine 20mg daily",
+    "Social history": "Non-smoker, occasional alcohol consumption"
+  },
+  "Family History": "Mother has a history of depression, father has hypertension",
+  "Mental Status Examination": {
+    "General description": {
+      "Appearance": "Well-groomed but appears tired",
+      "Overt behavior": "Quiet, minimal eye contact",
+      "Psychomotor activity": {
+        "Psychomotor retardation": true,
+        "Psychomotor agitation": false
+      },
+      "Attitude towards examiner": "Cooperative but reserved"
+    },
+    "Speech": "Soft-spoken, slow",
+    "Mood": "Depressed",
+    "Affect": "Blunted",
+    "Thought": {
+      "Process": "Slowed thinking",
+      "Content": "Feelings of hopelessness and worthlessness"
+    },
+    "Perception": {
+      "Hallucination": false,
+      "Illusion": false,
+      "Depersonalization": false,
+      "Derealization": false
+    },
+    "Insight": "Fair",
+    "Suicidal ideation": false
+  },
+  "Psychodynamic formulation": {
+    "Defense mechanisms": [
+      "Repression",
+      "Isolation of affect"
+    ],
+    "Attachment": [
+      "Insecure attachment",
+      "Anxious-preoccupied attachment"
+    ]
+  }
+}

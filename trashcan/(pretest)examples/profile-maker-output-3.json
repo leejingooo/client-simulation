@@ -1,0 +1,74 @@
+{
+    "Identification": {
+        "Gender": "Male",
+        "Age": 32,
+        "Marital status": false,
+        "Siblings": "1 younger sister",
+        "Birthplace": "Seoul, South Korea",
+        "Residence": "Seoul, South Korea",
+        "Occupation": "Software Developer"
+    },
+    "Chief Complaints": {
+        "symptom 1": {
+            "name": "Manic episodes",
+            "remote onset": "2020-02-15",
+            "recent onset": "2023-08-20",
+            "duration(week)": 8
+        },
+        "symptom 2": {
+            "name": "Depressive episodes",
+            "remote onset": "2019-11-10",
+            "recent onset": "2023-05-05",
+            "duration(week)": 12
+        },
+        "symptom 3": {
+            "name": "Auditory hallucinations",
+            "remote onset": "2021-03-12",
+            "recent onset": "2023-08-23",
+            "duration(week)": 8
+        }
+    },
+    "Past History": {
+        "Medical history": "History of hypertension",
+        "Neurological history": "No known neurological history",
+        "Drug history": "Treated with Lithium and Quetiapine",
+        "Social history": "Occasional smoking, Social drinker"
+    },
+    "Family History": "Family history of depression (mother) and schizophrenia (uncle)",
+    "Mental Status Examination": {
+        "General description": {
+            "Appearance": "Well-groomed male, appropriate attire for weather",
+            "Overt behavior": "Restless, frequently fidgeting",
+            "Psychomotor activity": {
+                "Psychomotor retardation": false,
+                "Psychomotor agitation": true
+            },
+            "Attitude towards examiner": "Cooperative but somewhat distracted"
+        },
+        "Speech": "Rapid and pressured",
+        "Mood": "Elevated",
+        "Affect": "Labile",
+        "Thought": {
+            "Process": "Flight of ideas",
+            "Content": "Grandiose delusions, persecutory ideas"
+        },
+        "Perception": {
+            "Hallucination": true,
+            "Illusion": false,
+            "Depersonalization": false,
+            "Derealization": false
+        },
+        "Insight": "Limited insight into condition",
+        "Suicidal ideation": false
+    },
+    "Psychodynamic formulation": {
+        "Defense mechanisms": [
+            "Denial",
+            "Projection"
+        ],
+        "Attachment": [
+            "Insecure",
+            "Preoccupied"
+        ]
+    }
+}

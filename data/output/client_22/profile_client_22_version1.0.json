@@ -1,0 +1,68 @@
+{
+  "Identification": {
+    "Gender": "Female",
+    "Age": 24,
+    "Marital status": false,
+    "Siblings": "One younger brother",
+    "Birthplace": "Seoul, South Korea",
+    "Residence": "Seoul, South Korea",
+    "Occupation": "University student"
+  },
+  "Chief Complaints": {
+    "symptom 1": {
+      "name": "Depressed mood",
+      "remote onset": "2023-01-01",
+      "recent onset": "2024-01-01",
+      "duration(week)": 52
+    },
+    "symptom 2": {
+      "name": "Fatigue",
+      "remote onset": "2023-03-01",
+      "recent onset": "2024-01-01",
+      "duration(week)": 44
+    }
+  },
+  "Past History": {
+    "Medical history": "No significant medical history",
+    "Neurological history": "No neurological issues",
+    "Drug history": "No history of substance abuse",
+    "Social history": "Occasional alcohol consumption, non-smoker"
+  },
+  "Family History": "Mother has a history of anxiety disorder",
+  "Mental Status Examination": {
+    "General description": {
+      "Appearance": "Neatly dressed, appears tired",
+      "Overt behavior": "Cooperative but subdued",
+      "Psychomotor activity": {
+        "Psychomotor retardation": true,
+        "Psychomotor agitation": false
+      },
+      "Attitude towards examiner": "Generally cooperative but somewhat guarded"
+    },
+    "Speech": "Soft-spoken, slow",
+    "Mood": "Depressed",
+    "Affect": "Flat",
+    "Thought": {
+      "Process": "Slowed",
+      "Content": "Themes of worthlessness and hopelessness"
+    },
+    "Perception": {
+      "Hallucination": false,
+      "Illusion": false,
+      "Depersonalization": false,
+      "Derealization": false
+    },
+    "Insight": "Limited insight into her condition",
+    "Suicidal ideation": false
+  },
+  "Psychodynamic formulation": {
+    "Defense mechanisms": [
+      "Repression",
+      "Denial"
+    ],
+    "Attachment": [
+      "Anxious attachment",
+      "Difficulty in trusting others"
+    ]
+  }
+}

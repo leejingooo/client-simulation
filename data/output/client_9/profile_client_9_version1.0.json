@@ -1,0 +1,54 @@
+{
+  "profile": {
+    "age": 24,
+    "gender": "Female",
+    "nationality": "South Korea",
+    "diagnosis": "Major depressive disorder",
+    "first_symptoms_noted": "2021-06-15",
+    "symptoms": [
+      "persistent sadness",
+      "loss of interest in activities",
+      "fatigue",
+      "changes in appetite",
+      "difficulty concentrating"
+    ],
+    "family_history": {
+      "mental_health_issues": true,
+      "conditions": [
+        "depression"
+      ]
+    },
+    "medical_history": {
+      "physical_conditions": [
+        "none"
+      ],
+      "medications": [
+        "none"
+      ]
+    },
+    "current_medication": [
+      {
+        "name": "Sertraline",
+        "dosage": "50 mg",
+        "frequency": "daily"
+      }
+    ],
+    "therapy": {
+      "type": "Cognitive Behavioral Therapy",
+      "frequency": "weekly",
+      "duration": "6 months"
+    },
+    "employment_status": "unemployed",
+    "support_system": {
+      "family": true,
+      "friends": true,
+      "support_groups": false
+    },
+    "hobbies": [
+      "painting",
+      "reading"
+    ],
+    "living_arrangement": "with parents",
+    "current_date": "2023-10-01"
+  }
+}

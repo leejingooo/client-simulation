@@ -1,0 +1,68 @@
+{
+  "Identification": {
+    "Gender": "Female",
+    "Age": 24,
+    "Marital status": false,
+    "Siblings": "One older brother",
+    "Birthplace": "Seoul, South Korea",
+    "Residence": "Busan, South Korea",
+    "Occupation": "Graduate student"
+  },
+  "Chief Complaints": {
+    "symptom 1": {
+      "name": "Depressed mood",
+      "remote onset": "2022-05-01",
+      "recent onset": "2024-01-01",
+      "duration(week)": 88
+    },
+    "symptom 2": {
+      "name": "Insomnia",
+      "remote onset": "2023-03-15",
+      "recent onset": "2024-01-01",
+      "duration(week)": 41
+    }
+  },
+  "Past History": {
+    "Medical history": "No significant medical history",
+    "Neurological history": "No neurological conditions",
+    "Drug history": "Fluoxetine (started 2023-06-01)",
+    "Social history": "Occasional alcohol use, non-smoker"
+  },
+  "Family History": "Mother has a history of depression, father with no known psychiatric conditions.",
+  "Mental Status Examination": {
+    "General description": {
+      "Appearance": "Well-groomed, casual attire",
+      "Overt behavior": "Cooperative but reserved",
+      "Psychomotor activity": {
+        "Psychomotor retardation": true,
+        "Psychomotor agitation": false
+      },
+      "Attitude towards examiner": "Engaged but cautious"
+    },
+    "Speech": "Soft-spoken, slow pace",
+    "Mood": "Depressed",
+    "Affect": "Blunted",
+    "Thought": {
+      "Process": "Slowed thinking",
+      "Content": "Themes of hopelessness and worthlessness"
+    },
+    "Perception": {
+      "Hallucination": false,
+      "Illusion": false,
+      "Depersonalization": false,
+      "Derealization": false
+    },
+    "Insight": "Partial (aware of condition but difficulty in understanding the extent)",
+    "Suicidal ideation": true
+  },
+  "Psychodynamic formulation": {
+    "Defense mechanisms": [
+      "Denial",
+      "Suppression"
+    ],
+    "Attachment": [
+      "Insecure attachment",
+      "Fearful-avoidant attachment"
+    ]
+  }
+}

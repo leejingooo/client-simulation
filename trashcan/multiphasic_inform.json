@@ -1,0 +1,46 @@
+{
+    "Identification": {
+        "Gender": "string",
+        "Age": "number",
+        "Marital status": "boolean",
+        "Siblings": "string",
+        "Birthplace": "string",
+        "Residence": "string",
+        "Occupation": "string"
+    },
+    "Patient history": "string",
+    "Chief complaints": {
+        "symptom 1": {
+            "onset": "date",
+            "duration(week)": "number"
+        },
+        "symptom 2": {
+            "onset": "date",
+            "duration(week)": "number"
+        },
+        "symptom 3": {
+            "onset": "date",
+            "duration(week)": "number"
+        }
+    },
+    "Mental Status Examination": {
+        "Mood": "string",
+        "Affect": "string",
+        "Psychomotor retardation": "boolean",
+        "Suicidal ideation": "boolean"
+    },
+    "Psychodynamic formulation": {
+        "Defense mechanisms": [
+            "string",
+            "string",
+            "string",
+            "string"
+        ],
+        "Attachment": [
+            "string",
+            "string",
+            "string",
+            "string"
+        ]
+    }
+}

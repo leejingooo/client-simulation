@@ -1,0 +1,386 @@
+import json
+import os
+import re
+from langchain.chat_models import ChatOpenAI
+from langchain.prompts import ChatPromptTemplate
+from langchain.schema import HumanMessage, SystemMessage
+from langchain.callbacks import StreamingStdOutCallbackHandler
+from langchain.memory import ConversationBufferMemory
+import streamlit as st
+import pandas as pd
+
+st.set_page_config(
+    page_title="All-in-one",
+    page_icon="🔥",
+)
+
+st.title("All-in-one")
+
+
+# Initialize the language model
+llm = ChatOpenAI(
+    temperature=0.7,
+    model="gpt-4o",
+)
+
+# 나중에 cover_agent는 이걸로 교체
+chat_llm = ChatOpenAI(
+    temperature=0.7,
+    model="gpt-4o",
+    streaming=True,
+    callbacks=[StreamingStdOutCallbackHandler()]
+)
+
+# Fixed date
+FIXED_DATE = "01/07/2024"
+
+
+# Load prompts from files
+@st.cache_data
+def load_prompt(selected_file):
+    prompt_path = selected_file
+    if os.path.exists(prompt_path):
+        try:
+            with open(prompt_path, "r", encoding="utf-8") as f:
+                return f.read()
+        except Exception as e:
+            st.error(f"Error reading the file: {e}")
+            return ""
+    else:
+        st.error("File does not exist.")
+        return ""
+
+# Function to get a list of files in a folder
+
+
+def get_file_list(folder_path):
+    try:
+        file_list = os.listdir(folder_path)
+        return [file for file in file_list if os.path.isfile(os.path.join(folder_path, file))]
+    except Exception as e:
+        st.error(f"Error: {e}")
+        return []
+
+
+def select_prompt(module_name, new_or_loaded):
+    # Folder path
+    folder_path = f"data/prompts/{module_name}_system_prompt"
+    # Get list of files in the folder
+    file_list = get_file_list(folder_path)
+
+    if file_list:
+        # Display the list of files in a selectbox
+        selected_file = st.selectbox(
+            f"Select a {module_name} SYSTEM prompt For {new_or_loaded}:", file_list, key=f"{module_name}_system_prompt_for_{new_or_loaded}")
+
+        if selected_file:
+            selected_file_path = os.path.join(folder_path, selected_file)
+            return load_prompt(selected_file_path)
+    else:
+        st.warning("No files found in the selected folder.")
+
+    return ""
+
+
+# Extract version number from filename
+def extract_version(filename):
+    match = re.search(r'version(\d+(?:\.\d+)?)\.json$', filename)
+    return match.group(1) if match else "1.0"
+
+
+# Check if client number already exists
+def client_exists(client_number):
+    return os.path.exists(f"data/output/client_{client_number}")
+
+
+def load_existing_client_data(client_number):
+    # Load existing profile and history
+    profile_path = f"data/output/client_{client_number}/profile_client_{client_number}_version{st.session_state.form_version}.json"
+    history_path = f"data/output/client_{client_number}/history_client_{client_number}_version{st.session_state.form_version}.txt"
+
+    if os.path.exists(profile_path) and os.path.exists(history_path):
+        with open(profile_path, "r") as f:
+            st.session_state.profile = json.load(f)
+        with open(history_path, "r") as f:
+            st.session_state.history = f.read()
+
+        # Recreate the agent with the loaded data
+        st.session_state.agent = create_conversational_agent(
+            st.session_state.form_version, client_number, select_prompt("con-agent", "loaded"))
+    else:
+        st.error(
+            "Could not find existing client data. Please generate a new profile and history.")
+
+
+# Module 1: Profile-maker
+@st.cache_data
+def profile_maker(form_version, given_information, client_number, system_prompt):
+    with open(f"data/profile_form/profile_form_version{form_version}.json", "r") as f:
+        profile_form = json.load(f)
+
+    chat_prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                system_prompt
+            ),
+            (
+                "human",
+                given_information
+            )
+        ])
+
+    chain = chat_prompt | llm
+
+    result = chain.invoke({
+        "current_date": FIXED_DATE,
+        "profile_form": json.dumps(profile_form, indent=2),
+        "given_information": given_information
+    })
+
+    # Save the result
+    os.makedirs(f"data/output/client_{client_number}", exist_ok=True)
+
+    try:
+        parsed_result = json.loads(result.content)
+    except json.JSONDecodeError as e:
+        st.error(f"Error parsing JSON: {e}")
+        st.error(f"Raw content: {result.content}")
+        return None
+
+    with open(f"data/output/client_{client_number}/profile_client_{client_number}_version{form_version}.json", "w") as f:
+        json.dump(json.loads(result.content), f, indent=2)
+
+    return result.content
+
+
+# Module 2: History-maker
+@st.cache_data
+def history_maker(form_version, client_number, system_prompt):
+    with open(f"data/output/client_{client_number}/profile_client_{client_number}_version{form_version}.json", "r") as f:
+        profile_json = json.load(f)
+
+    chat_prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                system_prompt
+            ),
+            (
+                "human",
+                """
+                <JSON>
+                {profile_json}
+                </JSON>
+                """
+            )
+        ]
+    )
+
+    chain = chat_prompt | llm
+
+    result = chain.invoke({
+        "current_date": FIXED_DATE,
+        "profile_json": json.dumps(profile_json, indent=2)
+    })
+
+    # Save the result
+    with open(f"data/output/client_{client_number}/history_client_{client_number}_version{form_version}.txt", "w") as f:
+        f.write(result.content)
+
+    return result.content
+
+# Module 3: Conversational agent
+
+
+# Initialize session state
+if 'messages' not in st.session_state:
+    st.session_state.messages = []
+if 'memory' not in st.session_state:
+    st.session_state.memory = ConversationBufferMemory(return_messages=True)
+if 'agent' not in st.session_state:
+    st.session_state.agent = None
+if 'client_number' not in st.session_state:
+    st.session_state.client_number = None
+if 'form_version' not in st.session_state:
+    st.session_state.form_version = None
+
+
+@st.cache_resource
+def create_conversational_agent(profile_version, client_number, system_prompt):
+    with open(f"data/output/client_{client_number}/profile_client_{client_number}_version{profile_version}.json", "r") as f:
+        profile_json = json.load(f)
+
+    with open(f"data/output/client_{client_number}/history_client_{client_number}_version{profile_version}.txt", "r") as f:
+        history = f.read()
+
+    chat_prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", system_prompt),
+            ("human", "{chat_history}\nHuman: {human_input}\nAI:")
+        ]
+    )
+
+    chain = chat_prompt | chat_llm
+
+    def agent(human_input):
+        messages = st.session_state.memory.chat_memory.messages
+        chat_history = "\n".join(
+            [f"{'Human' if isinstance(m, HumanMessage) else 'AI'}: {m.content}" for m in messages])
+
+        response = chain.invoke({
+            "current_date": FIXED_DATE,
+            "profile_json": json.dumps(profile_json, indent=2),
+            "history": history,
+            "chat_history": chat_history,
+            "human_input": human_input
+        })
+
+        return response.content
+
+    return agent
+
+# Save conversation to Excel
+
+
+def save_conversation_to_excel(client_number, messages):
+    df = pd.DataFrame(columns=['human', 'simulated client'])
+    for i in range(0, len(messages), 2):
+        if i+1 < len(messages):
+            df = df.append(
+                {'human': messages[i]['content'], 'simulated client': messages[i+1]['content']}, ignore_index=True)
+        else:
+            df = df.append(
+                {'human': messages[i]['content']}, ignore_index=True)
+
+    df.to_excel(
+        f"data/output/client_{client_number}/conversation_client_{client_number}.xlsx", index=False)
+
+# Streamlit UI
+
+
+def main():
+    st.title("Client-Simulation")
+
+    # Sidebar for input and file uploads
+    st.sidebar.header("Settings")
+
+    # Client number input
+    new_client_number = st.sidebar.number_input(
+        "Client Number", min_value=1, value=1)
+
+    # Check if client number has changed
+    if st.session_state.client_number != new_client_number:
+        st.session_state.client_number = new_client_number
+        st.session_state.messages = []
+        st.session_state.memory = ConversationBufferMemory(
+            return_messages=True)
+        st.session_state.agent = None
+
+    if client_exists(st.session_state.client_number):
+        st.sidebar.warning(
+            f"Client {st.session_state.client_number} already exists.")
+        if st.sidebar.button("Load Existing Client Data", key="load_existing_data_button"):
+            # Load existing client data
+            load_existing_client_data(st.session_state.client_number)
+            st.sidebar.success(
+                f"Loaded existing data for Client {st.session_state.client_number}")
+        elif st.sidebar.button("Start New Conversation", key="start_new_conversation_button"):
+            # Clear existing conversation data
+            st.session_state.messages = []
+            st.session_state.memory = ConversationBufferMemory(
+                return_messages=True)
+            st.session_state.agent = None
+            st.sidebar.success(
+                f"Starting new conversation for Client {st.session_state.client_number}")
+    else:
+        st.sidebar.info(f"Client {st.session_state.client_number} is new.")
+
+    st.session_state.form_version = st.sidebar.number_input(
+        "Form Version", min_value=1.0, value=1.0, step=0.1, key="form_version_input")
+
+    st.sidebar.header("Select Prompts")
+    profile_system_prompt = select_prompt("profile-maker", "new")
+    history_system_prompt = select_prompt("history-maker", "new")
+    con_agent_system_prompt = select_prompt("con-agent", "new")
+
+    st.sidebar.header("Patient Information")
+    age = st.sidebar.number_input(
+        "Age", min_value=0, max_value=120, value=24, key="age_input")
+    gender = st.sidebar.selectbox(
+        "Gender", ["Female", "Male", "Other"], key="gender_input")
+    nationality = st.sidebar.text_input(
+        "Nationality", "South Korea",  key="nationality_input")
+    diagnosis = st.sidebar.text_input(
+        "Diagnosis", "Major depressive disorder", key="diagnosis_input")
+
+    given_information = f"""
+    <Given information>
+    Age : {age}
+    Gender : {gender}
+    Nationality: {nationality}
+    Diagnosis : {diagnosis}
+    </Given information>
+    """
+
+    if st.sidebar.button("Generate Profile and History", key="generate_profile_history_button"):
+        if not client_exists(st.session_state.client_number) or st.session_state.agent is None:
+            with st.spinner("Generating profile..."):
+                profile = profile_maker(
+                    st.session_state.form_version, given_information, st.session_state.client_number, profile_system_prompt)
+                if profile is not None:
+                    st.session_state.profile = profile
+                    st.success("Profile generated!")
+
+                    with st.spinner("Generating history..."):
+                        history = history_maker(
+                            st.session_state.form_version, st.session_state.client_number, history_system_prompt)
+                        st.session_state.history = history
+                        st.success("History generated!")
+
+                    st.session_state.agent = create_conversational_agent(
+                        st.session_state.form_version, st.session_state.client_number, con_agent_system_prompt)
+                else:
+                    st.error(
+                        "Failed to generate profile. Please check the error messages above.")
+        else:
+            st.warning(
+                "Profile and history already exist for this client. You can start a new conversation or load existing data.")
+
+    # Main area for conversation
+    st.header("Conversation with Simulated Client")
+
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    if prompt := st.chat_input("Interviewer:"):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        st.session_state.memory.chat_memory.add_user_message(prompt)
+
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        if st.session_state.agent:
+            with st.chat_message("assistant"):
+                message_placeholder = st.empty()
+                full_response = st.session_state.agent(prompt)
+                message_placeholder.markdown(full_response)
+            st.session_state.messages.append(
+                {"role": "assistant", "content": full_response})
+            st.session_state.memory.chat_memory.add_ai_message(full_response)
+        else:
+            st.warning("Please generate profile and history first.")
+
+    if st.button("End/Save Conversation", key="end_save_conversation_button"):
+        if st.session_state.client_number is not None:
+            save_conversation_to_excel(
+                st.session_state.client_number, st.session_state.messages)
+            st.success(
+                f"Conversation saved to Excel file for Client {st.session_state.client_number}!")
+        else:
+            st.error("Unable to save conversation. Client number is not set.")
+
+
+if __name__ == "__main__":
+    main()

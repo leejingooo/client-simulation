@@ -1,0 +1,74 @@
+{
+  "Identification": {
+    "Gender": "Female",
+    "Age": 24,
+    "Marital status": false,
+    "Siblings": "One older brother",
+    "Birthplace": "Seoul, South Korea",
+    "Residence": "Seoul, South Korea",
+    "Occupation": "Student"
+  },
+  "Chief Complaints": {
+    "symptom 1": {
+      "name": "Depressed mood",
+      "remote onset": "2023-01-01",
+      "recent onset": "Gradual worsening over the past month",
+      "duration(week)": 52
+    },
+    "symptom 2": {
+      "name": "Anhedonia",
+      "remote onset": "2023-02-15",
+      "recent onset": "Persistent",
+      "duration(week)": 46
+    },
+    "symptom 3": {
+      "name": "Insomnia",
+      "remote onset": "2023-03-01",
+      "recent onset": "Worsening over the past two weeks",
+      "duration(week)": 44
+    }
+  },
+  "Past History": {
+    "Medical history": "No significant past medical history",
+    "Neurological history": "No significant neurological history",
+    "Drug history": "None",
+    "Social history": "Occasional alcohol use, non-smoker"
+  },
+  "Family History": "Mother has a history of depression",
+  "Mental Status Examination": {
+    "General description": {
+      "Appearance": "Well-groomed but appears fatigued",
+      "Overt behavior": "Cooperative but slow in responding",
+      "Psychomotor activity": {
+        "Psychomotor retardation": true,
+        "Psychomotor agitation": false
+      },
+      "Attitude towards examiner": "Open and cooperative"
+    },
+    "Speech": "Soft and slow",
+    "Mood": "Depressed",
+    "Affect": "Blunted",
+    "Thought": {
+      "Process": "Goal-directed but slow",
+      "Content": "No delusions or obsessions"
+    },
+    "Perception": {
+      "Hallucination": false,
+      "Illusion": false,
+      "Depersonalization": false,
+      "Derealization": false
+    },
+    "Insight": "Good insight into her condition",
+    "Suicidal ideation": false
+  },
+  "Psychodynamic formulation": {
+    "Defense mechanisms": [
+      "Denial",
+      "Repression"
+    ],
+    "Attachment": [
+      "Secure",
+      "Anxious-preoccupied"
+    ]
+  }
+}

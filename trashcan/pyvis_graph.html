@@ -1,0 +1,112 @@
+<html>
+<head>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.16.1/vis.css" type="text/css" />
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.16.1/vis-network.min.js"> </script>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+
+<style type="text/css">
+
+        #mynetwork {
+            width: 100%;
+            height: 750px;
+            background-color: #222222;
+            border: 1px solid lightgray;
+            position: relative;
+            float: left;
+        }
+        
+        #config {
+            float: left;
+            width: 400px;
+            height: 600px;
+        }
+        
+</style>
+
+</head>
+
+<body>
+<div id = "mynetwork"></div>
+
+<div id = "config"></div>
+
+<script type="text/javascript">
+
+    // initialize global variables.
+    var edges;
+    var nodes;
+    var network; 
+    var container;
+    var options, data;
+
+    
+    // This method is responsible for drawing the graph, returns the drawn network
+    function drawGraph() {
+        var container = document.getElementById('mynetwork');
+        
+        
+
+        // parsing and collecting nodes and edges from the python
+        nodes = [{'id': 'Identification', 'label': 'Identification', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Identification_Gender', 'label': 'Gender', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Identification_Gender_value', 'label': 'string', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Identification_Age', 'label': 'Age', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Identification_Age_value', 'label': 'number', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Identification_Marital status', 'label': 'Marital status', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Identification_Marital status_value', 'label': 'string', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Identification_Siblings', 'label': 'Siblings', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Identification_Siblings_value', 'label': 'string', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Identification_Birthplace', 'label': 'Birthplace', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Identification_Birthplace_value', 'label': 'string', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Identification_Residence', 'label': 'Residence', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Identification_Residence_value', 'label': 'string', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Identification_Occupation', 'label': 'Occupation', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Identification_Occupation_value', 'label': 'string', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Patient history', 'label': 'Patient history', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Patient history_Birth', 'label': 'Birth', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Patient history_Birth_value', 'label': 'string', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Patient history_Development', 'label': 'Development', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Patient history_Development_value', 'label': 'string', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Patient history_Recent history', 'label': 'Recent history', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Patient history_Recent history_value', 'label': 'string', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'C.C/Duration', 'label': 'C.C/Duration', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'C.C/Duration_Symptoms', 'label': 'Symptoms', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'C.C/Duration_Symptoms_value', 'label': "['string']", 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'C.C/Duration_Duration', 'label': 'Duration', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'C.C/Duration_Duration_value', 'label': 'string', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Mental Status Examination', 'label': 'Mental Status Examination', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Mental Status Examination_Mood', 'label': 'Mood', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Mental Status Examination_Mood_value', 'label': 'string', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Mental Status Examination_Affect', 'label': 'Affect', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Mental Status Examination_Affect_value', 'label': 'string', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Mental Status Examination_Psychomotor retardation', 'label': 'Psychomotor retardation', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Mental Status Examination_Psychomotor retardation_value', 'label': 'boolean', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Mental Status Examination_Suicidal ideation', 'label': 'Suicidal ideation', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Mental Status Examination_Suicidal ideation_value', 'label': 'boolean', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Psychodynamic formulation', 'label': 'Psychodynamic formulation', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Psychodynamic formulation_Defense mechanisms', 'label': 'Defense mechanisms', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Psychodynamic formulation_Defense mechanisms_value', 'label': "['string']", 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Psychodynamic formulation_Attachment', 'label': 'Attachment', 'shape': 'dot', 'font': {'color': 'white'}}, {'id': 'Psychodynamic formulation_Attachment_value', 'label': 'string', 'shape': 'dot', 'font': {'color': 'white'}}];
+        edges = [{'from': 'Identification', 'to': 'Identification_Gender'}, {'from': 'Identification', 'to': 'Identification_Age'}, {'from': 'Identification', 'to': 'Identification_Marital status'}, {'from': 'Identification', 'to': 'Identification_Siblings'}, {'from': 'Identification', 'to': 'Identification_Birthplace'}, {'from': 'Identification', 'to': 'Identification_Residence'}, {'from': 'Identification', 'to': 'Identification_Occupation'}, {'from': 'Identification_Gender', 'to': 'Identification_Gender_value'}, {'from': 'Identification_Age', 'to': 'Identification_Age_value'}, {'from': 'Identification_Marital status', 'to': 'Identification_Marital status_value'}, {'from': 'Identification_Siblings', 'to': 'Identification_Siblings_value'}, {'from': 'Identification_Birthplace', 'to': 'Identification_Birthplace_value'}, {'from': 'Identification_Residence', 'to': 'Identification_Residence_value'}, {'from': 'Identification_Occupation', 'to': 'Identification_Occupation_value'}, {'from': 'Patient history', 'to': 'Patient history_Birth'}, {'from': 'Patient history', 'to': 'Patient history_Development'}, {'from': 'Patient history', 'to': 'Patient history_Recent history'}, {'from': 'Patient history_Birth', 'to': 'Patient history_Birth_value'}, {'from': 'Patient history_Development', 'to': 'Patient history_Development_value'}, {'from': 'Patient history_Recent history', 'to': 'Patient history_Recent history_value'}, {'from': 'C.C/Duration', 'to': 'C.C/Duration_Symptoms'}, {'from': 'C.C/Duration', 'to': 'C.C/Duration_Duration'}, {'from': 'C.C/Duration_Symptoms', 'to': 'C.C/Duration_Symptoms_value'}, {'from': 'C.C/Duration_Duration', 'to': 'C.C/Duration_Duration_value'}, {'from': 'Mental Status Examination', 'to': 'Mental Status Examination_Mood'}, {'from': 'Mental Status Examination', 'to': 'Mental Status Examination_Affect'}, {'from': 'Mental Status Examination', 'to': 'Mental Status Examination_Psychomotor retardation'}, {'from': 'Mental Status Examination', 'to': 'Mental Status Examination_Suicidal ideation'}, {'from': 'Mental Status Examination_Mood', 'to': 'Mental Status Examination_Mood_value'}, {'from': 'Mental Status Examination_Affect', 'to': 'Mental Status Examination_Affect_value'}, {'from': 'Mental Status Examination_Psychomotor retardation', 'to': 'Mental Status Examination_Psychomotor retardation_value'}, {'from': 'Mental Status Examination_Suicidal ideation', 'to': 'Mental Status Examination_Suicidal ideation_value'}, {'from': 'Psychodynamic formulation', 'to': 'Psychodynamic formulation_Defense mechanisms'}, {'from': 'Psychodynamic formulation', 'to': 'Psychodynamic formulation_Attachment'}, {'from': 'Psychodynamic formulation_Defense mechanisms', 'to': 'Psychodynamic formulation_Defense mechanisms_value'}, {'from': 'Psychodynamic formulation_Attachment', 'to': 'Psychodynamic formulation_Attachment_value'}];
+
+        // adding nodes and edges to the graph
+        data = {nodes: nodes, edges: edges};
+
+        var options = {
+    "configure": {
+        "enabled": true,
+        "filter": [
+            "physics"
+        ]
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": false,
+            "type": "continuous"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+        
+        
+
+        // default to using dot shape for nodes
+        options.nodes = {
+            shape: "dot"
+        }
+        
+        // if this network requires displaying the configure window,
+        // put it in its div
+        options.configure["container"] = document.getElementById("config");
+        
+
+        network = new vis.Network(container, data, options);
+        return network;
+
+    }
+
+    drawGraph();
+
+</script>
+</body>
+</html>

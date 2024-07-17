@@ -1,0 +1,74 @@
+{
+  "Identification": {
+    "Gender": "Female",
+    "Age": 24,
+    "Marital status": false,
+    "Siblings": "One older brother",
+    "Birthplace": "Seoul, South Korea",
+    "Residence": "Seoul, South Korea",
+    "Occupation": "University student"
+  },
+  "Chief Complaints": {
+    "symptom 1": {
+      "name": "Depressed mood",
+      "remote onset": "2023-01-01",
+      "recent onset": "Persistent",
+      "duration(week)": 52
+    },
+    "symptom 2": {
+      "name": "Insomnia",
+      "remote onset": "2023-03-01",
+      "recent onset": "Persistent",
+      "duration(week)": 44
+    },
+    "symptom 3": {
+      "name": "Anhedonia",
+      "remote onset": "2023-02-01",
+      "recent onset": "Persistent",
+      "duration(week)": 48
+    }
+  },
+  "Past History": {
+    "Medical history": "No significant medical history",
+    "Neurological history": "No known neurological conditions",
+    "Drug history": "No history of substance abuse",
+    "Social history": "Occasional alcohol use, non-smoker"
+  },
+  "Family History": "Mother has a history of depression, father has hypertension",
+  "Mental Status Examination": {
+    "General description": {
+      "Appearance": "Well-groomed but appears tired",
+      "Overt behavior": "Cooperative but reserved",
+      "Psychomotor activity": {
+        "Psychomotor retardation": true,
+        "Psychomotor agitation": false
+      },
+      "Attitude towards examiner": "Guarded but polite"
+    },
+    "Speech": "Soft spoken with low volume",
+    "Mood": "Depressed",
+    "Affect": "Blunted",
+    "Thought": {
+      "Process": "Slowed",
+      "Content": "Preoccupations with feelings of worthlessness"
+    },
+    "Perception": {
+      "Hallucination": false,
+      "Illusion": false,
+      "Depersonalization": false,
+      "Derealization": false
+    },
+    "Insight": "Limited",
+    "Suicidal ideation": false
+  },
+  "Psychodynamic formulation": {
+    "Defense mechanisms": [
+      "Repression",
+      "Isolation of affect"
+    ],
+    "Attachment": [
+      "Insecure attachment",
+      "Fearful-avoidant"
+    ]
+  }
+}
