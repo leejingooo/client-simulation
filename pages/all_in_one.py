@@ -84,7 +84,7 @@ def select_prompt(module_name, new_or_loaded):
 
 # Extract version number from filename
 def extract_version(filename):
-    match = re.search(r'version(\d+(?:\.\d+)?)\.json$', filename)
+    match = re.search(r'version(\d+(?:\.\d+)?)\.$', filename)
     return match.group(1) if match else "1.0"
 
 
