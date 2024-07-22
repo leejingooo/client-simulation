@@ -29,7 +29,7 @@
             "severity": "blank (data_type:string, range_candidate_guide:mild/moderate/severe)"
         },
         "encounter_{n}": {
-            "ecounter_type": "blank (data_type:string, range_candidate_guide:outpatient clinic/day hospital/inpatient/vocational training)",
+            "encounter_type": "blank (data_type:string, range_candidate_guide:outpatient clinic/day hospital/inpatient/vocational training)",
             "modality": "blank (data_type:string, range_candidate_guide:medication/CBT/psychotherapy/light therapy/biofeedback/ECT/group therapy/other)",
             "effect": "blank (data_type:string, range_candidate_guide:effective/partially effective/non-effective)",
             "side effect": "blank (data_type:string, range_candidate_guide:If there was a side effect, fill in this node. Otherwise, leave it as \"None\".)",
@@ -60,10 +60,10 @@
             "members of family": "blank (data_type:string, range_candidate_guide:None)",
             "social environment": "blank (data_type:string, range_candidate_guide:Describe things like number and quality of friends.)"
         },
-        "school hisotry": "blank (data_type:string, range_candidate_guide:special education/learning disorder/behavioral problem/low academic performance/problem in extracurricular activity)",
+        "school history": "blank (data_type:string, range_candidate_guide:special education/learning disorder/behavioral problem/low academic performance/problem in extracurricular activity)",
         "work history": "blank (data_type:string, range_candidate_guide:Describe things like job, performance, reason for switching jobs, relationship with supervisor, coworker, etc.)"
     },
-    "Marriage/relationship hisotry": {
+    "Marriage/relationship history": {
         "current family structure": "blank (data_type:string, range_candidate_guide:None)"
     },
     "Mental Status Examination": {
@@ -88,7 +88,7 @@
             "problem in concentration and calculation(7 serial test)": "blank (data_type:boolean (normal/impaired), range_candidate_guide:None)",
             "abnormality in general information(past five presidents/capitals of 5 country)": "blank (data_type:boolean (normal/impaired), range_candidate_guide:None)",
             "abstract thinking(understanding of idioms)": "blank (data_type:boolean (normal/impaired), range_candidate_guide:None)",
-            "impulsivity-suicde risk": "blank (data_type:string, range_candidate_guide:high/moderate/low)",
+            "impulsivity-suicide risk": "blank (data_type:string, range_candidate_guide:high/moderate/low)",
             "impulsivity-self mutilating behavior risk": "blank (data_type:string, range_candidate_guide:None)",
             "suicidal ideation": "blank (data_type:boolean, range_candidate_guide:None)",
             "suicidal plan": "blank (data_type:boolean, range_candidate_guide:None)",

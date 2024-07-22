@@ -11,6 +11,7 @@ import pandas as pd
 from typing import Tuple
 from Home import check_password
 from firebase_config import get_firebase_ref
+import json
 
 st.set_page_config(
     page_title="All-in-one",
@@ -46,6 +47,17 @@ def save_to_firebase(client_number, data_type, content):
 def load_from_firebase(client_number, data_type):
     ref = get_firebase_ref()
     return ref.child(f"clients/{client_number}/{data_type}").get()
+
+
+def clean_data(data):
+    if isinstance(data, dict):
+        return {k: clean_data(v) for k, v in data.items() if v is not None}
+    elif isinstance(data, list):
+        return [clean_data(v) for v in data if v is not None]
+    elif isinstance(data, str):
+        return data.strip()
+    else:
+        return data
 
 
 # Load prompts from files
@@ -190,6 +202,9 @@ def profile_maker(form_version, given_information, client_number, system_prompt)
         "profile_form": json.dumps(profile_form, indent=2),
         "given_information": given_information
     })
+
+    cleaned_result = clean_data(json.loads(result.content))
+    json_string = json.dumps(cleaned_result, indent=2)
 
     # Save the result
 
