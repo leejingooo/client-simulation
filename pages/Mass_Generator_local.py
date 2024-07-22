@@ -1,4 +1,4 @@
-from pages.all_in_one import (
+from pages.all_in_one_local import (
     load_prompt,
     get_file_list,
     select_prompt,
