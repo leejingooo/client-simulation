@@ -95,6 +95,12 @@ def display_conversation(conversation):
 def main():
     st.title("Client Data Viewer")
 
+    # Initialize session state
+    if 'client_data' not in st.session_state:
+        st.session_state.client_data = None
+    if 'conversation_files' not in st.session_state:
+        st.session_state.conversation_files = []
+
     # Sidebar for client selection
     st.sidebar.header("Client Selection")
     client_number = st.sidebar.number_input(
@@ -102,36 +108,45 @@ def main():
     form_version = st.sidebar.number_input(
         "Form Version", min_value=1.0, value=1.0, step=0.1, format="%.1f")
 
-    if st.sidebar.button("Load Client Data"):
-        client_data = load_client_data(client_number, form_version)
+    if st.sidebar.button("Load Client Data") or st.session_state.client_data is not None:
+        if st.session_state.client_data is None:
+            st.session_state.client_data = load_client_data(
+                client_number, form_version)
+            base_path = f"./data/output/client_{client_number}"
+            st.session_state.conversation_files = [
+                f for f in os.listdir(base_path)
+                if f.startswith(f"conversation_client_{client_number}_") and f.endswith(".xlsx")
+            ]
 
-        if any(client_data.values()):
+        if any(st.session_state.client_data.values()):
             tab1, tab2, tab3 = st.tabs(["Profile", "History", "Conversation"])
 
             with tab1:
-                display_profile(client_data["profile"])
+                display_profile(st.session_state.client_data["profile"])
 
             with tab2:
-                display_history(client_data["history"])
+                display_history(st.session_state.client_data["history"])
 
             with tab3:
-                # Check for multiple conversation files
-                base_path = f"./data/output/client_{client_number}"
-                conversation_files = [f for f in os.listdir(base_path) if f.startswith(
-                    f"conversation_client_{client_number}_") and f.endswith(".xlsx")]
-
-                if len(conversation_files) > 1:
+                if len(st.session_state.conversation_files) > 1:
                     selected_file = st.selectbox(
-                        "Select conversation file:", conversation_files)
+                        "Select conversation file:", st.session_state.conversation_files)
+                    base_path = f"./data/output/client_{client_number}"
                     conversation_path = os.path.join(base_path, selected_file)
                     conversation_data = pd.read_excel(conversation_path)
                 else:
-                    conversation_data = client_data["conversation"]
+                    conversation_data = st.session_state.client_data["conversation"]
 
                 display_conversation(conversation_data)
         else:
             st.warning(
                 f"No data found for Client {client_number} with Form Version {form_version}")
+
+    # Add a button to clear the session state and reset the viewer
+    if st.sidebar.button("Reset Viewer"):
+        st.session_state.client_data = None
+        st.session_state.conversation_files = []
+        st.experimental_rerun()
 
 
 if __name__ == "__main__":

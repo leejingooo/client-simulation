@@ -1,15 +1,9 @@
-import time
 import streamlit as st
 
 st.set_page_config(
-    page_title="CLIENT-SIMULATION",
-    page_icon="🤖"
+    page_title="All-in-one",
+    page_icon="🔥",
 )
-
-st.title("Home")
-
-with st.sidebar:
-    st.title("Sidebar title")
 
 
 def check_password():
@@ -41,7 +35,14 @@ def check_password():
         return True
 
 
-if check_password():
-    st.success("You are logged in!")
-    time.sleep(1)  # Add a small delay
-    st.rerun()  # Rerun the app to load the main content
+def main():
+    if check_password():
+        st.success("You are logged in!")
+        st.title("Welcome to the All-in-one App")
+        st.write("Please select a page from the sidebar to continue.")
+    else:
+        st.stop()
+
+
+if __name__ == "__main__":
+    main()

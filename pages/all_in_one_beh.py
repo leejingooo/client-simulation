@@ -399,14 +399,14 @@ def save_conversation_to_excel(client_number, messages, con_agent_system_prompt_
 
 # Streamlit UI
 def main():
+    if not check_password():
+        st.stop()
+
     st.title("Client-Simulation")
 
     st.sidebar.header("Settings")
     new_client_number = st.sidebar.number_input(
         "Client Number", min_value=1, value=1)
-
-    if not check_password():
-        st.stop()  # Do not continue if check_password is not True.
 
     if st.session_state.client_number != new_client_number:
         st.session_state.client_number = new_client_number
