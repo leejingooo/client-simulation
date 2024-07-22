@@ -1,0 +1,68 @@
+{
+  "Identification": {
+    "Gender": "Female",
+    "Age": 40,
+    "Marital status": false,
+    "Siblings": "One older brother",
+    "Birthplace": "Seoul, South Korea",
+    "Residence": "Busan, South Korea",
+    "Occupation": "Marketing manager"
+  },
+  "Chief Complaints": {
+    "symptom 1": {
+      "name": "Depressed mood",
+      "remote onset": "2022-02-01",
+      "recent onset": "2023-12-01",
+      "duration(week)": 4
+    },
+    "symptom 2": {
+      "name": "Anhedonia",
+      "remote onset": "2022-02-01",
+      "recent onset": "2023-12-01",
+      "duration(week)": 4
+    }
+  },
+  "Past History": {
+    "Medical history": "Hypertension",
+    "Neurological history": "None",
+    "Drug history": "Lisinopril for hypertension",
+    "Social history": "Occasional alcohol use, non-smoker"
+  },
+  "Family History": "Father had depression, mother has hypertension",
+  "Mental Status Examination": {
+    "General description": {
+      "Appearance": "Well-groomed, appears older than stated age",
+      "Overt behavior": "Withdrawn, avoids eye contact",
+      "Psychomotor activity": {
+        "Psychomotor retardation": true,
+        "Psychomotor agitation": false
+      },
+      "Attitude towards examiner": "Cooperative but reserved"
+    },
+    "Speech": "Slow, low volume",
+    "Mood": "Depressed",
+    "Affect": "Blunted",
+    "Thought": {
+      "Process": "Slowed, with frequent pauses",
+      "Content": "Ruminations about worthlessness and guilt"
+    },
+    "Perception": {
+      "Hallucination": false,
+      "Illusion": false,
+      "Depersonalization": false,
+      "Derealization": false
+    },
+    "Insight": "Limited",
+    "Suicidal ideation": false
+  },
+  "Psychodynamic formulation": {
+    "Defense mechanisms": [
+      "Repression",
+      "Denial"
+    ],
+    "Attachment": [
+      "Insecure",
+      "Ambivalent"
+    ]
+  }
+}

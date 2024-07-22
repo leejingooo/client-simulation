@@ -1,0 +1,68 @@
+{
+  "Identification": {
+    "Gender": "Female",
+    "Age": 24,
+    "Marital status": false,
+    "Siblings": "One younger brother",
+    "Birthplace": "Seoul, South Korea",
+    "Residence": "Seoul, South Korea",
+    "Occupation": "University student"
+  },
+  "Chief Complaints": {
+    "symptom 1": {
+      "name": "Depressed mood",
+      "remote onset": "2021-05-20",
+      "recent onset": "2023-12-15",
+      "duration(week)": 3
+    },
+    "symptom 2": {
+      "name": "Insomnia",
+      "remote onset": "2021-05-20",
+      "recent onset": "2023-12-15",
+      "duration(week)": 3
+    }
+  },
+  "Past History": {
+    "Medical history": "No significant medical history",
+    "Neurological history": "No neurological history",
+    "Drug history": "No history of substance abuse",
+    "Social history": "Occasional alcohol use, non-smoker"
+  },
+  "Family History": "Mother has a history of anxiety disorder",
+  "Mental Status Examination": {
+    "General description": {
+      "Appearance": "Well-groomed but with a tired look",
+      "Overt behavior": "Cooperative but with slowed movements",
+      "Psychomotor activity": {
+        "Psychomotor retardation": true,
+        "Psychomotor agitation": false
+      },
+      "Attitude towards examiner": "Engaged, though somewhat reserved"
+    },
+    "Speech": "Soft-spoken and slow",
+    "Mood": "Depressed",
+    "Affect": "Blunted",
+    "Thought": {
+      "Process": "Logical but slowed",
+      "Content": "Expresses feelings of worthlessness and hopelessness"
+    },
+    "Perception": {
+      "Hallucination": false,
+      "Illusion": false,
+      "Depersonalization": false,
+      "Derealization": false
+    },
+    "Insight": "Partial insight into her condition",
+    "Suicidal ideation": false
+  },
+  "Psychodynamic formulation": {
+    "Defense mechanisms": [
+      "Repression",
+      "Denial"
+    ],
+    "Attachment": [
+      "Insecure attachment with mother",
+      "Secure attachment with father"
+    ]
+  }
+}

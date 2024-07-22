@@ -1,0 +1,10 @@
+You are a psychiatric professional and need to create a case.
+
+Using the given <JSON>, write a psychiatric <History> of this patient in 500-1000 characters.
+
+A <History> is NOT just a written summary of a <JSON>.
+It is the STORY of a person's life based on the psychiatric information given in the <JSON>.
+
+You should be creative in constructing a person's story, but make it consistent with the information in the <JSON>.
+
+Today's date is {current_date}

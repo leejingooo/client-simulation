@@ -1,0 +1,115 @@
+{
+  "Identifying data": {
+    "patient name": "Jane Doe",
+    "age": 40,
+    "sex": "female",
+    "marital status": "single",
+    "occupation": "accountant"
+  },
+  "Chief complaint": {
+    "cc_description": "I feel constantly sad and have lost interest in everything."
+  },
+  "Present illness": {
+    "symptom_1": {
+      "symptom_name": "depressed mood",
+      "length": 20,
+      "alleviating factor": "none",
+      "exacerbating factor": "stressful work environment"
+    },
+    "symptom_2": {
+      "symptom_name": "loss of interest",
+      "length": 18,
+      "alleviating factor": "none",
+      "exacerbating factor": "lack of social support"
+    },
+    "symptom_3": {
+      "symptom_name": "fatigue",
+      "length": 16,
+      "alleviating factor": "rest",
+      "exacerbating factor": "workload"
+    },
+    "triggering factor": "Increased stress at work and isolation",
+    "stressor": "work/interpersonal difficulty"
+  },
+  "Past psychiatric history": {
+    "presence": true,
+    "diagnosis_1": {
+      "diagnosis_name": "Major depressive disorder",
+      "when": 35,
+      "length": 24,
+      "frequency": 3,
+      "severity": "severe"
+    },
+    "encounter_1": {
+      "ecounter_type": "outpatient clinic",
+      "modality": "medication",
+      "effect": "partially effective",
+      "side effect": "weight gain",
+      "reason for discontinuing": "non-effective",
+      "compliance": "good"
+    },
+    "encounter_2": {
+      "ecounter_type": "outpatient clinic",
+      "modality": "CBT",
+      "effect": "effective",
+      "side effect": "None",
+      "reason for discontinuing": "financial problem",
+      "compliance": "good"
+    }
+  },
+  "Past medical history": {
+    "presence": false
+  },
+  "Family history": {
+    "presence": true,
+    "fh_diagnosis": "Mother had bipolar disorder",
+    "fh_substance_use": "Father had a history of alcohol abuse"
+  },
+  "Developmental/Social history": {
+    "abnormality in prenatal/birthing history": "None",
+    "delay in developmental milestone": "None",
+    "childhood history": {
+      "home environment": "Stable but emotionally distant",
+      "members of family": "Lived with parents and two siblings",
+      "social environment": "Had a few close friends, generally introverted"
+    },
+    "school hisotry": "low academic performance",
+    "work history": "Works as an accountant, high performance, but strained relationship with supervisor and colleagues due to stress"
+  },
+  "Marriage/relationship hisotry": {
+    "current family structure": "Lives alone, no children"
+  },
+  "Mental Status Examination": {
+    "mood": "depressed",
+    "affect": "restricted",
+    "speech characteristic": {
+      "Spontaneity": false,
+      "Verbal productivity": "decreased",
+      "Tone of voice": "decreased"
+    },
+    "perception": "None",
+    "thought process": "circumstantiality",
+    "thought content": "rumination",
+    "sensorium and cognition": {
+      "mental status": "alert",
+      "time_orientation": true,
+      "place_orientation": true,
+      "person_orientation": true,
+      "immediate_memory": true,
+      "recent_memory": true,
+      "remote_memory": true,
+      "problem in concentration and calculation(7 serial test)": true,
+      "abnormality in general information(past five presidents/capitals of 5 country)": true,
+      "abstract thinking(understanding of idioms)": true,
+      "impulsivity-suicde risk": "moderate",
+      "impulsivity-self mutilating behavior risk": "None",
+      "suicidal ideation": true,
+      "suicidal plan": false,
+      "suicidal attempt": false,
+      "impulsivity-homicide": "low",
+      "social judgement": true,
+      "insight": "Intellectual insight.",
+      "reliability": true
+    }
+  }
+}
