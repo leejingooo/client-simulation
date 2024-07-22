@@ -10,6 +10,7 @@ import streamlit as st
 import pandas as pd
 from typing import Tuple
 from Home import check_password
+from firebase_config import get_firebase_ref
 
 st.set_page_config(
     page_title="All-in-one",
@@ -35,6 +36,16 @@ chat_llm = ChatOpenAI(
 
 # Fixed date
 FIXED_DATE = "01/07/2024"
+
+
+def save_to_firebase(client_number, data_type, content):
+    ref = get_firebase_ref()
+    ref.child(f"clients/{client_number}/{data_type}").set(content)
+
+
+def load_from_firebase(client_number, data_type):
+    ref = get_firebase_ref()
+    return ref.child(f"clients/{client_number}/{data_type}").get()
 
 
 # Load prompts from files
@@ -126,20 +137,19 @@ def load_prompt_and_get_version(module_name: str, version: float) -> Tuple[str, 
 
 
 def load_existing_client_data(client_number, profile_version, con_agent_version):
-    profile_path = f"data/output/client_{client_number}/profile_client_{client_number}_version{format_version(profile_version)}.json"
-    history_path = f"data/output/client_{client_number}/history_client_{client_number}_version{format_version(profile_version)}.txt"
-    beh_dir_path = f"data/output/client_{client_number}/beh_dir_client_{client_number}_version{format_version(profile_version)}.txt"
-    con_agent_prompt_path = f"data/prompts/con-agent_system_prompt/con-agent_system_prompt_version{format_version(con_agent_version)}.txt"
+    profile = load_from_firebase(
+        client_number, f"profile_version{profile_version}")
+    history = load_from_firebase(
+        client_number, f"history_version{profile_version}")
+    beh_dir = load_from_firebase(
+        client_number, f"beh_dir_version{profile_version}")
+    con_agent_system_prompt = load_from_firebase(
+        "prompts", f"con_agent_version{con_agent_version}")
 
-    if all(os.path.exists(path) for path in [profile_path, history_path, beh_dir_path, con_agent_prompt_path]):
-        with open(profile_path, "r") as f:
-            st.session_state.profile = json.load(f)
-        with open(history_path, "r") as f:
-            st.session_state.history = f.read()
-        with open(beh_dir_path, "r") as f:
-            st.session_state.beh_dir = f.read()
-        with open(con_agent_prompt_path, "r") as f:
-            con_agent_system_prompt = f.read()
+    if all([profile, history, beh_dir, con_agent_system_prompt]):
+        st.session_state.profile = profile
+        st.session_state.history = history
+        st.session_state.beh_dir = beh_dir
         return True, con_agent_system_prompt
     else:
         st.error(
@@ -182,6 +192,7 @@ def profile_maker(form_version, given_information, client_number, system_prompt)
     })
 
     # Save the result
+
     os.makedirs(f"data/output/client_{client_number}", exist_ok=True)
 
     # Clean the JSON string
@@ -196,8 +207,8 @@ def profile_maker(form_version, given_information, client_number, system_prompt)
         st.error(f"Raw content: {json_string}")
         return None
 
-    with open(f"data/output/client_{client_number}/profile_client_{client_number}_version{form_version}.json", "w") as f:
-        json.dump(parsed_result, f, indent=2)
+    save_to_firebase(
+        client_number, f"profile_version{form_version}", parsed_result)
 
     return parsed_result
 
@@ -205,10 +216,9 @@ def profile_maker(form_version, given_information, client_number, system_prompt)
 # Module 2: History-maker
 @st.cache_data
 def history_maker(form_version, client_number, system_prompt):
-    profile_file = "data/output/client_{}/profile_client_{}_version{}.json".format(
-        client_number, client_number, format_version(form_version))
-    with open(profile_file, "r") as f:
-        profile_json = json.load(f)
+
+    profile_json = load_from_firebase(
+        client_number, f"profile_version{form_version}")
 
     chat_prompt = ChatPromptTemplate.from_messages(
         [
@@ -234,9 +244,8 @@ def history_maker(form_version, client_number, system_prompt):
         "profile_json": json.dumps(profile_json, indent=2)
     })
 
-    # Save the result
-    with open(f"data/output/client_{client_number}/history_client_{client_number}_version{form_version}.txt", "w") as f:
-        f.write(result.content)
+    save_to_firebase(
+        client_number, f"history_version{form_version}", result.content)
 
     return result.content
 
@@ -244,26 +253,10 @@ def history_maker(form_version, client_number, system_prompt):
 # Add this function after the history_maker function
 @st.cache_data
 def beh_dir_maker(form_version, client_number, system_prompt):
-    profile_file = "data/output/client_{}/profile_client_{}_version{}.json".format(
-        client_number, client_number, format_version(form_version))
-    history_file = "data/output/client_{}/history_client_{}_version{}.txt".format(
-        client_number, client_number, format_version(form_version))
-
-    try:
-        with open(profile_file, "r") as f:
-            profile_json = json.load(f)
-    except FileNotFoundError:
-        st.error(
-            f"Profile file not found for client {client_number}, version {form_version}. Please generate the profile first.")
-        return None
-
-    try:
-        with open(history_file, "r") as f:
-            history = f.read()
-    except FileNotFoundError:
-        st.error(
-            f"History file not found for client {client_number}, version {form_version}. Please generate the history first.")
-        return None
+    profile_json = load_from_firebase(
+        client_number, f"profile_version{form_version}")
+    history = load_from_firebase(
+        client_number, f"history_version{form_version}")
 
     chat_prompt = ChatPromptTemplate.from_messages(
         [
@@ -293,11 +286,8 @@ def beh_dir_maker(form_version, client_number, system_prompt):
     })
 
     # Save the result
-    output_dir = f"data/output/client_{client_number}"
-    os.makedirs(output_dir, exist_ok=True)
-    output_file = f"{output_dir}/beh_dir_client_{client_number}_version{format_version(form_version)}.txt"
-    with open(output_file, "w") as f:
-        f.write(result.content)
+    save_to_firebase(
+        client_number, f"beh_dir_version{form_version}", result.content)
 
     return result.content
 
@@ -316,21 +306,12 @@ if 'form_version' not in st.session_state:
 
 @st.cache_resource
 def create_conversational_agent(profile_version, client_number, system_prompt):
-    profile_file = "data/output/client_{}/profile_client_{}_version{}.json".format(
-        client_number, client_number, format_version(profile_version))
-    history_file = "data/output/client_{}/history_client_{}_version{}.txt".format(
-        client_number, client_number, format_version(profile_version))
-    beh_dir_file = "data/output/client_{}/beh_dir_client_{}_version{}.txt".format(
-        client_number, client_number, format_version(profile_version))
-
-    with open(profile_file, "r") as f:
-        profile_json = json.load(f)
-
-    with open(history_file, "r") as f:
-        history = f.read()
-
-    with open(beh_dir_file, "r") as f:
-        behavioral_direction = f.read()
+    profile_json = load_from_firebase(
+        client_number, f"profile_version{profile_version}")
+    history = load_from_firebase(
+        client_number, f"history_version{profile_version}")
+    behavioral_direction = load_from_firebase(
+        client_number, f"beh_dir_version{profile_version}")
 
     chat_prompt = ChatPromptTemplate.from_messages(
         [
@@ -365,7 +346,7 @@ def create_conversational_agent(profile_version, client_number, system_prompt):
 # Save conversation to Excel
 
 
-def save_conversation_to_excel(client_number, messages, con_agent_system_prompt_file):
+def save_conversation_to_firebase(client_number, messages, con_agent_system_prompt_version):
     conversation_data = []
     for i in range(0, len(messages), 2):
         human_message = messages[i].content if i < len(messages) else ""
@@ -375,26 +356,11 @@ def save_conversation_to_excel(client_number, messages, con_agent_system_prompt_
             'simulated client': ai_message
         })
 
-    df = pd.DataFrame(conversation_data)
+    # Save to Firebase
+    save_to_firebase(
+        client_number, f"conversation_sysprompt_{con_agent_system_prompt_version}", conversation_data)
 
-    con_agent_system_prompt_version = extract_version(
-        con_agent_system_prompt_file)
-
-    # Create the base filename
-    base_filename = f"conversation_client_{client_number}_sysprompt_{con_agent_system_prompt_version}"
-
-    # Check if file exists and append number if necessary
-    n = 1
-    while True:
-        filename = f"{base_filename}_{n}.xlsx"
-        file_path = f"data/output/client_{client_number}/{filename}"
-        if not os.path.exists(file_path):
-            break
-        n += 1
-
-    df.to_excel(file_path, index=False)
-
-    return filename
+    return f"conversation_sysprompt_{con_agent_system_prompt_version}"
 
 
 # Streamlit UI
@@ -544,25 +510,19 @@ def main():
         if st.session_state.client_number is not None and st.session_state.agent_and_memory is not None:
             _, memory = st.session_state.agent_and_memory
 
-            # Get the correct con-agent system prompt version
-            con_agent_prompt_path = f"data/prompts/con-agent_system_prompt/con-agent_system_prompt_version{con_agent_version}.txt"
-            if os.path.exists(con_agent_prompt_path):
-                with open(con_agent_prompt_path, "r") as f:
-                    con_agent_system_prompt = f.read()
-                con_agent_system_prompt_version = extract_version(
-                    con_agent_system_prompt)
+            con_agent_system_prompt_version = load_from_firebase(
+                "prompts", f"con_agent_version{con_agent_version}")
+            if con_agent_system_prompt_version:
+                filename = save_conversation_to_firebase(
+                    st.session_state.client_number,
+                    memory.chat_memory.messages,
+                    con_agent_system_prompt_version
+                )
+                st.success(
+                    f"Conversation saved to Firebase for Client {st.session_state.client_number}!")
             else:
                 st.error(
                     "Could not find the con-agent system prompt used for this client.")
-                return
-
-            filename = save_conversation_to_excel(
-                st.session_state.client_number,
-                memory.chat_memory.messages,
-                con_agent_system_prompt_version
-            )
-            st.success(
-                f"Conversation saved to Excel file for Client {st.session_state.client_number}!")
         else:
             st.error(
                 "Unable to save conversation. Client number is not set or no conversation has taken place.")
