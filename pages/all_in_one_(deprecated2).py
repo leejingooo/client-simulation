@@ -8,8 +8,6 @@ from langchain.callbacks import StreamingStdOutCallbackHandler
 from langchain.memory import ConversationBufferMemory
 import streamlit as st
 import pandas as pd
-from typing import Tuple
-from Home import check_password
 
 st.set_page_config(
     page_title="All-in-one",
@@ -99,7 +97,7 @@ def display_loaded_versions(profile_maker_version, history_maker_version, con_ag
 
 def format_version(version):
     """Format version to one decimal place"""
-    return "{:.1f}".format(float(version))
+    return f"{version:.1f}"
 
 
 def extract_version(filename):
@@ -107,7 +105,7 @@ def extract_version(filename):
     return match.group(1) if match else "1.0"
 
 
-def load_prompt_and_get_version(module_name: str, version: float) -> Tuple[str, str]:
+def load_prompt_and_get_version(module_name, version):
     folder_path = f"data/prompts/{module_name}_system_prompt"
     file_list = get_file_list(folder_path)
     formatted_version = format_version(version)
@@ -128,16 +126,13 @@ def load_prompt_and_get_version(module_name: str, version: float) -> Tuple[str, 
 def load_existing_client_data(client_number, profile_version, con_agent_version):
     profile_path = f"data/output/client_{client_number}/profile_client_{client_number}_version{format_version(profile_version)}.json"
     history_path = f"data/output/client_{client_number}/history_client_{client_number}_version{format_version(profile_version)}.txt"
-    beh_dir_path = f"data/output/client_{client_number}/beh_dir_client_{client_number}_version{format_version(profile_version)}.txt"
     con_agent_prompt_path = f"data/prompts/con-agent_system_prompt/con-agent_system_prompt_version{format_version(con_agent_version)}.txt"
 
-    if all(os.path.exists(path) for path in [profile_path, history_path, beh_dir_path, con_agent_prompt_path]):
+    if os.path.exists(profile_path) and os.path.exists(history_path) and os.path.exists(con_agent_prompt_path):
         with open(profile_path, "r") as f:
             st.session_state.profile = json.load(f)
         with open(history_path, "r") as f:
             st.session_state.history = f.read()
-        with open(beh_dir_path, "r") as f:
-            st.session_state.beh_dir = f.read()
         with open(con_agent_prompt_path, "r") as f:
             con_agent_system_prompt = f.read()
         return True, con_agent_system_prompt
@@ -146,16 +141,15 @@ def load_existing_client_data(client_number, profile_version, con_agent_version)
             f"Could not find existing client data or the specified prompt versions.")
         return False, None
 
+
 # Module 1: Profile-maker
 
 
 @st.cache_data
 def profile_maker(form_version, given_information, client_number, system_prompt):
-    profile_form_path = "data/profile_form/profile_form_version{}.json".format(
-        format_version(form_version))
+    profile_form_path = f"data/profile_form/profile_form_version{form_version}.json"
     if not os.path.exists(profile_form_path):
-        st.error("Profile form version {} not found.".format(
-            format_version(form_version)))
+        st.error(f"Profile form version {form_version} not found.")
         return None
 
     with open(profile_form_path, "r") as f:
@@ -205,9 +199,7 @@ def profile_maker(form_version, given_information, client_number, system_prompt)
 # Module 2: History-maker
 @st.cache_data
 def history_maker(form_version, client_number, system_prompt):
-    profile_file = "data/output/client_{}/profile_client_{}_version{}.json".format(
-        client_number, client_number, format_version(form_version))
-    with open(profile_file, "r") as f:
+    with open(f"data/output/client_{client_number}/profile_client_{client_number}_version{form_version}.json", "r") as f:
         profile_json = json.load(f)
 
     chat_prompt = ChatPromptTemplate.from_messages(
@@ -240,69 +232,9 @@ def history_maker(form_version, client_number, system_prompt):
 
     return result.content
 
-
-# Add this function after the history_maker function
-@st.cache_data
-def beh_dir_maker(form_version, client_number, system_prompt):
-    profile_file = "data/output/client_{}/profile_client_{}_version{}.json".format(
-        client_number, client_number, format_version(form_version))
-    history_file = "data/output/client_{}/history_client_{}_version{}.txt".format(
-        client_number, client_number, format_version(form_version))
-
-    try:
-        with open(profile_file, "r") as f:
-            profile_json = json.load(f)
-    except FileNotFoundError:
-        st.error(
-            f"Profile file not found for client {client_number}, version {form_version}. Please generate the profile first.")
-        return None
-
-    try:
-        with open(history_file, "r") as f:
-            history = f.read()
-    except FileNotFoundError:
-        st.error(
-            f"History file not found for client {client_number}, version {form_version}. Please generate the history first.")
-        return None
-
-    chat_prompt = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                system_prompt
-            ),
-            (
-                "human",
-                """
-                <Profile_JSON>
-                {profile_json}
-                </Profile_JSON>
-                <History>
-                {history}
-                </History>
-                """
-            )
-        ]
-    )
-
-    chain = chat_prompt | llm
-
-    result = chain.invoke({
-        "profile_json": json.dumps(profile_json, indent=2),
-        "history": history
-    })
-
-    # Save the result
-    output_dir = f"data/output/client_{client_number}"
-    os.makedirs(output_dir, exist_ok=True)
-    output_file = f"{output_dir}/beh_dir_client_{client_number}_version{format_version(form_version)}.txt"
-    with open(output_file, "w") as f:
-        f.write(result.content)
-
-    return result.content
-
-
 # Module 3: Conversational agent
+
+
 # Initialize session state
 if 'messages' not in st.session_state:
     st.session_state.messages = []
@@ -316,21 +248,11 @@ if 'form_version' not in st.session_state:
 
 @st.cache_resource
 def create_conversational_agent(profile_version, client_number, system_prompt):
-    profile_file = "data/output/client_{}/profile_client_{}_version{}.json".format(
-        client_number, client_number, format_version(profile_version))
-    history_file = "data/output/client_{}/history_client_{}_version{}.txt".format(
-        client_number, client_number, format_version(profile_version))
-    beh_dir_file = "data/output/client_{}/beh_dir_client_{}_version{}.txt".format(
-        client_number, client_number, format_version(profile_version))
-
-    with open(profile_file, "r") as f:
+    with open(f"data/output/client_{client_number}/profile_client_{client_number}_version{profile_version}.json", "r") as f:
         profile_json = json.load(f)
 
-    with open(history_file, "r") as f:
+    with open(f"data/output/client_{client_number}/history_client_{client_number}_version{profile_version}.txt", "r") as f:
         history = f.read()
-
-    with open(beh_dir_file, "r") as f:
-        behavioral_direction = f.read()
 
     chat_prompt = ChatPromptTemplate.from_messages(
         [
@@ -350,7 +272,6 @@ def create_conversational_agent(profile_version, client_number, system_prompt):
             "current_date": FIXED_DATE,
             "profile_json": json.dumps(profile_json, indent=2),
             "history": history,
-            "behavioral_direction": behavioral_direction,
             "chat_history": memory.chat_memory.messages,
             "human_input": human_input
         })
@@ -361,6 +282,7 @@ def create_conversational_agent(profile_version, client_number, system_prompt):
         return response.content
 
     return agent, memory
+
 
 # Save conversation to Excel
 
@@ -399,9 +321,6 @@ def save_conversation_to_excel(client_number, messages, con_agent_system_prompt_
 
 # Streamlit UI
 def main():
-    if not check_password():
-        st.stop()
-
     st.title("Client-Simulation")
 
     st.sidebar.header("Settings")
@@ -417,9 +336,9 @@ def main():
 
     if action == "Load existing data":
         profile_version = st.sidebar.number_input(
-            "Profile Version", min_value=1.0, value=2.0, step=0.1, format="%.1f")
+            "Profile Version", min_value=1.0, value=1.0, step=0.1, format="%.1f")
         con_agent_version = st.sidebar.number_input(
-            "Con-agent System Prompt Version", min_value=1.0, value=2.0, step=0.1, format="%.1f")
+            "Con-agent System Prompt Version", min_value=1.0, value=1.0, step=0.1, format="%.1f")
 
         if st.sidebar.button("Load Data", key="load_data_button"):
             success, con_agent_system_prompt = load_existing_client_data(
@@ -437,14 +356,13 @@ def main():
                     f"Con-agent version {format_version(con_agent_version)} successfully loaded")
             else:
                 st.sidebar.error("Failed to load existing data.")
+
     else:  # Create new data
         st.sidebar.subheader("Version Settings")
         profile_version = st.sidebar.number_input(
-            "Profile Version", min_value=1.0, value=2.0, step=0.1, format="%.1f")
+            "Profile Version", min_value=1.0, value=1.0, step=0.1, format="%.1f")
         con_agent_version = st.sidebar.number_input(
-            "Con-agent Version", min_value=1.0, value=2.0, step=0.1, format="%.1f")
-        beh_dir_version = st.sidebar.number_input(
-            "Beh-dir-maker Version", min_value=1.0, value=1.0, step=0.1, format="%.1f")
+            "Con-agent Version", min_value=1.0, value=1.0, step=0.1, format="%.1f")
 
         # Load prompts based on versions
         profile_system_prompt, actual_profile_version = load_prompt_and_get_version(
@@ -453,12 +371,10 @@ def main():
             "history-maker", profile_version)
         con_agent_system_prompt, actual_con_agent_version = load_prompt_and_get_version(
             "con-agent", con_agent_version)
-        beh_dir_system_prompt, actual_beh_dir_version = load_prompt_and_get_version(
-            "beh-dir-maker", beh_dir_version)
 
         st.sidebar.subheader("Patient Information")
         age = st.sidebar.number_input(
-            "Age", min_value=0, max_value=120, value=40)
+            "Age", min_value=0, max_value=120, value=24)
         gender = st.sidebar.selectbox("Gender", ["Female", "Male", "Other"])
         nationality = st.sidebar.text_input("Nationality", "South Korea")
         diagnosis = st.sidebar.text_input(
@@ -473,8 +389,8 @@ def main():
         </Given information>
         """
 
-        if st.sidebar.button("Generate Profile, History, and Behavioral Direction", key="generate_all_button"):
-            if all([profile_system_prompt, history_system_prompt, con_agent_system_prompt, beh_dir_system_prompt]):
+        if st.sidebar.button("Generate Profile and History", key="generate_profile_history_button"):
+            if all([profile_system_prompt, history_system_prompt, con_agent_system_prompt]):
                 with st.spinner("Generating profile..."):
                     profile = profile_maker(format_version(
                         profile_version), given_information, st.session_state.client_number, profile_system_prompt)
@@ -485,33 +401,17 @@ def main():
                         with st.spinner("Generating history..."):
                             history = history_maker(format_version(
                                 profile_version), st.session_state.client_number, history_system_prompt)
-                            if history is not None:
-                                st.session_state.history = history
-                                st.success("History generated!")
+                            st.session_state.history = history
+                            st.success("History generated!")
 
-                                with st.spinner("Generating behavioral direction..."):
-                                    beh_dir = beh_dir_maker(format_version(
-                                        profile_version), st.session_state.client_number, beh_dir_system_prompt)
-                                    if beh_dir is not None:
-                                        st.session_state.beh_dir = beh_dir
-                                        st.success(
-                                            "Behavioral direction generated!")
+                        st.session_state.agent_and_memory = create_conversational_agent(
+                            format_version(profile_version), st.session_state.client_number, con_agent_system_prompt)
 
-                                        st.session_state.agent_and_memory = create_conversational_agent(
-                                            format_version(profile_version), st.session_state.client_number, con_agent_system_prompt)
-
-                                        # Display loaded versions
-                                        st.success(
-                                            f"Profile version {actual_profile_version} successfully loaded")
-                                        st.success(
-                                            f"Con-agent version {actual_con_agent_version} successfully loaded")
-                                        st.success(
-                                            f"Beh-dir-maker version {actual_beh_dir_version} successfully loaded")
-                                    else:
-                                        st.error(
-                                            "Failed to generate behavioral direction.")
-                            else:
-                                st.error("Failed to generate history.")
+                        # Display loaded versions
+                        st.success(
+                            f"Profile version {actual_profile_version} successfully loaded")
+                        st.success(
+                            f"Con-agent version {actual_con_agent_version} successfully loaded")
                     else:
                         st.error(
                             "Failed to generate profile. Please check the error messages above.")
