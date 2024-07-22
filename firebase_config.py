@@ -1,47 +1,46 @@
 import firebase_admin
 from firebase_admin import credentials, db
 import streamlit as st
-import logging
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+import json
 
 
 def initialize_firebase():
-    try:
-        if not firebase_admin._apps:
-            cred = credentials.Certificate(st.secrets["firebase"])
+    if not firebase_admin._apps:
+        try:
+            # Streamlit Secrets에서 Firebase 설정을 가져옵니다
+            firebase_config = st.secrets["firebase"]
+
+            # 문자열로 저장된 경우 JSON으로 파싱합니다
+            if isinstance(firebase_config, str):
+                firebase_config = json.loads(firebase_config)
+
+            # 딕셔너리가 아니라면 오류를 발생시킵니다
+            if not isinstance(firebase_config, dict):
+                raise ValueError("Firebase config must be a dictionary")
+
+            # 필수 키가 모두 있는지 확인합니다
+            required_keys = ['type', 'project_id',
+                             'private_key_id', 'private_key', 'client_email']
+            for key in required_keys:
+                if key not in firebase_config:
+                    raise ValueError(
+                        f"Missing required key in Firebase config: {key}")
+
+            # 인증 정보를 사용하여 Firebase 앱을 초기화합니다
+            cred = credentials.Certificate(firebase_config)
             firebase_admin.initialize_app(cred, {
                 'databaseURL': st.secrets["firebase_database_url"]
             })
+        except Exception as e:
+            st.error(f"Failed to initialize Firebase: {e}")
+            return None
+
+    try:
         return db.reference()
     except Exception as e:
-        logger.error(f"Error initializing Firebase: {e}")
-        st.error(f"Failed to initialize Firebase: {e}")
+        st.error(f"Failed to get database reference: {e}")
         return None
 
 
 def get_firebase_ref():
-    ref = initialize_firebase()
-    if ref is None:
-        st.error(
-            "Failed to get Firebase reference. Check your configuration and network connection.")
-    return ref
-
-
-def test_firebase_connection():
-    ref = get_firebase_ref()
-    if ref:
-        try:
-            # 테스트 데이터 쓰기
-            ref.child("test").set({"connection": "successful"})
-            # 테스트 데이터 읽기
-            test_data = ref.child("test").get()
-            if test_data and test_data.get("connection") == "successful":
-                st.success("Firebase connection test successful!")
-            else:
-                st.warning("Firebase connection test failed: Unexpected data")
-        except Exception as e:
-            st.error(f"Firebase connection test failed: {e}")
-    else:
-        st.error("Firebase connection test failed: Could not get reference")
+    return initialize_firebase()
