@@ -125,19 +125,13 @@ def load_prompt_and_get_version(module_name: str, version: float) -> Tuple[str, 
         return None, None
 
 
-def load_existing_client_data(client_number, profile_version, con_agent_version, beh_dir_version):
-    profile_path = "data/output/client_{}/profile_client_{}_version{}.json".format(
-        client_number, client_number, format_version(profile_version))
-    history_path = "data/output/client_{}/history_client_{}_version{}.txt".format(
-        client_number, client_number, format_version(profile_version))
-    beh_dir_path = "data/output/client_{}/beh_dir_client_{}_version{}.txt".format(
-        client_number, client_number, format_version(profile_version))
-    con_agent_prompt_path = "data/prompts/con-agent_system_prompt/con-agent_system_prompt_version{}.txt".format(
-        format_version(con_agent_version))
-    beh_dir_prompt_path = "data/prompts/beh-dir-maker_system_prompt/beh-dir-maker_system_prompt_version{}.txt".format(
-        format_version(beh_dir_version))
+def load_existing_client_data(client_number, profile_version, con_agent_version):
+    profile_path = f"data/output/client_{client_number}/profile_client_{client_number}_version{format_version(profile_version)}.json"
+    history_path = f"data/output/client_{client_number}/history_client_{client_number}_version{format_version(profile_version)}.txt"
+    beh_dir_path = f"data/output/client_{client_number}/beh_dir_client_{client_number}_version{format_version(profile_version)}.txt"
+    con_agent_prompt_path = f"data/prompts/con-agent_system_prompt/con-agent_system_prompt_version{format_version(con_agent_version)}.txt"
 
-    if all(os.path.exists(path) for path in [profile_path, history_path, beh_dir_path, con_agent_prompt_path, beh_dir_prompt_path]):
+    if all(os.path.exists(path) for path in [profile_path, history_path, beh_dir_path, con_agent_prompt_path]):
         with open(profile_path, "r") as f:
             st.session_state.profile = json.load(f)
         with open(history_path, "r") as f:
@@ -146,14 +140,11 @@ def load_existing_client_data(client_number, profile_version, con_agent_version,
             st.session_state.beh_dir = f.read()
         with open(con_agent_prompt_path, "r") as f:
             con_agent_system_prompt = f.read()
-        with open(beh_dir_prompt_path, "r") as f:
-            beh_dir_system_prompt = f.read()
-        return True, con_agent_system_prompt, beh_dir_system_prompt
+        return True, con_agent_system_prompt
     else:
         st.error(
             f"Could not find existing client data or the specified prompt versions.")
-        return False, None, None
-
+        return False, None
 
 # Module 1: Profile-maker
 
@@ -426,37 +417,32 @@ def main():
 
     if action == "Load existing data":
         profile_version = st.sidebar.number_input(
-            "Profile Version", min_value=1.0, value=1.0, step=0.1, format="%.1f")
+            "Profile Version", min_value=1.0, value=2.0, step=0.1, format="%.1f")
         con_agent_version = st.sidebar.number_input(
-            "Con-agent System Prompt Version", min_value=1.0, value=1.0, step=0.1, format="%.1f")
-        beh_dir_version = st.sidebar.number_input(
-            "Beh-dir-maker System Prompt Version", min_value=1.0, value=1.0, step=0.1, format="%.1f")
+            "Con-agent System Prompt Version", min_value=1.0, value=2.0, step=0.1, format="%.1f")
 
         if st.sidebar.button("Load Data", key="load_data_button"):
-            success, con_agent_system_prompt, beh_dir_system_prompt = load_existing_client_data(
-                st.session_state.client_number, profile_version, con_agent_version, beh_dir_version)
+            success, con_agent_system_prompt = load_existing_client_data(
+                st.session_state.client_number, profile_version, con_agent_version)
             if success:
                 st.sidebar.success(
-                    "Loaded existing data for Client {}".format(st.session_state.client_number))
+                    f"Loaded existing data for Client {st.session_state.client_number}")
                 st.session_state.agent_and_memory = create_conversational_agent(
                     format_version(profile_version), st.session_state.client_number, con_agent_system_prompt)
 
                 # Display loaded versions
                 st.success(
-                    "Profile version {} successfully loaded".format(format_version(profile_version)))
+                    f"Profile version {format_version(profile_version)} successfully loaded")
                 st.success(
-                    "Con-agent version {} successfully loaded".format(format_version(con_agent_version)))
-                st.success(
-                    "Beh-dir-maker version {} successfully loaded".format(format_version(beh_dir_version)))
+                    f"Con-agent version {format_version(con_agent_version)} successfully loaded")
             else:
                 st.sidebar.error("Failed to load existing data.")
-
     else:  # Create new data
         st.sidebar.subheader("Version Settings")
         profile_version = st.sidebar.number_input(
-            "Profile Version", min_value=1.0, value=1.0, step=0.1, format="%.1f")
+            "Profile Version", min_value=1.0, value=2.0, step=0.1, format="%.1f")
         con_agent_version = st.sidebar.number_input(
-            "Con-agent Version", min_value=1.0, value=1.0, step=0.1, format="%.1f")
+            "Con-agent Version", min_value=1.0, value=2.0, step=0.1, format="%.1f")
         beh_dir_version = st.sidebar.number_input(
             "Beh-dir-maker Version", min_value=1.0, value=1.0, step=0.1, format="%.1f")
 
@@ -472,7 +458,7 @@ def main():
 
         st.sidebar.subheader("Patient Information")
         age = st.sidebar.number_input(
-            "Age", min_value=0, max_value=120, value=24)
+            "Age", min_value=0, max_value=120, value=40)
         gender = st.sidebar.selectbox("Gender", ["Female", "Male", "Other"])
         nationality = st.sidebar.text_input("Nationality", "South Korea")
         diagnosis = st.sidebar.text_input(

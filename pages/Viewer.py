@@ -11,7 +11,6 @@ def load_client_data(client_number, form_version):
     base_path = f"./data/output/client_{client_number}"
     profile_path = f"{base_path}/profile_client_{client_number}_version{form_version}.json"
     history_path = f"{base_path}/history_client_{client_number}_version{form_version}.txt"
-    conversation_path = f"{base_path}/conversation_client_{client_number}.xlsx"
 
     data = {"profile": None, "history": None, "conversation": None}
 
@@ -23,7 +22,14 @@ def load_client_data(client_number, form_version):
         with open(history_path, 'r') as f:
             data["history"] = f.read()
 
-    if os.path.exists(conversation_path):
+    # Find the most recent conversation file
+    conversation_files = [f for f in os.listdir(base_path) if f.startswith(
+        f"conversation_client_{client_number}_") and f.endswith(".xlsx")]
+    if conversation_files:
+        # Sort files by modification time (most recent first)
+        conversation_files.sort(key=lambda x: os.path.getmtime(
+            os.path.join(base_path, x)), reverse=True)
+        conversation_path = os.path.join(base_path, conversation_files[0])
         data["conversation"] = pd.read_excel(conversation_path)
 
     return data
@@ -94,7 +100,7 @@ def main():
     client_number = st.sidebar.number_input(
         "Enter Client Number", min_value=1, value=1, step=1)
     form_version = st.sidebar.number_input(
-        "Form Version", min_value=1.0, value=1.0, step=0.1)
+        "Form Version", min_value=1.0, value=1.0, step=0.1, format="%.1f")
 
     if st.sidebar.button("Load Client Data"):
         client_data = load_client_data(client_number, form_version)
@@ -109,7 +115,20 @@ def main():
                 display_history(client_data["history"])
 
             with tab3:
-                display_conversation(client_data["conversation"])
+                # Check for multiple conversation files
+                base_path = f"./data/output/client_{client_number}"
+                conversation_files = [f for f in os.listdir(base_path) if f.startswith(
+                    f"conversation_client_{client_number}_") and f.endswith(".xlsx")]
+
+                if len(conversation_files) > 1:
+                    selected_file = st.selectbox(
+                        "Select conversation file:", conversation_files)
+                    conversation_path = os.path.join(base_path, selected_file)
+                    conversation_data = pd.read_excel(conversation_path)
+                else:
+                    conversation_data = client_data["conversation"]
+
+                display_conversation(conversation_data)
         else:
             st.warning(
                 f"No data found for Client {client_number} with Form Version {form_version}")
