@@ -14,11 +14,11 @@ from firebase_config import get_firebase_ref
 import json
 
 st.set_page_config(
-    page_title="All-in-one",
+    page_title="Simulation",
     page_icon="🔥",
 )
 
-st.title("All-in-one")
+st.title("Simulation")
 
 
 # Initialize the language model
