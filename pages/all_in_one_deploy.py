@@ -38,9 +38,14 @@ chat_llm = ChatOpenAI(
 # Fixed date
 FIXED_DATE = "01/07/2024"
 
+firebase_ref = get_firebase_ref()
+if firebase_ref is None:
+    st.error(
+        "Firebase initialization failed. Please check your configuration and try again.")
+    st.stop()
 
-def save_to_firebase(client_number, data_type, content):
-    ref = get_firebase_ref()
+
+def save_to_firebase(ref, client_number, data_type, content):
     if ref is not None:
         try:
             ref.child(f"clients/{client_number}/{data_type}").set(content)
@@ -51,8 +56,7 @@ def save_to_firebase(client_number, data_type, content):
         st.error("Firebase reference is not available. Data not saved.")
 
 
-def load_from_firebase(client_number, data_type):
-    ref = get_firebase_ref()
+def load_from_firebase(ref, client_number, data_type):
     if ref is not None:
         try:
             return ref.child(f"clients/{client_number}/{data_type}").get()
@@ -162,13 +166,13 @@ def load_prompt_and_get_version(module_name: str, version: float) -> Tuple[str, 
 
 def load_existing_client_data(client_number, profile_version, con_agent_version):
     profile = load_from_firebase(
-        client_number, f"profile_version{profile_version}")
+        firebase_ref, client_number, f"profile_version{profile_version}")
     history = load_from_firebase(
-        client_number, f"history_version{profile_version}")
+        firebase_ref, client_number, f"history_version{profile_version}")
     beh_dir = load_from_firebase(
-        client_number, f"beh_dir_version{profile_version}")
+        firebase_ref, client_number, f"beh_dir_version{profile_version}")
     con_agent_system_prompt = load_from_firebase(
-        "prompts", f"con_agent_version{con_agent_version}")
+        firebase_ref, "prompts", f"con_agent_version{con_agent_version}")
 
     if all([profile, history, beh_dir, con_agent_system_prompt]):
         st.session_state.profile = profile
@@ -250,8 +254,8 @@ def profile_maker(form_version, given_information, client_number, system_prompt)
         st.error(f"Processed JSON string: {json_string}")
         return None
 
-    save_to_firebase(
-        client_number, f"profile_version{form_version}", parsed_result)
+    save_to_firebase(firebase_ref, client_number,
+                     f"profile_version{form_version}", parsed_result)
     return parsed_result
 # Module 2: History-maker
 
@@ -259,7 +263,7 @@ def profile_maker(form_version, given_information, client_number, system_prompt)
 @st.cache_data
 def history_maker(form_version, client_number, system_prompt):
     profile_json = load_from_firebase(
-        client_number, f"profile_version{form_version}")
+        firebase_ref, client_number, f"profile_version{form_version}")
 
     if profile_json is None:
         st.error(
@@ -291,7 +295,7 @@ def history_maker(form_version, client_number, system_prompt):
     })
 
     save_to_firebase(
-        client_number, f"history_version{form_version}", result.content)
+        firebase_ref, client_number, f"history_version{form_version}", result.content)
 
     return result.content
 
@@ -301,9 +305,9 @@ def history_maker(form_version, client_number, system_prompt):
 @st.cache_data
 def beh_dir_maker(form_version, client_number, system_prompt):
     profile_json = load_from_firebase(
-        client_number, f"profile_version{form_version}")
+        firebase_ref, client_number, f"profile_version{form_version}")
     history = load_from_firebase(
-        client_number, f"history_version{form_version}")
+        firebase_ref, client_number, f"history_version{form_version}")
 
     chat_prompt = ChatPromptTemplate.from_messages(
         [
@@ -334,7 +338,7 @@ def beh_dir_maker(form_version, client_number, system_prompt):
 
     # Save the result
     save_to_firebase(
-        client_number, f"beh_dir_version{form_version}", result.content)
+        firebase_ref, client_number, f"beh_dir_version{form_version}", result.content)
 
     return result.content
 
@@ -354,11 +358,11 @@ if 'form_version' not in st.session_state:
 @st.cache_resource
 def create_conversational_agent(profile_version, client_number, system_prompt):
     profile_json = load_from_firebase(
-        client_number, f"profile_version{profile_version}")
+        firebase_ref, client_number, f"profile_version{profile_version}")
     history = load_from_firebase(
-        client_number, f"history_version{profile_version}")
+        firebase_ref, client_number, f"history_version{profile_version}")
     behavioral_direction = load_from_firebase(
-        client_number, f"beh_dir_version{profile_version}")
+        firebase_ref, client_number, f"beh_dir_version{profile_version}")
 
     chat_prompt = ChatPromptTemplate.from_messages(
         [
@@ -405,7 +409,7 @@ def save_conversation_to_firebase(client_number, messages, con_agent_system_prom
 
     # Save to Firebase
     save_to_firebase(
-        client_number, f"conversation_sysprompt_{con_agent_system_prompt_version}", conversation_data)
+        firebase_ref, client_number, f"conversation_sysprompt_{con_agent_system_prompt_version}", conversation_data)
 
     return f"conversation_sysprompt_{con_agent_system_prompt_version}"
 
@@ -416,6 +420,13 @@ def main():
         st.stop()
 
     st.title("Client-Simulation")
+
+    # Initialize Firebase at the start of the main function
+    firebase_ref = get_firebase_ref()
+    if firebase_ref is None:
+        st.error(
+            "Firebase initialization failed. Please check your configuration and try again.")
+        st.stop()
 
     st.sidebar.header("Settings")
     new_client_number = st.sidebar.number_input(
@@ -558,7 +569,7 @@ def main():
             _, memory = st.session_state.agent_and_memory
 
             con_agent_system_prompt_version = load_from_firebase(
-                "prompts", f"con_agent_version{con_agent_version}")
+                firebase_ref, "prompts", f"con_agent_version{con_agent_version}")
             if con_agent_system_prompt_version:
                 filename = save_conversation_to_firebase(
                     st.session_state.client_number,
