@@ -48,11 +48,20 @@ else:
     st.success("Firebase initialized successfully")
 
 
+def sanitize_path(path):
+    # Remove leading slashes
+    path = path.lstrip('/')
+    # Replace dots with underscores
+    path = path.replace('.', '_')
+    return path
+
+
 def save_to_firebase(firebase_ref, client_number, data_type, content):
     if firebase_ref is not None:
         try:
-            firebase_ref.child(
-                f"clients/{client_number}/{data_type}").set(content)
+            sanitized_path = sanitize_path(
+                f"clients/{client_number}/{data_type}")
+            firebase_ref.child(sanitized_path).set(content)
             st.success(f"Data saved successfully for client {client_number}")
         except Exception as e:
             st.error(f"Failed to save data to Firebase: {str(e)}")
@@ -63,7 +72,9 @@ def save_to_firebase(firebase_ref, client_number, data_type, content):
 def load_from_firebase(firebase_ref, client_number, data_type):
     if firebase_ref is not None:
         try:
-            return firebase_ref.child(f"clients/{client_number}/{data_type}").get()
+            sanitized_path = sanitize_path(
+                f"clients/{client_number}/{data_type}")
+            return firebase_ref.child(sanitized_path).get()
         except Exception as e:
             st.error(f"Error loading data from Firebase: {str(e)}")
     return None
