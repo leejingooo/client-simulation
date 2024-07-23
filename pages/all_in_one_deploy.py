@@ -41,7 +41,14 @@ FIXED_DATE = "01/07/2024"
 
 def save_to_firebase(client_number, data_type, content):
     ref = get_firebase_ref()
-    ref.child(f"clients/{client_number}/{data_type}").set(content)
+    if ref is not None:
+        try:
+            ref.child(f"clients/{client_number}/{data_type}").set(content)
+            st.success(f"Data saved successfully for client {client_number}")
+        except Exception as e:
+            st.error(f"Failed to save data to Firebase: {str(e)}")
+    else:
+        st.error("Firebase reference is not available. Data not saved.")
 
 
 def load_from_firebase(client_number, data_type):
