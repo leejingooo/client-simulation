@@ -188,12 +188,25 @@ def profile_maker(form_version, given_information, client_number, system_prompt)
     profile_form_path = "data/profile_form/profile_form_version{}.json".format(
         format_version(form_version))
     if not os.path.exists(profile_form_path):
-        st.error("Profile form version {} not found.".format(
-            format_version(form_version)))
+        st.error(
+            f"Profile form version {format_version(form_version)} not found.")
         return None
 
-    with open(profile_form_path, "r") as f:
-        profile_form = json.load(f)
+    try:
+        with open(profile_form_path, "r") as f:
+            profile_form_content = f.read()
+
+        # Print the content of the file for debugging
+        st.write("Profile Form Content:", profile_form_content)
+
+        profile_form = json.loads(profile_form_content)
+    except json.JSONDecodeError as e:
+        st.error(f"Error parsing profile form JSON: {str(e)}")
+        st.error(f"Profile form content: {profile_form_content}")
+        return None
+    except Exception as e:
+        st.error(f"Error reading profile form: {str(e)}")
+        return None
 
     chat_prompt = ChatPromptTemplate.from_messages(
         [
@@ -209,29 +222,37 @@ def profile_maker(form_version, given_information, client_number, system_prompt)
 
     chain = chat_prompt | llm
 
-    result = chain.invoke({
-        "current_date": FIXED_DATE,
-        "profile_form": json.dumps(profile_form, indent=2),
-        "given_information": given_information
-    })
+    try:
+        result = chain.invoke({
+            "current_date": FIXED_DATE,
+            "profile_form": json.dumps(profile_form, indent=2),
+            "given_information": given_information
+        })
+    except Exception as e:
+        st.error(f"Error invoking language model: {str(e)}")
+        return None
 
-    cleaned_result = clean_data(json.loads(result.content))
-    json_string = json.dumps(cleaned_result, indent=2)
+    try:
+        cleaned_result = clean_data(json.loads(result.content))
+        json_string = json.dumps(cleaned_result, indent=2)
+    except json.JSONDecodeError as e:
+        st.error(f"Error parsing result JSON: {str(e)}")
+        st.error(f"Raw result content: {result.content}")
+        return None
 
-    # Save the result
-
-    os.makedirs(f"data/output/client_{client_number}", exist_ok=True)
-
-    # Clean the JSON string
-    json_string = result.content
     # Remove <JSON> and </JSON> tags if they exist
     json_string = re.sub(r'<\/?JSON>', '', json_string).strip()
 
-    parsed_result = json.loads(json_string)
+    try:
+        parsed_result = json.loads(json_string)
+    except json.JSONDecodeError as e:
+        st.error(f"Error parsing final JSON: {str(e)}")
+        st.error(f"Processed JSON string: {json_string}")
+        return None
+
     save_to_firebase(
         client_number, f"profile_version{form_version}", parsed_result)
     return parsed_result
-
 # Module 2: History-maker
 
 
