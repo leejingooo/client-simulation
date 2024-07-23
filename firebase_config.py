@@ -7,16 +7,30 @@ import json
 def initialize_firebase():
     if not firebase_admin._apps:
         try:
+            st.write("Secrets keys:", list(st.secrets.keys()))
+
+            if "firebase" not in st.secrets:
+                raise ValueError(
+                    "Firebase configuration not found in Streamlit secrets")
+
             firebase_config = st.secrets["firebase"]
             st.write("Firebase config type:", type(firebase_config))
-            st.write("Firebase config:", firebase_config)
 
             if isinstance(firebase_config, str):
-                firebase_config = json.loads(firebase_config)
+                st.write(
+                    "Firebase config is a string, attempting to parse as JSON")
+                try:
+                    firebase_config = json.loads(firebase_config)
+                except json.JSONDecodeError as e:
+                    st.error(
+                        f"Failed to parse Firebase config as JSON: {str(e)}")
+                    return None
 
             if not isinstance(firebase_config, dict):
                 raise ValueError(
                     f"Firebase config must be a dictionary, but it is a {type(firebase_config)}")
+
+            st.write("Firebase config keys:", list(firebase_config.keys()))
 
             required_keys = ['type', 'project_id',
                              'private_key_id', 'private_key', 'client_email']
@@ -30,21 +44,20 @@ def initialize_firebase():
                 'databaseURL': st.secrets["firebase_database_url"]
             })
             st.success("Firebase app initialized successfully")
+            return db.reference()
         except Exception as e:
             st.error(f"Failed to initialize Firebase: {str(e)}")
             st.error(
                 "Please check your Firebase configuration in Streamlit secrets.")
             return None
-
-    try:
-        ref = db.reference()
-        st.success("Database reference obtained successfully")
-        return ref
-    except Exception as e:
-        st.error(f"Failed to get database reference: {str(e)}")
-        st.error(
-            "Please check your Firebase Realtime Database settings and permissions.")
-        return None
+    else:
+        try:
+            return db.reference()
+        except Exception as e:
+            st.error(f"Failed to get database reference: {str(e)}")
+            st.error(
+                "Please check your Firebase Realtime Database settings and permissions.")
+            return None
 
 
 def get_firebase_ref():

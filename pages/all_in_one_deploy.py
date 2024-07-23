@@ -38,17 +38,21 @@ chat_llm = ChatOpenAI(
 # Fixed date
 FIXED_DATE = "01/07/2024"
 
+# Initialize Firebase
 firebase_ref = get_firebase_ref()
 if firebase_ref is None:
     st.error(
         "Firebase initialization failed. Please check your configuration and try again.")
     st.stop()
+else:
+    st.success("Firebase initialized successfully")
 
 
-def save_to_firebase(ref, client_number, data_type, content):
-    if ref is not None:
+def save_to_firebase(firebase_ref, client_number, data_type, content):
+    if firebase_ref is not None:
         try:
-            ref.child(f"clients/{client_number}/{data_type}").set(content)
+            firebase_ref.child(
+                f"clients/{client_number}/{data_type}").set(content)
             st.success(f"Data saved successfully for client {client_number}")
         except Exception as e:
             st.error(f"Failed to save data to Firebase: {str(e)}")
@@ -56,10 +60,10 @@ def save_to_firebase(ref, client_number, data_type, content):
         st.error("Firebase reference is not available. Data not saved.")
 
 
-def load_from_firebase(ref, client_number, data_type):
-    if ref is not None:
+def load_from_firebase(firebase_ref, client_number, data_type):
+    if firebase_ref is not None:
         try:
-            return ref.child(f"clients/{client_number}/{data_type}").get()
+            return firebase_ref.child(f"clients/{client_number}/{data_type}").get()
         except Exception as e:
             st.error(f"Error loading data from Firebase: {str(e)}")
     return None
