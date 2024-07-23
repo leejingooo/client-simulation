@@ -33,6 +33,8 @@ def initialize_firebase():
             })
         except Exception as e:
             st.error(f"Failed to initialize Firebase: {e}")
+            # Be careful not to expose sensitive information
+            st.error(f"Firebase config: {firebase_config}")
             return None
 
     try:
