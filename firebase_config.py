@@ -28,6 +28,8 @@ def initialize_firebase():
             st.success("Firebase app initialized successfully")
         except Exception as e:
             st.error(f"Failed to initialize Firebase: {str(e)}")
+            st.error(
+                "Please check your Firebase configuration in Streamlit secrets.")
             return None
 
     try:
@@ -36,6 +38,8 @@ def initialize_firebase():
         return ref
     except Exception as e:
         st.error(f"Failed to get database reference: {str(e)}")
+        st.error(
+            "Please check your Firebase Realtime Database settings and permissions.")
         return None
 
 
@@ -44,4 +48,7 @@ def get_firebase_ref():
     if ref is None:
         st.error(
             "Failed to initialize Firebase. Check your configuration and try again.")
+        st.error(
+            "Make sure your Firebase configuration and database URL are correctly set in Streamlit secrets.")
+        raise RuntimeError("Firebase initialization failed")
     return ref

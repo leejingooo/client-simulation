@@ -52,8 +52,12 @@ def save_to_firebase(client_number, data_type, content):
 
 
 def load_from_firebase(client_number, data_type):
-    ref = get_firebase_ref()
-    return ref.child(f"clients/{client_number}/{data_type}").get()
+    try:
+        ref = get_firebase_ref()
+        return ref.child(f"clients/{client_number}/{data_type}").get()
+    except Exception as e:
+        st.error(f"Error loading data from Firebase: {str(e)}")
+        return None
 
 
 def clean_data(data):
@@ -238,9 +242,13 @@ def profile_maker(form_version, given_information, client_number, system_prompt)
 # Module 2: History-maker
 @st.cache_data
 def history_maker(form_version, client_number, system_prompt):
-
     profile_json = load_from_firebase(
         client_number, f"profile_version{form_version}")
+
+    if profile_json is None:
+        st.error(
+            "Failed to load profile data from Firebase. Unable to generate history.")
+        return None
 
     chat_prompt = ChatPromptTemplate.from_messages(
         [
@@ -271,8 +279,9 @@ def history_maker(form_version, client_number, system_prompt):
 
     return result.content
 
-
 # Add this function after the history_maker function
+
+
 @st.cache_data
 def beh_dir_maker(form_version, client_number, system_prompt):
     profile_json = load_from_firebase(
