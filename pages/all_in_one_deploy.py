@@ -425,13 +425,6 @@ def main():
 
     st.title("Client-Simulation")
 
-    # Initialize Firebase at the start of the main function
-    firebase_ref = get_firebase_ref()
-    if firebase_ref is None:
-        st.error(
-            "Firebase initialization failed. Please check your configuration and try again.")
-        st.stop()
-
     st.sidebar.header("Settings")
     new_client_number = st.sidebar.number_input(
         "Client Number", min_value=1, value=1)

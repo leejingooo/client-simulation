@@ -16,7 +16,12 @@ def initialize_firebase():
             firebase_config = st.secrets["firebase"]
             st.write("Firebase config type:", type(firebase_config))
 
-            if isinstance(firebase_config, str):
+            # Convert AttrDict to regular dictionary
+            if hasattr(firebase_config, 'to_dict'):
+                firebase_config = firebase_config.to_dict()
+            elif isinstance(firebase_config, dict):
+                pass
+            elif isinstance(firebase_config, str):
                 st.write(
                     "Firebase config is a string, attempting to parse as JSON")
                 try:
@@ -25,8 +30,7 @@ def initialize_firebase():
                     st.error(
                         f"Failed to parse Firebase config as JSON: {str(e)}")
                     return None
-
-            if not isinstance(firebase_config, dict):
+            else:
                 raise ValueError(
                     f"Firebase config must be a dictionary, but it is a {type(firebase_config)}")
 
