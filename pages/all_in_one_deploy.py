@@ -52,12 +52,13 @@ def save_to_firebase(client_number, data_type, content):
 
 
 def load_from_firebase(client_number, data_type):
-    try:
-        ref = get_firebase_ref()
-        return ref.child(f"clients/{client_number}/{data_type}").get()
-    except Exception as e:
-        st.error(f"Error loading data from Firebase: {str(e)}")
-        return None
+    ref = get_firebase_ref()
+    if ref is not None:
+        try:
+            return ref.child(f"clients/{client_number}/{data_type}").get()
+        except Exception as e:
+            st.error(f"Error loading data from Firebase: {str(e)}")
+    return None
 
 
 def clean_data(data):
@@ -226,20 +227,14 @@ def profile_maker(form_version, given_information, client_number, system_prompt)
     # Remove <JSON> and </JSON> tags if they exist
     json_string = re.sub(r'<\/?JSON>', '', json_string).strip()
 
-    try:
-        parsed_result = json.loads(json_string)
-    except json.JSONDecodeError as e:
-        st.error(f"Error parsing JSON: {e}")
-        st.error(f"Raw content: {json_string}")
-        return None
-
+    parsed_result = json.loads(json_string)
     save_to_firebase(
         client_number, f"profile_version{form_version}", parsed_result)
-
     return parsed_result
 
-
 # Module 2: History-maker
+
+
 @st.cache_data
 def history_maker(form_version, client_number, system_prompt):
     profile_json = load_from_firebase(

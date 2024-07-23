@@ -47,8 +47,5 @@ def get_firebase_ref():
     ref = initialize_firebase()
     if ref is None:
         st.error(
-            "Failed to initialize Firebase. Check your configuration and try again.")
-        st.error(
-            "Make sure your Firebase configuration and database URL are correctly set in Streamlit secrets.")
-        raise RuntimeError("Firebase initialization failed")
+            "Firebase initialization failed. Check your configuration and try again.")
     return ref
