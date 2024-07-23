@@ -235,7 +235,7 @@ xlrd==2.0.1
 XlsxWriter==3.1.5
 yarl==1.9.2
 zipp==3.16.2
-tiktoken==0.5.1
+tiktoken==0.5.2
 langchain==0.1.0
 langchain-openai==0.0.2.post1
 langchain-anthropic==0.1.1
