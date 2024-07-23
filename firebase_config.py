@@ -8,11 +8,15 @@ def initialize_firebase():
     if not firebase_admin._apps:
         try:
             firebase_config = st.secrets["firebase"]
+            st.write("Firebase config type:", type(firebase_config))
+            st.write("Firebase config:", firebase_config)
+
             if isinstance(firebase_config, str):
                 firebase_config = json.loads(firebase_config)
 
             if not isinstance(firebase_config, dict):
-                raise ValueError("Firebase config must be a dictionary")
+                raise ValueError(
+                    f"Firebase config must be a dictionary, but it is a {type(firebase_config)}")
 
             required_keys = ['type', 'project_id',
                              'private_key_id', 'private_key', 'client_email']
