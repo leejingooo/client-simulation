@@ -1,36 +1,30 @@
 import streamlit as st
-import os
-import json
 import pandas as pd
+from firebase_config import get_firebase_ref
 
-st.set_page_config(page_title="Viewer",
-                   page_icon="👁️", layout="wide")
+st.set_page_config(page_title="Firebase Viewer", page_icon="👁️", layout="wide")
 
 
-def load_client_data(client_number, form_version):
-    base_path = f"./data/output/client_{client_number}"
-    profile_path = f"{base_path}/profile_client_{client_number}_version{form_version}.json"
-    history_path = f"{base_path}/history_client_{client_number}_version{form_version}.txt"
-
+def load_client_data(firebase_ref, client_number, form_version):
     data = {"profile": None, "history": None, "conversation": None}
 
-    if os.path.exists(profile_path):
-        with open(profile_path, 'r') as f:
-            data["profile"] = json.load(f)
+    # Load profile
+    profile_path = f"clients/{client_number}/profile_version{form_version}"
+    data["profile"] = firebase_ref.child(profile_path).get()
 
-    if os.path.exists(history_path):
-        with open(history_path, 'r') as f:
-            data["history"] = f.read()
+    # Load history
+    history_path = f"clients/{client_number}/history_version{form_version}"
+    data["history"] = firebase_ref.child(history_path).get()
 
-    # Find the most recent conversation file
-    conversation_files = [f for f in os.listdir(base_path) if f.startswith(
-        f"conversation_client_{client_number}_") and f.endswith(".xlsx")]
-    if conversation_files:
-        # Sort files by modification time (most recent first)
-        conversation_files.sort(key=lambda x: os.path.getmtime(
-            os.path.join(base_path, x)), reverse=True)
-        conversation_path = os.path.join(base_path, conversation_files[0])
-        data["conversation"] = pd.read_excel(conversation_path)
+    # Load conversation
+    conversation_path = f"clients/{client_number}"
+    conversations = firebase_ref.child(conversation_path).get()
+    if conversations:
+        conversation_keys = [k for k in conversations.keys(
+        ) if k.startswith("conversation_sysprompt_")]
+        if conversation_keys:
+            latest_conversation = conversations[max(conversation_keys)]
+            data["conversation"] = pd.DataFrame(latest_conversation)
 
     return data
 
@@ -77,13 +71,17 @@ def display_conversation(conversation):
         for index, row in conversation.iterrows():
             # Human message
             st.markdown(
-                f"<div style='background-color: #E6E6FA; padding: 10px; border-radius: 10px; margin-bottom: 10px; max-width: 80%; float: left;'>{row['human']}</div>", unsafe_allow_html=True)
+                f"<div style='background-color: #E6E6FA; padding: 10px; border-radius: 10px; margin-bottom: 10px; max-width: 80%; float: left;'>{row['human']}</div>",
+                unsafe_allow_html=True
+            )
             st.markdown("<div style='clear: both;'></div>",
                         unsafe_allow_html=True)
 
             # AI message
             st.markdown(
-                f"<div style='background-color: #F0FFF0; padding: 10px; border-radius: 10px; margin-bottom: 10px; max-width: 80%; float: right;'>{row['simulated client']}</div>", unsafe_allow_html=True)
+                f"<div style='background-color: #F0FFF0; padding: 10px; border-radius: 10px; margin-bottom: 10px; max-width: 80%; float: right;'>{row['simulated client']}</div>",
+                unsafe_allow_html=True
+            )
             st.markdown("<div style='clear: both;'></div>",
                         unsafe_allow_html=True)
 
@@ -93,13 +91,19 @@ def display_conversation(conversation):
 
 
 def main():
-    st.title("Client Data Viewer")
+    st.title("Firebase Client Data Viewer")
+
+    # Initialize Firebase
+    firebase_ref = get_firebase_ref()
+    if firebase_ref is None:
+        st.error("Firebase initialization failed. Please check your configuration.")
+        return
 
     # Initialize session state
     if 'client_data' not in st.session_state:
         st.session_state.client_data = None
-    if 'conversation_files' not in st.session_state:
-        st.session_state.conversation_files = []
+    if 'conversation_keys' not in st.session_state:
+        st.session_state.conversation_keys = []
 
     # Sidebar for client selection
     st.sidebar.header("Client Selection")
@@ -111,12 +115,13 @@ def main():
     if st.sidebar.button("Load Client Data") or st.session_state.client_data is not None:
         if st.session_state.client_data is None:
             st.session_state.client_data = load_client_data(
-                client_number, form_version)
-            base_path = f"./data/output/client_{client_number}"
-            st.session_state.conversation_files = [
-                f for f in os.listdir(base_path)
-                if f.startswith(f"conversation_client_{client_number}_") and f.endswith(".xlsx")
-            ]
+                firebase_ref, client_number, form_version)
+            conversation_path = f"clients/{client_number}"
+            conversations = firebase_ref.child(conversation_path).get()
+            if conversations:
+                st.session_state.conversation_keys = [
+                    k for k in conversations.keys() if k.startswith("conversation_sysprompt_")
+                ]
 
         if any(st.session_state.client_data.values()):
             tab1, tab2, tab3 = st.tabs(["Profile", "History", "Conversation"])
@@ -128,12 +133,13 @@ def main():
                 display_history(st.session_state.client_data["history"])
 
             with tab3:
-                if len(st.session_state.conversation_files) > 1:
-                    selected_file = st.selectbox(
-                        "Select conversation file:", st.session_state.conversation_files)
-                    base_path = f"./data/output/client_{client_number}"
-                    conversation_path = os.path.join(base_path, selected_file)
-                    conversation_data = pd.read_excel(conversation_path)
+                if len(st.session_state.conversation_keys) > 1:
+                    selected_key = st.selectbox(
+                        "Select conversation:", st.session_state.conversation_keys)
+                    conversation_data = pd.DataFrame(
+                        firebase_ref.child(
+                            f"clients/{client_number}/{selected_key}").get()
+                    )
                 else:
                     conversation_data = st.session_state.client_data["conversation"]
 
@@ -145,7 +151,7 @@ def main():
     # Add a button to clear the session state and reset the viewer
     if st.sidebar.button("Reset Viewer"):
         st.session_state.client_data = None
-        st.session_state.conversation_files = []
+        st.session_state.conversation_keys = []
         st.experimental_rerun()
 
 
