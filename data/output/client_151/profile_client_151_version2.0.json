@@ -1,0 +1,101 @@
+{
+  "Identifying data": {
+    "patient name": "Kim Joon",
+    "age": 21,
+    "sex": "male",
+    "marital status": "single",
+    "occupation": "unemployed"
+  },
+  "Chief complaint": {
+    "cc_description": "I keep hearing voices that are not there."
+  },
+  "Present illness": {
+    "symptom_1": {
+      "symptom_name": "auditory hallucinations",
+      "length": 12,
+      "alleviating factor": "None",
+      "exacerbating factor": "stress and lack of sleep"
+    },
+    "symptom_2": {
+      "symptom_name": "paranoia",
+      "length": 8,
+      "alleviating factor": "None",
+      "exacerbating factor": "being in crowded places"
+    },
+    "triggering factor": "Symptoms worsened after a recent move to a new city for university.",
+    "stressor": "school"
+  },
+  "Past psychiatric history": {
+    "presence": true,
+    "diagnosis_1": {
+      "diagnosis_name": "Schizophrenia",
+      "when": 20,
+      "length": 24,
+      "frequency": 1,
+      "severity": "severe"
+    },
+    "encounter_1": {
+      "encounter_type": "outpatient clinic",
+      "modality": "medication",
+      "effect": "partially effective",
+      "side effect": "weight gain",
+      "reason for discontinuing": "None",
+      "compliance": "good"
+    }
+  },
+  "Past medical history": {
+    "presence": false
+  },
+  "Family history": {
+    "presence": true,
+    "fh_diagnosis": "Mother has depression.",
+    "fh_substance_use": "Father has history of alcohol abuse."
+  },
+  "Developmental/Social history": {
+    "abnormality in prenatal/birthing history": "None",
+    "delay in developmental milestone": "None",
+    "childhood history": {
+      "home environment": "Stable, but parents had frequent arguments.",
+      "members of family": "Lives with parents and one younger sister.",
+      "social environment": "Had few friends, mostly kept to himself."
+    },
+    "school history": "low academic performance",
+    "work history": "No significant work history. Difficulty maintaining part-time jobs due to symptoms."
+  },
+  "Marriage/relationship history": {
+    "current family structure": "Lives with parents and younger sister."
+  },
+  "Mental Status Examination": {
+    "mood": "dysphoric",
+    "affect": "restricted",
+    "speech characteristic": {
+      "Spontaneity": false,
+      "Verbal productivity": "decreased",
+      "Tone of voice": "moderate"
+    },
+    "perception": "Auditory hallucinations",
+    "thought process": "Loosening of association",
+    "thought content": "preoccupation",
+    "sensorium and cognition": {
+      "mental status": "alert",
+      "time_orientation": true,
+      "place_orientation": true,
+      "person_orientation": true,
+      "immediate_memory": true,
+      "recent_memory": true,
+      "remote_memory": true,
+      "problem in concentration and calculation(7 serial test)": false,
+      "abnormality in general information(past five presidents/capitals of 5 country)": false,
+      "abstract thinking(understanding of idioms)": false,
+      "impulsivity-suicide risk": "moderate",
+      "impulsivity-self mutilating behavior risk": "None",
+      "suicidal ideation": true,
+      "suicidal plan": false,
+      "suicidal attempt": false,
+      "impulsivity-homicide": "low",
+      "social judgement": true,
+      "insight": "Awareness of being sick but blaming it on others, external events",
+      "reliability": true
+    }
+  }
+}

@@ -1,0 +1,109 @@
+{
+  "Identifying data": {
+    "patient name": "blank",
+    "age": 55,
+    "sex": "female",
+    "marital status": "single",
+    "occupation": "retired teacher"
+  },
+  "Chief complaint": {
+    "cc_description": "I hear voices telling me to do things."
+  },
+  "Present illness": {
+    "symptom_1": {
+      "symptom_name": "Auditory hallucinations",
+      "length": 24,
+      "alleviating factor": "None",
+      "exacerbating factor": "Stress"
+    },
+    "symptom_2": {
+      "symptom_name": "Paranoid delusions",
+      "length": 20,
+      "alleviating factor": "Medication",
+      "exacerbating factor": "Lack of sleep"
+    },
+    "triggering factor": "Increased frequency and intensity of hallucinations",
+    "stressor": "home"
+  },
+  "Past psychiatric history": {
+    "presence": true,
+    "diagnosis_1": {
+      "diagnosis_name": "Schizophrenia",
+      "when": 30,
+      "length": 24,
+      "frequency": 5,
+      "severity": "severe"
+    },
+    "encounter_1": {
+      "encounter_type": "inpatient",
+      "modality": "medication",
+      "effect": "partially effective",
+      "side effect": "weight gain",
+      "reason for discontinuing": "None",
+      "compliance": "good"
+    },
+    "encounter_2": {
+      "encounter_type": "outpatient clinic",
+      "modality": "CBT",
+      "effect": "effective",
+      "side effect": "None",
+      "reason for discontinuing": "None",
+      "compliance": "good"
+    }
+  },
+  "Past medical history": {
+    "presence": false
+  },
+  "Family history": {
+    "presence": true,
+    "fh_diagnosis": "Father had depression",
+    "fh_substance_use": "Mother had a history of alcohol abuse"
+  },
+  "Developmental/Social history": {
+    "abnormality in prenatal/birthing history": "None",
+    "delay in developmental milestone": "None",
+    "childhood history": {
+      "home environment": "Grew up in a supportive family environment",
+      "members of family": "Lived with parents and two siblings",
+      "social environment": "Had a few close friends during childhood"
+    },
+    "school history": "low academic performance",
+    "work history": "Worked as a teacher for 20 years, good relationship with colleagues, retired early due to illness"
+  },
+  "Marriage/relationship history": {
+    "current family structure": "Lives alone, no children"
+  },
+  "Mental Status Examination": {
+    "mood": "dysphoric",
+    "affect": "blunt",
+    "speech characteristic": {
+      "Spontaneity": true,
+      "Verbal productivity": "moderate",
+      "Tone of voice": "moderate"
+    },
+    "perception": "Auditory hallucination",
+    "thought process": "Normal",
+    "thought content": "paranoid delusions",
+    "sensorium and cognition": {
+      "mental status": "alert",
+      "time_orientation": true,
+      "place_orientation": true,
+      "person_orientation": true,
+      "immediate_memory": true,
+      "recent_memory": true,
+      "remote_memory": true,
+      "problem in concentration and calculation(7 serial test)": true,
+      "abnormality in general information(past five presidents/capitals of 5 country)": true,
+      "abstract thinking(understanding of idioms)": true,
+      "impulsivity-suicide risk": "moderate",
+      "impulsivity-self mutilating behavior risk": "None",
+      "suicidal ideation": false,
+      "suicidal plan": false,
+      "suicidal attempt": false,
+      "impulsivity-homicide": "low",
+      "social judgement": "normal",
+      "insight": "Intellectual insight",
+      "reliability": true
+    }
+  }
+}

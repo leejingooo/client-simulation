@@ -1,0 +1,122 @@
+{
+  "Identifying data": {
+    "patient name": "blank",
+    "age": 29,
+    "sex": "female",
+    "marital status": "single",
+    "occupation": "software engineer"
+  },
+  "Chief complaint": {
+    "cc_description": "I feel extremely energetic and happy, but sometimes I see things that others don't."
+  },
+  "Present illness": {
+    "symptom_1": {
+      "symptom_name": "elevated mood",
+      "length": 4,
+      "alleviating factor": "resting",
+      "exacerbating factor": "stress"
+    },
+    "symptom_2": {
+      "symptom_name": "decreased need for sleep",
+      "length": 3,
+      "alleviating factor": "None",
+      "exacerbating factor": "None"
+    },
+    "symptom_3": {
+      "symptom_name": "psychotic symptoms (hallucinations)",
+      "length": 1,
+      "alleviating factor": "None",
+      "exacerbating factor": "stress"
+    },
+    "triggering factor": "Increased workload and stress at job",
+    "stressor": "work"
+  },
+  "Past psychiatric history": {
+    "presence": true,
+    "diagnosis_1": {
+      "diagnosis_name": "Major Depressive Disorder",
+      "when": 25,
+      "length": 24,
+      "frequency": 1,
+      "severity": "moderate"
+    },
+    "diagnosis_2": {
+      "diagnosis_name": "Bipolar I Disorder",
+      "when": 27,
+      "length": 24,
+      "frequency": 2,
+      "severity": "severe"
+    },
+    "encounter_1": {
+      "encounter_type": "outpatient clinic",
+      "modality": "medication",
+      "effect": "partially effective",
+      "side effect": "weight gain",
+      "reason for discontinuing": "None",
+      "compliance": "good"
+    },
+    "encounter_2": {
+      "encounter_type": "inpatient",
+      "modality": "ECT",
+      "effect": "effective",
+      "side effect": "memory loss",
+      "reason for discontinuing": "None",
+      "compliance": "good"
+    }
+  },
+  "Past medical history": {
+    "presence": false
+  },
+  "Family history": {
+    "presence": true,
+    "fh_diagnosis": "Mother diagnosed with Major Depressive Disorder",
+    "fh_substance_use": "Father had alcohol use disorder"
+  },
+  "Developmental/Social history": {
+    "abnormality in prenatal/birthing history": "None",
+    "delay in developmental milestone": "None",
+    "childhood history": {
+      "home environment": "Stable but strict parents",
+      "members of family": "Lived with parents and one younger brother",
+      "social environment": "Had a few close friends, generally well-liked"
+    },
+    "school history": "low academic performance",
+    "work history": "Currently employed as a software engineer, good performance, has had conflicts with supervisor due to recent mood changes."
+  },
+  "Marriage/relationship history": {
+    "current family structure": "Lives alone, single"
+  },
+  "Mental Status Examination": {
+    "mood": "euphoric",
+    "affect": "labile",
+    "speech characteristic": {
+      "Spontaneity": true,
+      "Verbal productivity": "increased",
+      "Tone of voice": "increased"
+    },
+    "perception": "Auditory hallucination",
+    "thought process": "flight of idea",
+    "thought content": "grandiosity",
+    "sensorium and cognition": {
+      "mental status": "alert",
+      "time_orientation": true,
+      "place_orientation": true,
+      "person_orientation": true,
+      "immediate_memory": true,
+      "recent_memory": true,
+      "remote_memory": true,
+      "problem in concentration and calculation(7 serial test)": false,
+      "abnormality in general information(past five presidents/capitals of 5 country)": false,
+      "abstract thinking(understanding of idioms)": false,
+      "impulsivity-suicide risk": "low",
+      "impulsivity-self mutilating behavior risk": "None",
+      "suicidal ideation": false,
+      "suicidal plan": false,
+      "suicidal attempt": false,
+      "impulsivity-homicide": "low",
+      "social judgement": true,
+      "insight": "Awareness of being sick but blaming it on others, external events",
+      "reliability": true
+    }
+  }
+}
