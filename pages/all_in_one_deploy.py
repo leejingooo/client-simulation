@@ -421,7 +421,7 @@ def create_conversational_agent(profile_version, client_number, system_prompt):
 # Save conversation to Excel
 
 
-def save_conversation_to_firebase(client_number, messages, con_agent_system_prompt_version):
+def save_conversation_to_firebase(client_number, messages, con_agent_version):
     conversation_data = []
     for i in range(0, len(messages), 2):
         human_message = messages[i].content if i < len(messages) else ""
@@ -431,14 +431,36 @@ def save_conversation_to_firebase(client_number, messages, con_agent_system_prom
             'simulated client': ai_message
         })
 
-    # Save to Firebase
+    # Load the con-agent system prompt
+    con_agent_system_prompt, actual_con_agent_version = load_prompt_and_get_version(
+        "con-agent", con_agent_version)
+
+    if con_agent_system_prompt is None:
+        st.error(
+            f"Could not find the con-agent system prompt for version {con_agent_version}")
+        return None
+
+    # Save conversation data to Firebase
     save_to_firebase(
-        firebase_ref, client_number, f"conversation_sysprompt_{con_agent_system_prompt_version}", conversation_data)
+        firebase_ref,
+        client_number,
+        f"conversation_sysprompt_{actual_con_agent_version}",
+        conversation_data
+    )
 
-    return f"conversation_sysprompt_{con_agent_system_prompt_version}"
+    # Save the con-agent system prompt to Firebase
+    save_to_firebase(
+        firebase_ref,
+        "prompts",
+        f"con_agent_version{actual_con_agent_version}",
+        con_agent_system_prompt
+    )
 
+    return f"conversation_sysprompt_{actual_con_agent_version}"
 
 # Streamlit UI
+
+
 def main():
     if not check_password():
         st.stop()
@@ -585,19 +607,16 @@ def main():
         if st.session_state.client_number is not None and st.session_state.agent_and_memory is not None:
             _, memory = st.session_state.agent_and_memory
 
-            con_agent_system_prompt_version = load_from_firebase(
-                firebase_ref, "prompts", f"con_agent_version{con_agent_version}")
-            if con_agent_system_prompt_version:
-                filename = save_conversation_to_firebase(
-                    st.session_state.client_number,
-                    memory.chat_memory.messages,
-                    con_agent_system_prompt_version
-                )
+            filename = save_conversation_to_firebase(
+                st.session_state.client_number,
+                memory.chat_memory.messages,
+                con_agent_version  # Pass the version number directly
+            )
+            if filename:
                 st.success(
                     f"Conversation saved to Firebase for Client {st.session_state.client_number}!")
             else:
-                st.error(
-                    "Could not find the con-agent system prompt used for this client.")
+                st.error("Failed to save conversation.")
         else:
             st.error(
                 "Unable to save conversation. Client number is not set or no conversation has taken place.")
