@@ -12,6 +12,7 @@ from typing import Tuple
 from Home import check_password
 from firebase_config import get_firebase_ref
 import json
+import time
 
 st.set_page_config(
     page_title="Simulation",
@@ -157,7 +158,8 @@ def display_loaded_versions(profile_maker_version, history_maker_version, con_ag
         f"Profile-maker version {profile_maker_version} successfully loaded")
     st.success(
         f"History-maker version {history_maker_version} successfully loaded")
-    st.success(f"Con-agent version {con_agent_version} successfully loaded")
+    st.success(
+        f"Con-agent version {con_agent_version} successfully loaded")
 
 
 def format_version(version):
@@ -167,7 +169,7 @@ def format_version(version):
 
 def extract_version(filename):
     match = re.search(r'version(\d+\.\d)', filename)
-    return match.group(1) if match else "1.0"
+    return match.group(1) if match else st.error("extract_version error")
 
 
 def load_prompt_and_get_version(module_name: str, version: float) -> Tuple[str, str]:
@@ -188,13 +190,18 @@ def load_prompt_and_get_version(module_name: str, version: float) -> Tuple[str, 
         return None, None
 
 
-def load_existing_client_data(client_number, profile_version, con_agent_version):
+def load_existing_client_data(client_number, profile_version, beh_dir_version, con_agent_version):
+    # profile_version = profile_form version = profile-maker sys prompt version = history-maker sys prompt version
     profile = load_from_firebase(
         firebase_ref, client_number, f"profile_version{profile_version}")
     history = load_from_firebase(
         firebase_ref, client_number, f"history_version{profile_version}")
+
+    # beh_dir_version = beh-dir-maker sys prompt (profile, history와 다를 수 있음)
     beh_dir = load_from_firebase(
-        firebase_ref, client_number, f"beh_dir_version{profile_version}")
+        firebase_ref, client_number, f"beh_dir_version{beh_dir_version}")
+
+    # con_agent_version = con-agent sys prompt (profile, history와 다를 수 있음)
     con_agent_system_prompt = load_from_firebase(
         firebase_ref, "prompts", f"con_agent_version{con_agent_version}")
 
@@ -208,16 +215,15 @@ def load_existing_client_data(client_number, profile_version, con_agent_version)
             f"Could not find existing client data or the specified prompt versions.")
         return False, None
 
+
 # Module 1: Profile-maker
-
-
 @st.cache_data
-def profile_maker(form_version, given_information, client_number, system_prompt):
+def profile_maker(profile_version, given_information, client_number, system_prompt):
     profile_form_path = "data/profile_form/profile_form_version{}.json".format(
-        format_version(form_version))
+        format_version(profile_version))
     if not os.path.exists(profile_form_path):
         st.error(
-            f"Profile form version {format_version(form_version)} not found.")
+            f"Profile form version {format_version(profile_version)} not found.")
         return None
 
     try:
@@ -279,15 +285,15 @@ def profile_maker(form_version, given_information, client_number, system_prompt)
         return None
 
     save_to_firebase(firebase_ref, client_number,
-                     f"profile_version{form_version}", parsed_result)
+                     f"profile_version{profile_version}", parsed_result)
     return parsed_result
+
+
 # Module 2: History-maker
-
-
 @st.cache_data
-def history_maker(form_version, client_number, system_prompt):
+def history_maker(profile_version, client_number, system_prompt):
     profile_json = load_from_firebase(
-        firebase_ref, client_number, f"profile_version{form_version}")
+        firebase_ref, client_number, f"profile_version{profile_version}")
 
     if profile_json is None:
         st.error(
@@ -319,7 +325,7 @@ def history_maker(form_version, client_number, system_prompt):
     })
 
     save_to_firebase(
-        firebase_ref, client_number, f"history_version{form_version}", result.content)
+        firebase_ref, client_number, f"history_version{profile_version}", result.content)
 
     return result.content
 
@@ -327,11 +333,11 @@ def history_maker(form_version, client_number, system_prompt):
 
 
 @st.cache_data
-def beh_dir_maker(form_version, client_number, system_prompt):
+def beh_dir_maker(profile_version, beh_dir_version, client_number, system_prompt):
     profile_json = load_from_firebase(
-        firebase_ref, client_number, f"profile_version{form_version}")
+        firebase_ref, client_number, f"profile_version{profile_version}")
     history = load_from_firebase(
-        firebase_ref, client_number, f"history_version{form_version}")
+        firebase_ref, client_number, f"history_version{profile_version}")
 
     chat_prompt = ChatPromptTemplate.from_messages(
         [
@@ -362,7 +368,7 @@ def beh_dir_maker(form_version, client_number, system_prompt):
 
     # Save the result
     save_to_firebase(
-        firebase_ref, client_number, f"beh_dir_version{form_version}", result.content)
+        firebase_ref, client_number, f"beh_dir_version{beh_dir_version}", result.content)
 
     return result.content
 
@@ -375,18 +381,20 @@ if 'agent_and_memory' not in st.session_state:
     st.session_state.agent_and_memory = None
 if 'client_number' not in st.session_state:
     st.session_state.client_number = None
-if 'form_version' not in st.session_state:
-    st.session_state.form_version = None
+if 'profile_version' not in st.session_state:
+    st.session_state.profile_version = None
 
 
 @st.cache_resource
-def create_conversational_agent(profile_version, client_number, system_prompt):
+def create_conversational_agent(profile_version, beh_dir_version, client_number, system_prompt):
     profile_json = load_from_firebase(
         firebase_ref, client_number, f"profile_version{profile_version}")
     history = load_from_firebase(
         firebase_ref, client_number, f"history_version{profile_version}")
+
+    # beh_dir_version은 profile_version과 다를 수 있음
     behavioral_direction = load_from_firebase(
-        firebase_ref, client_number, f"beh_dir_version{profile_version}")
+        firebase_ref, client_number, f"beh_dir_version{beh_dir_version}")
 
     chat_prompt = ChatPromptTemplate.from_messages(
         [
@@ -421,14 +429,14 @@ def create_conversational_agent(profile_version, client_number, system_prompt):
 # Save conversation to Excel
 
 
-def save_conversation_to_firebase(client_number, messages, con_agent_version):
+def save_conversation_to_firebase(firebase_ref, client_number, messages, con_agent_version):
     conversation_data = []
     for i in range(0, len(messages), 2):
         human_message = messages[i].content if i < len(messages) else ""
         ai_message = messages[i+1].content if i+1 < len(messages) else ""
         conversation_data.append({
             'human': human_message,
-            'simulated client': ai_message
+            'simulated_client': ai_message
         })
 
     # Load the con-agent system prompt
@@ -440,24 +448,21 @@ def save_conversation_to_firebase(client_number, messages, con_agent_version):
             f"Could not find the con-agent system prompt for version {con_agent_version}")
         return None
 
-    # Save conversation data to Firebase
-    save_to_firebase(
-        firebase_ref,
-        client_number,
-        f"conversation_sysprompt_{actual_con_agent_version}",
-        conversation_data
-    )
+    # Create a unique identifier for this conversation
+    timestamp = int(time.time())
+    conversation_id = f"conversation_{actual_con_agent_version}_{timestamp}"
 
-    # Save the con-agent system prompt to Firebase
-    save_to_firebase(
-        firebase_ref,
-        "prompts",
-        f"con_agent_version{actual_con_agent_version}",
-        con_agent_system_prompt
-    )
+    # Prepare the content to be saved
+    content = {
+        'version': actual_con_agent_version,
+        'timestamp': timestamp,
+        'data': conversation_data
+    }
 
-    return f"conversation_sysprompt_{actual_con_agent_version}"
+    # Save the conversation data to Firebase
+    save_to_firebase(firebase_ref, client_number, conversation_id, content)
 
+    return conversation_id
 # Streamlit UI
 
 
@@ -476,28 +481,33 @@ def main():
         st.session_state.agent_and_memory = None
 
     action = st.sidebar.radio(
-        "Choose action", ["Load existing data", "Create new data"])
+        "Choose action", ["Create new data", "Load existing data"])
 
     if action == "Load existing data":
         profile_version = st.sidebar.number_input(
-            "Profile Version", min_value=1.0, value=2.0, step=0.1, format="%.1f")
+            "Profile Version : profile_form=profile-maker=history-maker", min_value=1.0, value=2.0, step=0.1, format="%.1f")
         con_agent_version = st.sidebar.number_input(
             "Con-agent System Prompt Version", min_value=1.0, value=2.0, step=0.1, format="%.1f")
 
+        beh_dir_version = st.sidebar.number_input(
+            "beh_dir Version", min_value=1.0, value=2.0, step=0.1, format="%.1f")
+
         if st.sidebar.button("Load Data", key="load_data_button"):
             success, con_agent_system_prompt = load_existing_client_data(
-                st.session_state.client_number, profile_version, con_agent_version)
+                st.session_state.client_number, profile_version, beh_dir_version, con_agent_version)
             if success:
                 st.sidebar.success(
                     f"Loaded existing data for Client {st.session_state.client_number}")
                 st.session_state.agent_and_memory = create_conversational_agent(
-                    format_version(profile_version), st.session_state.client_number, con_agent_system_prompt)
+                    format_version(profile_version), format_version(beh_dir_version), st.session_state.client_number, con_agent_system_prompt)
 
                 # Display loaded versions
                 st.success(
                     f"Profile version {format_version(profile_version)} successfully loaded")
                 st.success(
                     f"Con-agent version {format_version(con_agent_version)} successfully loaded")
+                st.success(
+                    f"Beh-dir version {format_version(beh_dir_version)} successfully loaded")
             else:
                 st.sidebar.error("Failed to load existing data.")
     else:  # Create new data
@@ -507,17 +517,33 @@ def main():
         con_agent_version = st.sidebar.number_input(
             "Con-agent Version", min_value=1.0, value=2.0, step=0.1, format="%.1f")
         beh_dir_version = st.sidebar.number_input(
-            "Beh-dir-maker Version", min_value=1.0, value=1.0, step=0.1, format="%.1f")
+            "Beh-dir-maker Version", min_value=1.0, value=2.0, step=0.1, format="%.1f")
+
+        def check_version_mismatch(requested_version, actual_version, prompt_type):
+            if requested_version != actual_version:
+                raise ValueError(
+                    f"Version mismatch for {prompt_type}: Requested {requested_version}, but actual version is {actual_version}")
 
         # Load prompts based on versions
         profile_system_prompt, actual_profile_version = load_prompt_and_get_version(
             "profile-maker", profile_version)
+        check_version_mismatch(
+            profile_version, actual_profile_version, "profile-maker")
+
         history_system_prompt, actual_history_version = load_prompt_and_get_version(
             "history-maker", profile_version)
+        check_version_mismatch(
+            profile_version, actual_history_version, "history-maker")
+
         con_agent_system_prompt, actual_con_agent_version = load_prompt_and_get_version(
             "con-agent", con_agent_version)
+        check_version_mismatch(
+            con_agent_version, actual_con_agent_version, "con-agent")
+
         beh_dir_system_prompt, actual_beh_dir_version = load_prompt_and_get_version(
             "beh-dir-maker", beh_dir_version)
+        check_version_mismatch(
+            beh_dir_version, actual_beh_dir_version, "beh-dir-maker")
 
         st.sidebar.subheader("Patient Information")
         age = st.sidebar.number_input(
@@ -554,14 +580,16 @@ def main():
 
                                 with st.spinner("Generating behavioral direction..."):
                                     beh_dir = beh_dir_maker(format_version(
-                                        profile_version), st.session_state.client_number, beh_dir_system_prompt)
+                                        profile_version), format_version(
+                                        beh_dir_version), st.session_state.client_number, beh_dir_system_prompt)
                                     if beh_dir is not None:
                                         st.session_state.beh_dir = beh_dir
                                         st.success(
                                             "Behavioral direction generated!")
 
                                         st.session_state.agent_and_memory = create_conversational_agent(
-                                            format_version(profile_version), st.session_state.client_number, con_agent_system_prompt)
+                                            format_version(profile_version), format_version(
+                                                beh_dir_version), st.session_state.client_number, con_agent_system_prompt)
 
                                         # Display loaded versions
                                         st.success(

@@ -1,0 +1,25 @@
+You are a psychiatric professional and need to create a case.
+
+<Profile_JSON> is the patient's psychiatric profile, and <History> is the patient's story created from this profile.
+
+Based on <Profile_JSON> and <History>, create a <Behavioral Direction> for how this patient will behave during the interview. This is exactly the same process as filling out the General appearance, Attitude, and Behavior sections of the Mental Status Examination, and we've provided three examples below.
+
+<Example 1>
+During the interview, poor eye contact by not making adequate eye contact with the interviewer and looking off into the distance, not listening to the questions until the end, giving half-answers that are not related to the questions, and smiling silly smiles in the middle of the interview were not submissive, not attentive, and not cooperative. After finishing the meal, he went out to the lounge for a while and watched some videos on the computer before lying down on the bed. No increase or decrease in general activity was observed, and no psychomotor retardation or agitation was observed.
+</Example 1>
+
+<Example 2>
+Poor eye contact as evidenced by inability to make adequate eye contact with the interviewer during the interview; submissive, not attentive, not cooperative as evidenced by attempting to respond respectfully but moving away before finishing the question or not answering the question appropriately. Increased general activity observed as pacing around the room with newspapers and walking nonstop, and psychomotor agitation observed as inability to remain in one place during the interview.
+</Example 2>
+
+<Example 3>
+During the interview, she made adequate eye contact with the interviewer and was submissive, attentive, and cooperative, listening to questions and trying to explain things in a respectful and thorough manner. Decreased general activity was observed, as evidenced by lying in bed without turning around except during meal times, and psychomotor retardation and agitation were not observed.
+</Example 3>
+
+<Profile_JSON>
+{profile_json}
+</Profile_JSON>
+
+<History>
+{history}
+</History>
