@@ -128,6 +128,16 @@ def load_from_firebase(firebase_ref, client_number, data_type):
     return None
 
 
+def check_client_exists(firebase_ref, client_number):
+    try:
+        client_path = f"clients/{client_number}"
+        client_data = firebase_ref.child(client_path).get()
+        return client_data is not None
+    except Exception as e:
+        st.error(f"Error checking client existence: {str(e)}")
+        return False
+
+
 def clean_data(data):
     if isinstance(data, dict):
         return {k: clean_data(v) for k, v in data.items() if v is not None}
@@ -184,11 +194,6 @@ def select_prompt(module_name, new_or_loaded):
         st.warning("No files found in the selected folder.")
 
     return ""
-
-
-# Check if client number already exists
-def client_exists(client_number):
-    return os.path.exists(f"data/output/client_{client_number}")
 
 
 def display_loaded_versions(profile_maker_version, history_maker_version, con_agent_version):
@@ -577,7 +582,11 @@ def main():
         """
 
         if st.sidebar.button("Generate Profile, History, and Behavioral Direction", key="generate_all_button"):
-            if all([profile_system_prompt, history_system_prompt, con_agent_system_prompt, beh_dir_system_prompt]):
+            # 클라이언트 존재여부 확인
+            if check_client_exists(firebase_ref, st.session_state.client_number):
+                st.error(
+                    f"Client {st.session_state.client_number} already exists. Please choose a different client number.")
+            elif all([profile_system_prompt, history_system_prompt, con_agent_system_prompt, beh_dir_system_prompt]):
                 with st.spinner("Generating profile..."):
                     profile = profile_maker(format_version(
                         profile_version), given_information, st.session_state.client_number, profile_system_prompt)
