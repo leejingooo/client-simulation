@@ -20,7 +20,23 @@ st.set_page_config(
     page_icon="🔥",
 )
 
-st.title("Simulation")
+instructions = """
+<style>
+    .orange-text {
+        color: orange;
+    }
+</style>
+<div class="orange-text">
+    1. Adjust the "Settings".<br>
+    2. Enter the desired "Patient information".<br>
+    3. Click the "Generate button".<br>
+    4. Start a conversation when the creation is complete.<br>
+    5. When the conversation is finished, save the conversation with "End/Save".<br>
+    6. You can check the saved conversation / Profile / History / Beh-Direction on the "Viewer" page.
+</div>
+"""
+
+st.write(instructions, unsafe_allow_html=True)
 
 
 # Initialize the language model
