@@ -33,28 +33,19 @@ def load_client_data(firebase_ref, client_number, profile_version, beh_dir_versi
     # Load profile
     profile_path = f"clients_{client_number}_profile_version{profile_version_formatted}"
     data["profile"] = firebase_ref.child(profile_path).get()
-    st.write(f"Debug: Profile path: {profile_path}")
-    st.write(f"Debug: Profile data: {data['profile']}")
 
     # Load history
     history_path = f"clients_{client_number}_history_version{profile_version_formatted}"
     data["history"] = firebase_ref.child(history_path).get()
-    st.write(f"Debug: History path: {history_path}")
-    st.write(f"Debug: History data: {data['history']}")
-
     # Load behavioral direction
     beh_dir_path = f"clients_{client_number}_beh_dir_version{beh_dir_version_formatted}"
     data["beh_dir"] = firebase_ref.child(beh_dir_path).get()
-    st.write(f"Debug: Beh_dir path: {beh_dir_path}")
-    st.write(f"Debug: Beh_dir data: {data['beh_dir']}")
 
     # Load conversations
     all_data = firebase_ref.get()
     if all_data:
         data["conversations"] = {k: v for k, v in all_data.items(
         ) if k.startswith(f"clients_{client_number}_conversation_")}
-    st.write(
-        f"Debug: Number of conversations: {len(data['conversations'] or {})}")
 
     return data
 
@@ -146,8 +137,6 @@ def main():
     if firebase_ref is None:
         st.error("Firebase initialization failed. Please check your configuration.")
         return
-
-    st.write(f"Debug: Firebase reference: {firebase_ref}")
 
     # List all clients
     available_clients = list_all_clients(firebase_ref)
