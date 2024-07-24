@@ -524,7 +524,7 @@ def main():
             if success:
                 st.sidebar.success(
                     f"Loaded existing data for Client {st.session_state.client_number}")
-                # Reset the agent and memory to start a new conversation
+
                 st.session_state.agent_and_memory = create_conversational_agent(
                     format_version(profile_version), format_version(beh_dir_version), st.session_state.client_number, con_agent_system_prompt)
 
@@ -644,6 +644,17 @@ def main():
     else:
         st.warning(
             "Please load existing data or generate a new profile and history.")
+
+    if st.button("Start New Conversation"):
+        if st.session_state.agent_and_memory:
+            # Reset the memory of the existing agent
+            _, memory = st.session_state.agent_and_memory
+            memory.chat_memory.clear()
+            st.success("New conversation started with the same client data.")
+            st.experimental_rerun()
+        else:
+            st.error(
+                "Please load client data first before starting a new conversation.")
 
     if st.button("End/Save Conversation", key="end_save_conversation_button"):
         if st.session_state.client_number is not None and st.session_state.agent_and_memory is not None:
