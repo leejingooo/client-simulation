@@ -15,36 +15,25 @@ def load_client_data(firebase_ref, client_number, profile_version, beh_dir_versi
 
     # Load profile
     profile_path = f"clients_{client_number}_profile_version{profile_version_formatted}"
-    st.write(f"Attempting to load profile from path: {profile_path}")
     data["profile"] = firebase_ref.child(profile_path).get()
-    st.write(f"Profile data: {data['profile']}")
 
     # Load history
     history_path = f"clients_{client_number}_history_version{profile_version_formatted}"
-    st.write(f"Attempting to load history from path: {history_path}")
     data["history"] = firebase_ref.child(history_path).get()
-    st.write(f"History data: {data['history']}")
 
     # Load behavioral direction
     beh_dir_path = f"clients_{client_number}_beh_dir_version{beh_dir_version_formatted}"
-    st.write(
-        f"Attempting to load behavioral direction from path: {beh_dir_path}")
     data["beh_dir"] = firebase_ref.child(beh_dir_path).get()
-    st.write(f"Behavioral direction data: {data['beh_dir']}")
 
     # Load conversation
     conversation_path = f"clients_{client_number}"
-    st.write(
-        f"Attempting to load conversations from path: {conversation_path}")
     conversations = firebase_ref.child(conversation_path).get()
-    st.write(f"Conversations data: {conversations}")
     if conversations:
         conversation_keys = [
             k for k in conversations.keys() if k.startswith("conversation_")]
         if conversation_keys:
             latest_conversation = conversations[max(conversation_keys)]
             data["conversation"] = latest_conversation.get('data')
-            st.write(f"Latest conversation data: {data['conversation']}")
 
     return data
 
@@ -88,7 +77,14 @@ def display_history(history):
 def display_beh_dir(beh_dir):
     st.subheader("Behavioral Direction")
     if beh_dir:
-        st.write(beh_dir)
+        sections = beh_dir.split('\n\n')
+        for section in sections:
+            lines = section.split('\n')
+            if lines:
+                st.markdown(f"### {lines[0]}")
+                for line in lines[1:]:
+                    st.markdown(f"- {line}")
+            st.markdown("---")
     else:
         st.write("No behavioral direction data available.")
 

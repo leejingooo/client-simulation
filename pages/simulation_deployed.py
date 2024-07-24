@@ -13,6 +13,7 @@ from Home import check_password
 from firebase_config import get_firebase_ref
 import json
 import time
+from collections import OrderedDict
 
 st.set_page_config(
     page_title="Simulation",
@@ -259,7 +260,8 @@ def profile_maker(profile_version, given_information, client_number, system_prom
         return None
 
     try:
-        cleaned_result = clean_data(json.loads(result.content))
+        cleaned_result = clean_data(json.loads(
+            result.content, object_pairs_hook=OrderedDict))
 
         # Check if cleaned_result is a string before applying re.sub
         if isinstance(cleaned_result, str):
@@ -273,7 +275,7 @@ def profile_maker(profile_version, given_information, client_number, system_prom
         return None
 
     try:
-        parsed_result = json.loads(json_string)
+        parsed_result = json.loads(json_string, object_pairs_hook=OrderedDict)
     except json.JSONDecodeError as e:
         st.error(f"Error parsing final JSON: {str(e)}")
         st.error(f"Processed JSON string: {json_string}")
@@ -283,8 +285,9 @@ def profile_maker(profile_version, given_information, client_number, system_prom
                      f"profile_version{profile_version}", parsed_result)
     return parsed_result
 
-
 # Module 2: History-maker
+
+
 @st.cache_data
 def history_maker(profile_version, client_number, system_prompt):
     profile_json = load_from_firebase(
@@ -431,22 +434,13 @@ def save_conversation_to_firebase(firebase_ref, client_number, messages, con_age
             'simulated_client': ai_message
         })
 
-    # Load the con-agent system prompt
-    con_agent_system_prompt, actual_con_agent_version = load_prompt_and_get_version(
-        "con-agent", con_agent_version)
-
-    if con_agent_system_prompt is None:
-        st.error(
-            f"Could not find the con-agent system prompt for version {con_agent_version}")
-        return None
-
     # Create a unique identifier for this conversation
     timestamp = int(time.time())
-    conversation_id = f"conversation_{actual_con_agent_version}_{timestamp}"
+    conversation_id = f"conversation_{con_agent_version}_{timestamp}"
 
     # Prepare the content to be saved
     content = {
-        'version': actual_con_agent_version,
+        'version': con_agent_version,
         'timestamp': timestamp,
         'data': conversation_data
     }
