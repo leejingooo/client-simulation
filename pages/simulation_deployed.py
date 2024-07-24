@@ -27,11 +27,17 @@ instructions = """
     }
 </style>
 <div class="orange-text">
+
     1. Setting 을 조정하세요.
+    
     2. 원하는 Patient Information을 입력하세요.
+    
     3. Generate 버튼을 누르세요.
+    
     4. 생성이 완료되면 대화를 시작하세요.
+    
     5. 대화가 끝나면 End/Save로 대화를 저장하세요.
+    
     6. 저장된 대화내역 / Profile / History / Beh-Direction은 Viewer 페이지에서 확인할 수 있습니다.
 </div>
 """
