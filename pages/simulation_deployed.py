@@ -32,6 +32,9 @@ instructions = """
     
     2. 원하는 Patient Information을 입력하세요.
     
+    * 미리 세팅되어 있는 값은 40/Female/South Korea/MDD 입니다.
+    * 변경 가능합니다.
+    
     3. Generate 버튼을 누르세요.
     
     4. 생성이 완료되면 대화를 시작하세요.
