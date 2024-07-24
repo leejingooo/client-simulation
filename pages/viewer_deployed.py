@@ -6,20 +6,23 @@ st.set_page_config(page_title="Firebase Viewer", page_icon="👁️", layout="wi
 
 
 def list_all_clients(firebase_ref):
-    clients = firebase_ref.child("clients").get()
+    clients = firebase_ref.get()
     if clients:
         st.write("Available clients:")
-        for client_number in clients.keys():
-            st.write(f"- Client {client_number}")
-        return list(clients.keys())
+        client_numbers = []
+        for key in clients.keys():
+            if key.startswith("clients_"):
+                client_number = key.split("_")[1]
+                if client_number not in client_numbers:
+                    client_numbers.append(client_number)
+                    st.write(f"- Client {client_number}")
+        return client_numbers
     else:
         st.write("No clients found in the database.")
         return []
 
 
 def load_client_data(firebase_ref, client_number, profile_version, beh_dir_version):
-    st.write(f"Debug: Firebase reference: {firebase_ref}")
-
     data = {"profile": None, "history": None,
             "beh_dir": None, "conversations": None}
 
@@ -28,25 +31,25 @@ def load_client_data(firebase_ref, client_number, profile_version, beh_dir_versi
     beh_dir_version_formatted = f"{beh_dir_version:.1f}".replace(".", "_")
 
     # Load profile
-    profile_path = f"clients/{client_number}/profile_version{profile_version_formatted}"
+    profile_path = f"clients_{client_number}_profile_version{profile_version_formatted}"
     data["profile"] = firebase_ref.child(profile_path).get()
     st.write(f"Debug: Profile path: {profile_path}")
     st.write(f"Debug: Profile data: {data['profile']}")
 
     # Load history
-    history_path = f"clients/{client_number}/history_version{profile_version_formatted}"
+    history_path = f"clients_{client_number}_history_version{profile_version_formatted}"
     data["history"] = firebase_ref.child(history_path).get()
     st.write(f"Debug: History path: {history_path}")
     st.write(f"Debug: History data: {data['history']}")
 
     # Load behavioral direction
-    beh_dir_path = f"clients/{client_number}/beh_dir_version{beh_dir_version_formatted}"
+    beh_dir_path = f"clients_{client_number}_beh_dir_version{beh_dir_version_formatted}"
     data["beh_dir"] = firebase_ref.child(beh_dir_path).get()
     st.write(f"Debug: Beh_dir path: {beh_dir_path}")
     st.write(f"Debug: Beh_dir data: {data['beh_dir']}")
 
     # Load conversations
-    conversations_path = f"clients/{client_number}"
+    conversations_path = f"clients_{client_number}"
     conversations = firebase_ref.child(conversations_path).get()
     st.write(f"Debug: Conversations path: {conversations_path}")
     st.write(f"Debug: Conversations data: {conversations}")
@@ -159,8 +162,9 @@ def main():
         client_number = st.sidebar.selectbox(
             "Select Client", available_clients)
     else:
-        client_number = st.sidebar.number_input(
-            "Enter Client Number", min_value=1, value=1, step=1)
+        st.warning(
+            "No clients found in the database. Please create a client using the simulation page first.")
+        return
 
     profile_version = st.sidebar.number_input(
         "Profile Version", min_value=1.0, value=2.0, step=0.1, format="%.1f")
@@ -173,7 +177,7 @@ def main():
                 firebase_ref, client_number, profile_version, beh_dir_version)
             if any(st.session_state.client_data.values()):
                 st.success("Data loaded successfully!")
-            conversation_path = f"clients/{client_number}"
+            conversation_path = f"clients_{client_number}"
             conversations = firebase_ref.child(conversation_path).get()
             if conversations:
                 st.session_state.conversation_keys = [
