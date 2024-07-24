@@ -5,12 +5,10 @@ Fill in the <JSON> form below.
 - Fill in the parts where the data type is specified by replacing it with your content.
 
 Do NOT say anything other than generate JSON.
-Do NOT generate any additional words, such as '''json, <JSON>.
+Do NOT generate any additional words, such as '''json, <JSON>, </JSON>.
 
 Use the <Given information> to make medically/psychiatrically appropriate inferences and fill in all the blanks.
 
 Today's date is {current_date}
 
-<JSON>
 {profile_form}
-</JSON>
