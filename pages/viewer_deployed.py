@@ -154,8 +154,6 @@ def main():
     # Initialize session state
     if 'client_data' not in st.session_state:
         st.session_state.client_data = None
-    if 'conversation_keys' not in st.session_state:
-        st.session_state.conversation_keys = []
 
     # Sidebar for client selection
     st.sidebar.header("Client Selection")
@@ -183,25 +181,25 @@ def main():
                 ["Profile", "History", "Behavioral Direction", "Conversation"])
 
             with tab1:
-                display_profile(st.session_state.client_data["profile"])
+                display_profile(st.session_state.client_data.get("profile"))
 
             with tab2:
-                display_history(st.session_state.client_data["history"])
+                display_history(st.session_state.client_data.get("history"))
 
             with tab3:
-                display_beh_dir(st.session_state.client_data["beh_dir"])
+                display_beh_dir(st.session_state.client_data.get("beh_dir"))
 
             with tab4:
-                if st.session_state.client_data["conversations"]:
-                    conversation_keys = list(
-                        st.session_state.client_data["conversations"].keys())
+                conversations = st.session_state.client_data.get(
+                    "conversations")
+                if conversations:
+                    conversation_keys = list(conversations.keys())
                     if len(conversation_keys) > 1:
                         selected_key = st.selectbox(
                             "Select conversation:", conversation_keys)
-                        conversation_data = st.session_state.client_data["conversations"][selected_key]
+                        conversation_data = conversations[selected_key]
                     else:
-                        conversation_data = next(
-                            iter(st.session_state.client_data["conversations"].values()))
+                        conversation_data = next(iter(conversations.values()))
                     display_conversation(conversation_data)
                 else:
                     st.write("No conversation data available.")
@@ -214,7 +212,6 @@ def main():
     # Add a button to clear the session state and reset the viewer
     if st.sidebar.button("Reset Viewer"):
         st.session_state.client_data = None
-        st.session_state.conversation_keys = []
         st.experimental_rerun()
 
 
