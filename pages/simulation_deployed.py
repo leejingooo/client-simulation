@@ -229,10 +229,6 @@ def profile_maker(profile_version, given_information, client_number, system_prom
     try:
         with open(profile_form_path, "r") as f:
             profile_form_content = f.read()
-
-        # Print the content of the file for debugging
-        st.write("Profile Form Content:", profile_form_content)
-
         profile_form = json.loads(profile_form_content)
     except json.JSONDecodeError as e:
         st.error(f"Error parsing profile form JSON: {str(e)}")
@@ -268,14 +264,13 @@ def profile_maker(profile_version, given_information, client_number, system_prom
 
     try:
         cleaned_result = clean_data(json.loads(result.content))
+        # Remove <JSON> and </JSON> tags if they exist
+        cleaned_result = re.sub(r'<\/?JSON>', '', cleaned_result).strip()
         json_string = json.dumps(cleaned_result, indent=2)
     except json.JSONDecodeError as e:
         st.error(f"Error parsing result JSON: {str(e)}")
         st.error(f"Raw result content: {result.content}")
         return None
-
-    # Remove <JSON> and </JSON> tags if they exist
-    json_string = re.sub(r'<\/?JSON>', '', json_string).strip()
 
     try:
         parsed_result = json.loads(json_string)
