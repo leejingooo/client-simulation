@@ -14,19 +14,19 @@ def load_client_data(firebase_ref, client_number, profile_version, beh_dir_versi
     beh_dir_version_formatted = f"{beh_dir_version:.1f}".replace(".", "_")
 
     # Load profile
-    profile_path = f"clients/{client_number}/profile_version{profile_version_formatted}"
+    profile_path = f"clients_{client_number}_profile_version{profile_version_formatted}"
     data["profile"] = firebase_ref.child(profile_path).get()
 
     # Load history
-    history_path = f"clients/{client_number}/history_version{profile_version_formatted}"
+    history_path = f"clients_{client_number}_history_version{profile_version_formatted}"
     data["history"] = firebase_ref.child(history_path).get()
 
     # Load behavioral direction
-    beh_dir_path = f"clients/{client_number}/beh_dir_version{beh_dir_version_formatted}"
+    beh_dir_path = f"clients_{client_number}_beh_dir_version{beh_dir_version_formatted}"
     data["beh_dir"] = firebase_ref.child(beh_dir_path).get()
 
     # Load conversation
-    conversation_path = f"clients/{client_number}"
+    conversation_path = f"clients_{client_number}"
     conversations = firebase_ref.child(conversation_path).get()
     if conversations:
         conversation_keys = [
@@ -141,7 +141,7 @@ def main():
                 st.session_state.conversation_keys = [
                     k for k in conversations.keys() if k.startswith("conversation_")]
 
-        if any(st.session_state.client_data.values()):
+        if st.session_state.client_data["profile"] or st.session_state.client_data["history"] or st.session_state.client_data["beh_dir"]:
             tab1, tab2, tab3, tab4 = st.tabs(
                 ["Profile", "History", "Behavioral Direction", "Conversation"])
 
