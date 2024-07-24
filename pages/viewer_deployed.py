@@ -7,33 +7,30 @@ st.set_page_config(page_title="Firebase Viewer", page_icon="👁️", layout="wi
 
 def load_client_data(firebase_ref, client_number, profile_version, beh_dir_version):
     data = {"profile": None, "history": None,
-            "beh_dir": None, "conversation": None}
+            "beh_dir": None, "conversations": None}
 
     # Format version numbers
     profile_version_formatted = f"{profile_version:.1f}".replace(".", "_")
     beh_dir_version_formatted = f"{beh_dir_version:.1f}".replace(".", "_")
 
     # Load profile
-    profile_path = f"clients_{client_number}_profile_version{profile_version_formatted}"
+    profile_path = f"clients/{client_number}/profile_version{profile_version_formatted}"
     data["profile"] = firebase_ref.child(profile_path).get()
 
     # Load history
-    history_path = f"clients_{client_number}_history_version{profile_version_formatted}"
+    history_path = f"clients/{client_number}/history_version{profile_version_formatted}"
     data["history"] = firebase_ref.child(history_path).get()
 
     # Load behavioral direction
-    beh_dir_path = f"clients_{client_number}_beh_dir_version{beh_dir_version_formatted}"
+    beh_dir_path = f"clients/{client_number}/beh_dir_version{beh_dir_version_formatted}"
     data["beh_dir"] = firebase_ref.child(beh_dir_path).get()
 
-    # Load conversation
-    conversation_path = f"clients_{client_number}"
-    conversations = firebase_ref.child(conversation_path).get()
+    # Load conversations
+    conversations_path = f"clients/{client_number}"
+    conversations = firebase_ref.child(conversations_path).get()
     if conversations:
-        conversation_keys = [
-            k for k in conversations.keys() if k.startswith("conversation_")]
-        if conversation_keys:
-            latest_conversation = conversations[max(conversation_keys)]
-            data["conversation"] = latest_conversation.get('data')
+        data["conversations"] = {
+            k: v for k, v in conversations.items() if k.startswith("conversation_")}
 
     return data
 
@@ -91,8 +88,8 @@ def display_beh_dir(beh_dir):
 
 def display_conversation(conversation):
     st.subheader("Conversation")
-    if conversation:
-        for entry in conversation:
+    if conversation and 'data' in conversation:
+        for entry in conversation['data']:
             # Human message
             st.markdown(
                 f"<div style='background-color: #E6E6FA; padding: 10px; border-radius: 10px; margin-bottom: 10px; max-width: 80%; float: left;'>{entry['human']}</div>",

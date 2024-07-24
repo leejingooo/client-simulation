@@ -205,6 +205,8 @@ def load_existing_client_data(client_number, profile_version, beh_dir_version, c
         st.session_state.profile = profile
         st.session_state.history = history
         st.session_state.beh_dir = beh_dir
+        # Reset the conversation memory
+        st.session_state.messages = []
         return True, con_agent_system_prompt
     else:
         st.error(
