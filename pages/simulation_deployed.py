@@ -27,17 +27,19 @@ instructions = """
     }
 </style>
 <div class="orange-text">
-    1. Adjust the "Settings".<br>
-    2. Enter the desired "Patient information".<br>
-    3. Click the "Generate button".<br>
-    4. Start a conversation when the creation is complete.<br>
-    5. When the conversation is finished, save the conversation with "End/Save".<br>
-    6. You can check the saved conversation / Profile / History / Beh-Direction on the "Viewer" page.
+    1. Setting 을 조정하세요.
+
+    2. 원하는 Patient Information을 입력하세요.
+
+    3. Generate 버튼을 누르세요.
+
+    4. 생성이 완료되면 대화를 시작하세요.
+
+    5. 대화가 끝나면 End/Save로 대화를 저장하세요.
+
+    6. 저장된 대화내역 / Profile / History / Beh-Direction은 Viewer 페이지에서 확인할 수 있습니다.
 </div>
 """
-
-st.write(instructions, unsafe_allow_html=True)
-
 
 # Initialize the language model
 llm = ChatOpenAI(
@@ -492,6 +494,8 @@ def main():
         st.stop()
 
     st.title("Client-Simulation")
+
+    st.write(instructions, unsafe_allow_html=True)
 
     st.sidebar.header("Settings")
     new_client_number = st.sidebar.number_input(

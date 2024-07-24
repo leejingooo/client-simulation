@@ -4,18 +4,33 @@ from firebase_config import get_firebase_ref
 
 st.set_page_config(page_title="Firebase Viewer", page_icon="👁️", layout="wide")
 
+instructions = """
+<style>
+    .orange-text {
+        color: orange;
+    }
+</style>
+<div class="orange-text">
+    1. 원하는 Client를 좌측 사이드바에서 선택하세요. 가능한 Client만 Selecbox에 표시됩니다.
+
+    2. Load Client Data를 누르세요.
+
+    3. Profile / History / Beh-Direction / Conversation을 확인 할 수 있습니다.
+
+    4. 같은 Client로 Conversation을 여러 번 진행했다면, 여러 가지의 Conversation 내역이 존재할 수 있습니다. Selectbox로 선택할 수 있습니다.
+</div>
+"""
+
 
 def list_all_clients(firebase_ref):
     clients = firebase_ref.get()
     if clients:
-        st.write("Available clients:")
         client_numbers = []
         for key in clients.keys():
             if key.startswith("clients_"):
                 client_number = key.split("_")[1]
                 if client_number not in client_numbers:
                     client_numbers.append(client_number)
-                    st.write(f"- Client {client_number}")
         return client_numbers
     else:
         st.write("No clients found in the database.")
@@ -130,7 +145,7 @@ def display_conversation(conversation):
 
 
 def main():
-    st.title("Firebase Client Data Viewer")
+    st.title("Client Data Viewer")
 
     # Initialize Firebase
     firebase_ref = get_firebase_ref()
