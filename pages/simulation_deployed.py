@@ -582,7 +582,7 @@ def main():
         """
 
         if st.sidebar.button("Generate Profile, History, and Behavioral Direction", key="generate_all_button"):
-            # 클라이언트 존재여부 확인
+            # 클라이언트 존재여부 확인. 근데 제대로 작동 안하는 듯... 근데 존재하면 알아서 load하는거같으니 놔두자..
             if check_client_exists(firebase_ref, st.session_state.client_number):
                 st.error(
                     f"Client {st.session_state.client_number} already exists. Please choose a different client number.")
