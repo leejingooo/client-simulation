@@ -519,31 +519,18 @@ def main():
         beh_dir_version = st.sidebar.number_input(
             "Beh-dir-maker Version", min_value=1.0, value=2.0, step=0.1, format="%.1f")
 
-        def check_version_mismatch(requested_version, actual_version, prompt_type):
-            if requested_version != actual_version:
-                raise ValueError(
-                    f"Version mismatch for {prompt_type}: Requested {requested_version}, but actual version is {actual_version}")
-
         # Load prompts based on versions
         profile_system_prompt, actual_profile_version = load_prompt_and_get_version(
             "profile-maker", profile_version)
-        check_version_mismatch(
-            profile_version, actual_profile_version, "profile-maker")
 
         history_system_prompt, actual_history_version = load_prompt_and_get_version(
             "history-maker", profile_version)
-        check_version_mismatch(
-            profile_version, actual_history_version, "history-maker")
 
         con_agent_system_prompt, actual_con_agent_version = load_prompt_and_get_version(
             "con-agent", con_agent_version)
-        check_version_mismatch(
-            con_agent_version, actual_con_agent_version, "con-agent")
 
         beh_dir_system_prompt, actual_beh_dir_version = load_prompt_and_get_version(
             "beh-dir-maker", beh_dir_version)
-        check_version_mismatch(
-            beh_dir_version, actual_beh_dir_version, "beh-dir-maker")
 
         st.sidebar.subheader("Patient Information")
         age = st.sidebar.number_input(
