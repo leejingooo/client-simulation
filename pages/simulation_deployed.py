@@ -622,6 +622,7 @@ def main():
             _, memory = st.session_state.agent_and_memory
 
             filename = save_conversation_to_firebase(
+                firebase_ref,
                 st.session_state.client_number,
                 memory.chat_memory.messages,
                 con_agent_version  # Pass the version number directly
