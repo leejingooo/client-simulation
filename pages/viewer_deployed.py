@@ -10,8 +10,8 @@ def load_client_data(firebase_ref, client_number, profile_version, beh_dir_versi
             "beh_dir": None, "conversations": None}
 
     # Format version numbers
-    profile_version_formatted = f"{profile_version:.1f}".replace(".", "_")
-    beh_dir_version_formatted = f"{beh_dir_version:.1f}".replace(".", "_")
+    profile_version_formatted = f"{profile_version:.1f}"
+    beh_dir_version_formatted = f"{beh_dir_version:.1f}"
 
     # Load profile
     profile_path = f"clients/{client_number}/profile_version{profile_version_formatted}"

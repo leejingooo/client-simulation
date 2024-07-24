@@ -7,14 +7,12 @@ import json
 def initialize_firebase():
     if not firebase_admin._apps:
         try:
-            st.write("Secrets keys:", list(st.secrets.keys()))
 
             if "firebase" not in st.secrets:
                 raise ValueError(
                     "Firebase configuration not found in Streamlit secrets")
 
             firebase_config = st.secrets["firebase"]
-            st.write("Firebase config type:", type(firebase_config))
 
             # Convert AttrDict to regular dictionary
             if hasattr(firebase_config, 'to_dict'):
@@ -33,8 +31,6 @@ def initialize_firebase():
             else:
                 raise ValueError(
                     f"Firebase config must be a dictionary, but it is a {type(firebase_config)}")
-
-            st.write("Firebase config keys:", list(firebase_config.keys()))
 
             required_keys = ['type', 'project_id',
                              'private_key_id', 'private_key', 'client_email']
