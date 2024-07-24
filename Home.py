@@ -1,7 +1,7 @@
 import streamlit as st
 
 st.set_page_config(
-    page_title="All-in-one",
+    page_title="Client-Simulation Home",
     page_icon="🔥",
 )
 
@@ -38,7 +38,7 @@ def check_password():
 def main():
     if check_password():
         st.success("You are logged in!")
-        st.title("Welcome to the All-in-one App")
+        st.title("Welcome to the Client-Simulation")
         st.write("Please select a page from the sidebar to continue.")
     else:
         st.stop()

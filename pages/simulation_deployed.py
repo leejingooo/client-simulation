@@ -228,10 +228,9 @@ def load_prompt_and_get_version(module_name: str, version: float) -> Tuple[str, 
         return None, None
 
 
-def load_existing_client_data(client_number, profile_version, beh_dir_version, con_agent_version):
+def load_existing_client_data(client_number, profile_version, beh_dir_version):
     profile_version_formatted = f"{profile_version:.1f}".replace(".", "_")
     beh_dir_version_formatted = f"{beh_dir_version:.1f}".replace(".", "_")
-    con_agent_version_formatted = f"{con_agent_version:.1f}".replace(".", "_")
 
     profile = load_from_firebase(
         firebase_ref, client_number, f"profile_version{profile_version_formatted}")
@@ -239,16 +238,14 @@ def load_existing_client_data(client_number, profile_version, beh_dir_version, c
         firebase_ref, client_number, f"history_version{profile_version_formatted}")
     beh_dir = load_from_firebase(
         firebase_ref, client_number, f"beh_dir_version{beh_dir_version_formatted}")
-    con_agent_system_prompt = load_from_firebase(
-        firebase_ref, "prompts", f"con_agent_version{con_agent_version_formatted}")
 
-    if all([profile, history, beh_dir, con_agent_system_prompt]):
+    if all([profile, history, beh_dir]):
         st.session_state.profile = profile
         st.session_state.history = history
         st.session_state.beh_dir = beh_dir
         # Reset the conversation memory
         st.session_state.messages = []
-        return True, con_agent_system_prompt
+        return True
     else:
         st.error(
             f"Could not find existing client data or the specified prompt versions.")
@@ -524,8 +521,10 @@ def main():
             "beh_dir Version", min_value=1.0, value=2.0, step=0.1, format="%.1f")
 
         if st.sidebar.button("Load Data", key="load_data_button"):
-            success, con_agent_system_prompt = load_existing_client_data(
-                st.session_state.client_number, profile_version, beh_dir_version, con_agent_version)
+            success = load_existing_client_data(
+                st.session_state.client_number, profile_version, beh_dir_version)
+            con_agent_system_prompt, actual_con_agent_version = load_prompt_and_get_version(
+                "con-agent", con_agent_version)
             if success:
                 st.sidebar.success(
                     f"Loaded existing data for Client {st.session_state.client_number}")
@@ -537,19 +536,19 @@ def main():
                 st.success(
                     f"Profile version {format_version(profile_version)} successfully loaded")
                 st.success(
-                    f"Con-agent version {format_version(con_agent_version)} successfully loaded")
-                st.success(
                     f"Beh-dir version {format_version(beh_dir_version)} successfully loaded")
+                st.success(
+                    f"Con-agent version {format_version(con_agent_version)} successfully loaded")
             else:
                 st.sidebar.error("Failed to load existing data.")
     else:  # Create new data
         st.sidebar.subheader("Version Settings")
         profile_version = st.sidebar.number_input(
             "Profile Version", min_value=1.0, value=2.0, step=0.1, format="%.1f")
-        con_agent_version = st.sidebar.number_input(
-            "Con-agent Version", min_value=1.0, value=2.0, step=0.1, format="%.1f")
         beh_dir_version = st.sidebar.number_input(
             "Beh-dir-maker Version", min_value=1.0, value=2.0, step=0.1, format="%.1f")
+        con_agent_version = st.sidebar.number_input(
+            "Con-agent Version", min_value=1.0, value=2.0, step=0.1, format="%.1f")
 
         # Load prompts based on versions
         profile_system_prompt, actual_profile_version = load_prompt_and_get_version(
@@ -614,9 +613,9 @@ def main():
                                         st.success(
                                             f"Profile version {actual_profile_version} successfully loaded")
                                         st.success(
-                                            f"Con-agent version {actual_con_agent_version} successfully loaded")
-                                        st.success(
                                             f"Beh-dir-maker version {actual_beh_dir_version} successfully loaded")
+                                        st.success(
+                                            f"Con-agent version {actual_con_agent_version} successfully loaded")
                                     else:
                                         st.error(
                                             "Failed to generate behavioral direction.")
