@@ -264,8 +264,12 @@ def profile_maker(profile_version, given_information, client_number, system_prom
 
     try:
         cleaned_result = clean_data(json.loads(result.content))
-        # Remove <JSON> and </JSON> tags if they exist
-        cleaned_result = re.sub(r'<\/?JSON>', '', cleaned_result).strip()
+
+        # Check if cleaned_result is a string before applying re.sub
+        if isinstance(cleaned_result, str):
+            # Remove <JSON> and </JSON> tags if they exist
+            cleaned_result = re.sub(r'<\/?JSON>', '', cleaned_result).strip()
+
         json_string = json.dumps(cleaned_result, indent=2)
     except json.JSONDecodeError as e:
         st.error(f"Error parsing result JSON: {str(e)}")
