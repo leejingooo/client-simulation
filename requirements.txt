@@ -237,11 +237,7 @@ yarl==1.9.2
 zipp==3.16.2
 tiktoken
 langchain
-langchain-openai
-langchain-anthropic
-langchain-community
 langsmith
 openai
-anthropic
-ollama
+langchain-openai
 firebase-admin
