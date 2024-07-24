@@ -69,6 +69,12 @@ def sanitize_dict(data):
 def save_to_firebase(firebase_ref, client_number, data_type, content):
     if firebase_ref is not None:
         try:
+            # Replace decimal point with underscore in data_type if it contains a version number
+            if "version" in data_type:
+                version_part = data_type.split("version")[1]
+                formatted_version = version_part.replace(".", "_")
+                data_type = f"{data_type.split('version')[0]}version{formatted_version}"
+
             sanitized_path = sanitize_key(
                 f"clients/{client_number}/{data_type}")
             sanitized_content = sanitize_dict(content)
@@ -83,6 +89,12 @@ def save_to_firebase(firebase_ref, client_number, data_type, content):
 def load_from_firebase(firebase_ref, client_number, data_type):
     if firebase_ref is not None:
         try:
+            # Replace decimal point with underscore in data_type if it contains a version number
+            if "version" in data_type:
+                version_part = data_type.split("version")[1]
+                formatted_version = version_part.replace(".", "_")
+                data_type = f"{data_type.split('version')[0]}version{formatted_version}"
+
             sanitized_path = sanitize_key(
                 f"clients/{client_number}/{data_type}")
             return firebase_ref.child(sanitized_path).get()
@@ -192,14 +204,18 @@ def load_prompt_and_get_version(module_name: str, version: float) -> Tuple[str, 
 
 
 def load_existing_client_data(client_number, profile_version, beh_dir_version, con_agent_version):
+    profile_version_formatted = f"{profile_version:.1f}".replace(".", "_")
+    beh_dir_version_formatted = f"{beh_dir_version:.1f}".replace(".", "_")
+    con_agent_version_formatted = f"{con_agent_version:.1f}".replace(".", "_")
+
     profile = load_from_firebase(
-        firebase_ref, client_number, f"profile_version{profile_version}")
+        firebase_ref, client_number, f"profile_version{profile_version_formatted}")
     history = load_from_firebase(
-        firebase_ref, client_number, f"history_version{profile_version}")
+        firebase_ref, client_number, f"history_version{profile_version_formatted}")
     beh_dir = load_from_firebase(
-        firebase_ref, client_number, f"beh_dir_version{beh_dir_version}")
+        firebase_ref, client_number, f"beh_dir_version{beh_dir_version_formatted}")
     con_agent_system_prompt = load_from_firebase(
-        firebase_ref, "prompts", f"con_agent_version{con_agent_version}")
+        firebase_ref, "prompts", f"con_agent_version{con_agent_version_formatted}")
 
     if all([profile, history, beh_dir, con_agent_system_prompt]):
         st.session_state.profile = profile

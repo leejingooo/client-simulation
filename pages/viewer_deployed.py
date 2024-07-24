@@ -9,25 +9,33 @@ def load_client_data(firebase_ref, client_number, profile_version, beh_dir_versi
     data = {"profile": None, "history": None,
             "beh_dir": None, "conversations": None}
 
-    # Format version numbers
-    profile_version_formatted = f"{profile_version:.1f}"
-    beh_dir_version_formatted = f"{beh_dir_version:.1f}"
+    # Format version numbers, replacing decimal point with underscore
+    profile_version_formatted = f"{profile_version:.1f}".replace(".", "_")
+    beh_dir_version_formatted = f"{beh_dir_version:.1f}".replace(".", "_")
 
     # Load profile
     profile_path = f"clients/{client_number}/profile_version{profile_version_formatted}"
     data["profile"] = firebase_ref.child(profile_path).get()
+    st.write(f"Debug: Profile path: {profile_path}")
+    st.write(f"Debug: Profile data: {data['profile']}")
 
     # Load history
     history_path = f"clients/{client_number}/history_version{profile_version_formatted}"
     data["history"] = firebase_ref.child(history_path).get()
+    st.write(f"Debug: History path: {history_path}")
+    st.write(f"Debug: History data: {data['history']}")
 
     # Load behavioral direction
     beh_dir_path = f"clients/{client_number}/beh_dir_version{beh_dir_version_formatted}"
     data["beh_dir"] = firebase_ref.child(beh_dir_path).get()
+    st.write(f"Debug: Beh_dir path: {beh_dir_path}")
+    st.write(f"Debug: Beh_dir data: {data['beh_dir']}")
 
     # Load conversations
     conversations_path = f"clients/{client_number}"
     conversations = firebase_ref.child(conversations_path).get()
+    st.write(f"Debug: Conversations path: {conversations_path}")
+    st.write(f"Debug: Conversations data: {conversations}")
     if conversations:
         data["conversations"] = {
             k: v for k, v in conversations.items() if k.startswith("conversation_")}
