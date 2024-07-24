@@ -9,16 +9,20 @@ def load_client_data(firebase_ref, client_number, profile_version, beh_dir_versi
     data = {"profile": None, "history": None,
             "beh_dir": None, "conversation": None}
 
+    # Format version numbers
+    profile_version_formatted = f"{profile_version:.1f}".replace(".", "_")
+    beh_dir_version_formatted = f"{beh_dir_version:.1f}".replace(".", "_")
+
     # Load profile
-    profile_path = f"clients/{client_number}/profile_version{profile_version}"
+    profile_path = f"clients/{client_number}/profile_version{profile_version_formatted}"
     data["profile"] = firebase_ref.child(profile_path).get()
 
     # Load history
-    history_path = f"clients/{client_number}/history_version{profile_version}"
+    history_path = f"clients/{client_number}/history_version{profile_version_formatted}"
     data["history"] = firebase_ref.child(history_path).get()
 
     # Load behavioral direction
-    beh_dir_path = f"clients/{client_number}/beh_dir_version{beh_dir_version}"
+    beh_dir_path = f"clients/{client_number}/beh_dir_version{beh_dir_version_formatted}"
     data["beh_dir"] = firebase_ref.child(beh_dir_path).get()
 
     # Load conversation
