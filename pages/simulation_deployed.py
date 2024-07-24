@@ -191,17 +191,12 @@ def load_prompt_and_get_version(module_name: str, version: float) -> Tuple[str, 
 
 
 def load_existing_client_data(client_number, profile_version, beh_dir_version, con_agent_version):
-    # profile_version = profile_form version = profile-maker sys prompt version = history-maker sys prompt version
     profile = load_from_firebase(
         firebase_ref, client_number, f"profile_version{profile_version}")
     history = load_from_firebase(
         firebase_ref, client_number, f"history_version{profile_version}")
-
-    # beh_dir_version = beh-dir-maker sys prompt (profile, history와 다를 수 있음)
     beh_dir = load_from_firebase(
         firebase_ref, client_number, f"beh_dir_version{beh_dir_version}")
-
-    # con_agent_version = con-agent sys prompt (profile, history와 다를 수 있음)
     con_agent_system_prompt = load_from_firebase(
         firebase_ref, "prompts", f"con_agent_version{con_agent_version}")
 
@@ -215,8 +210,9 @@ def load_existing_client_data(client_number, profile_version, beh_dir_version, c
             f"Could not find existing client data or the specified prompt versions.")
         return False, None
 
-
 # Module 1: Profile-maker
+
+
 @st.cache_data
 def profile_maker(profile_version, given_information, client_number, system_prompt):
     profile_form_path = "data/profile_form/profile_form_version{}.json".format(
@@ -390,8 +386,6 @@ def create_conversational_agent(profile_version, beh_dir_version, client_number,
         firebase_ref, client_number, f"profile_version{profile_version}")
     history = load_from_firebase(
         firebase_ref, client_number, f"history_version{profile_version}")
-
-    # beh_dir_version은 profile_version과 다를 수 있음
     behavioral_direction = load_from_firebase(
         firebase_ref, client_number, f"beh_dir_version{beh_dir_version}")
 
@@ -424,7 +418,6 @@ def create_conversational_agent(profile_version, beh_dir_version, client_number,
         return response.content
 
     return agent, memory
-
 # Save conversation to Excel
 
 
@@ -487,7 +480,6 @@ def main():
             "Profile Version : profile_form=profile-maker=history-maker", min_value=1.0, value=2.0, step=0.1, format="%.1f")
         con_agent_version = st.sidebar.number_input(
             "Con-agent System Prompt Version", min_value=1.0, value=2.0, step=0.1, format="%.1f")
-
         beh_dir_version = st.sidebar.number_input(
             "beh_dir Version", min_value=1.0, value=2.0, step=0.1, format="%.1f")
 
@@ -497,6 +489,7 @@ def main():
             if success:
                 st.sidebar.success(
                     f"Loaded existing data for Client {st.session_state.client_number}")
+                # Reset the agent and memory to start a new conversation
                 st.session_state.agent_and_memory = create_conversational_agent(
                     format_version(profile_version), format_version(beh_dir_version), st.session_state.client_number, con_agent_system_prompt)
 
