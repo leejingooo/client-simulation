@@ -1,0 +1,102 @@
+{
+    "Identifying data": {
+        "patient name": "blank (data_type:string, range_candidate_guide:None)",
+        "age": "blank (data_type:number, range_candidate_guide:19-64)",
+        "sex": "blank (data_type:string, range_candidate_guide:male/female)",
+        "marital status": "blank (data_type:string, range_candidate_guide:single/married/divorced/widowed)",
+        "occupation": "blank (data_type:string, range_candidate_guide:None)"
+    },
+    "Chief complaint": {
+        "cc_description": "blank (data_type:string, range_candidate_guide:Describe in the patient's words)"
+    },
+    "Present illness": {
+        "symptom_{n}": {
+            "symptom_name": "blank (data_type:string, range_candidate_guide:None)",
+            "length": "blank (data_type:number, range_candidate_guide:0-24 (Unit: week, over 24 is represented as 24))",
+            "alleviating factor": "blank (data_type:string, range_candidate_guide:None)",
+            "exacerbating factor": "blank (data_type:string, range_candidate_guide:None)"
+        },
+        "triggering factor": "blank (data_type:string, range_candidate_guide:The reason patient came to the hospital at this time)",
+        "stressor": "blank (data_type:string, range_candidate_guide:(multiple answers available) home/work/school/legal issue/medical comorbidity/interpersonal difficulty/none)"
+    },
+    "Past psychiatric history": {
+        "presence": "blank (data_type:boolean, range_candidate_guide:Randomize(50%) the presence or absence of past psychiatric history. If 'false', then remove all children of 'pph' except this 'presence' which has 'false' as a child.)",
+        "diagnosis_{n}": {
+            "diagnosis_name": "blank (data_type:string, range_candidate_guide:None)",
+            "when": "blank (data_type:number, range_candidate_guide:Enter the patient's age at the time of the event, not the date)",
+            "length": "blank (data_type:number, range_candidate_guide:0-24 (Unit: week, over 24 is represented as 24))",
+            "frequency": "blank (data_type:number, range_candidate_guide:number of episodes)",
+            "severity": "blank (data_type:string, range_candidate_guide:mild/moderate/severe)"
+        },
+        "encounter_{n}": {
+            "encounter_type": "blank (data_type:string, range_candidate_guide:outpatient clinic/day hospital/inpatient/vocational training)",
+            "modality": "blank (data_type:string, range_candidate_guide:medication/CBT/psychotherapy/light therapy/biofeedback/ECT/group therapy/other)",
+            "effect": "blank (data_type:string, range_candidate_guide:effective/partially effective/non-effective)",
+            "side effect": "blank (data_type:string, range_candidate_guide:If there was a side effect, fill in this node. Otherwise, leave it as \"None\".)",
+            "reason for discontinuing": "blank (data_type:string, range_candidate_guide:non-effective/financial problem/moving to new town/None (If there was discontinuing, fill in this node. Otherwise, leave it as \"None\".))",
+            "compliance": "blank (data_type:string, range_candidate_guide:good/bad)"
+        }
+    },
+    "Past medical history": {
+        "presence": "blank (data_type:boolean, range_candidate_guide:Randomize(50%) the presence or absence of past medical history. If 'false', then remove all children of 'pmh' except this 'presence' which has 'false' as a child.)",
+        "history_{n}": "blank (data_type:string, range_candidate_guide:Describe a past medical history)",
+        "current medication": {
+            "duration": "blank (data_type:number, range_candidate_guide:Unit: week)",
+            "compliance": "blank (data_type:string, range_candidate_guide:good/bad)",
+            "effect": "blank (data_type:string, range_candidate_guide:effective/partially effective/non-effective)",
+            "side effect": "blank (data_type:string, range_candidate_guide:If there was a side effect, fill in this node. Otherwise, leave it as \"None\".)"
+        }
+    },
+    "Family history": {
+        "presence": "blank (data_type:boolean, range_candidate_guide:Randomize(50%) the presence or absence of family history. If 'false', then remove all children of 'fh' except this 'presence' which has 'false' as a child.)",
+        "fh_diagnosis": "blank (data_type:string, range_candidate_guide:Describe a psychiatric family history)",
+        "fh_substance_use": "blank (data_type:string, range_candidate_guide:Describe a family history of substance use (alcohol, drugs, etc.).)"
+    },
+    "Developmental/Social history": {
+        "abnormality in prenatal/birthing history": "blank (data_type:string, range_candidate_guide:Randomize presence/absence (50%). If yes, write a description; otherwise, enter None.)",
+        "delay in developmental milestone": "blank (data_type:string, range_candidate_guide:Randomize presence/absence (50%). If yes, write a description; otherwise, enter None.)",
+        "childhood history": {
+            "home environment": "blank (data_type:string, range_candidate_guide:None)",
+            "members of family": "blank (data_type:string, range_candidate_guide:None)",
+            "social environment": "blank (data_type:string, range_candidate_guide:Describe things like number and quality of friends.)"
+        },
+        "school history": "blank (data_type:string, range_candidate_guide:special education/learning disorder/behavioral problem/low academic performance/problem in extracurricular activity)",
+        "work history": "blank (data_type:string, range_candidate_guide:Describe things like job, performance, reason for switching jobs, relationship with supervisor, coworker, etc.)"
+    },
+    "Marriage/relationship history": {
+        "current family structure": "blank (data_type:string, range_candidate_guide:None)"
+    },
+    "Mental Status Examination": {
+        "mood": "blank (data_type:string, range_candidate_guide:euphoric/elated/euthymic/dysphoric/depressed)",
+        "affect": "blank (data_type:string, range_candidate_guide:broad/restricted/blunt/flat/labile/anxious/tense/shallow/inadequate/inappropriate)",
+        "speech characteristic": {
+            "Spontaneity": "blank (data_type:boolean, range_candidate_guide:None)",
+            "Verbal productivity": "blank (data_type:string, range_candidate_guide:increased/moderate/decreased)",
+            "Tone of voice": "blank (data_type:string, range_candidate_guide:increased/moderate/decreased)"
+        },
+        "perception": "blank (data_type:boolean, range_candidate_guide:Describe the perception problem (Illusion, Auditory hallucination, Visual hallucination, Olfactory hallucination, Gustatory hallucination, Depersonalization, Derealization, Déjà vu, Jamais vu). If none, enter None.)",
+        "thought process": "blank (data_type:boolean, range_candidate_guide:Describe the thought process (Loosening of association, flight of idea, circumstantiality, tangentiality, Word salad or incoherence, Neologism, logicality, relevancy). If normal, enter Normal.)",
+        "thought content": "blank (data_type:boolean, range_candidate_guide:Describe the Thought content (preoccupation, overvalued idea, idea of referecne, grandiosity, obsession, compulsion, rumination, delusion, phobia). If normal, enter Normal.)",
+        "sensorium and cognition": {
+            "mental status": "blank (data_type:string, range_candidate_guide:alert/drowsy/stupor/coma)",
+            "time_orientation": "blank (data_type:boolean (normal/impaired), range_candidate_guide:None)",
+            "place_orientation": "blank (data_type:boolean (normal/impaired), range_candidate_guide:None)",
+            "person_orientation": "blank (data_type:boolean (normal/impaired), range_candidate_guide:None)",
+            "immediate_memory": "blank (data_type:boolean (normal/impaired), range_candidate_guide:None)",
+            "recent_memory": "blank (data_type:boolean (normal/impaired), range_candidate_guide:None)",
+            "remote_memory": "blank (data_type:boolean (normal/impaired), range_candidate_guide:None)",
+            "problem in concentration and calculation(7 serial test)": "blank (data_type:boolean (normal/impaired), range_candidate_guide:None)",
+            "abnormality in general information(past five presidents/capitals of 5 country)": "blank (data_type:boolean (normal/impaired), range_candidate_guide:None)",
+            "abstract thinking(understanding of idioms)": "blank (data_type:boolean (normal/impaired), range_candidate_guide:None)",
+            "impulsivity-suicide risk": "blank (data_type:string, range_candidate_guide:high/moderate/low)",
+            "impulsivity-self mutilating behavior risk": "blank (data_type:string, range_candidate_guide:None)",
+            "suicidal ideation": "blank (data_type:boolean, range_candidate_guide:None)",
+            "suicidal plan": "blank (data_type:boolean, range_candidate_guide:None)",
+            "suicidal attempt": "blank (data_type:boolean, range_candidate_guide:None)",
+            "impulsivity-homicide": "blank (data_type:string, range_candidate_guide:high/moderate/low)",
+            "social judgement": "blank (data_type:boolean (normal/impaired), range_candidate_guide:None)",
+            "insight": "blank (data_type:string, range_candidate_guide:Complete denial of illness/Slight awareness of being sick and needing help, but denying it at the same time/Awareness of being sick but blaming it on others, external events/Intellectual insight/True emotional insight)",
+            "reliability": "blank (data_type:boolean, range_candidate_guide:None)"
+        }
+    }
+}
