@@ -5,7 +5,21 @@ from firebase_config import get_firebase_ref
 st.set_page_config(page_title="Firebase Viewer", page_icon="👁️", layout="wide")
 
 
+def list_all_clients(firebase_ref):
+    clients = firebase_ref.child("clients").get()
+    if clients:
+        st.write("Available clients:")
+        for client_number in clients.keys():
+            st.write(f"- Client {client_number}")
+        return list(clients.keys())
+    else:
+        st.write("No clients found in the database.")
+        return []
+
+
 def load_client_data(firebase_ref, client_number, profile_version, beh_dir_version):
+    st.write(f"Debug: Firebase reference: {firebase_ref}")
+
     data = {"profile": None, "history": None,
             "beh_dir": None, "conversations": None}
 
@@ -128,6 +142,11 @@ def main():
         st.error("Firebase initialization failed. Please check your configuration.")
         return
 
+    st.write(f"Debug: Firebase reference: {firebase_ref}")
+
+    # List all clients
+    available_clients = list_all_clients(firebase_ref)
+
     # Initialize session state
     if 'client_data' not in st.session_state:
         st.session_state.client_data = None
@@ -136,8 +155,13 @@ def main():
 
     # Sidebar for client selection
     st.sidebar.header("Client Selection")
-    client_number = st.sidebar.number_input(
-        "Enter Client Number", min_value=1, value=1, step=1)
+    if available_clients:
+        client_number = st.sidebar.selectbox(
+            "Select Client", available_clients)
+    else:
+        client_number = st.sidebar.number_input(
+            "Enter Client Number", min_value=1, value=1, step=1)
+
     profile_version = st.sidebar.number_input(
         "Profile Version", min_value=1.0, value=2.0, step=0.1, format="%.1f")
     beh_dir_version = st.sidebar.number_input(
