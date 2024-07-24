@@ -49,13 +49,11 @@ def load_client_data(firebase_ref, client_number, profile_version, beh_dir_versi
     st.write(f"Debug: Beh_dir data: {data['beh_dir']}")
 
     # Load conversations
-    conversations_path = f"clients_{client_number}"
-    conversations = firebase_ref.child(conversations_path).get()
-    st.write(f"Debug: Conversations path: {conversations_path}")
-    st.write(f"Debug: Conversations data: {conversations}")
+    conversations = firebase_ref.get()
     if conversations:
-        data["conversations"] = {
-            k: v for k, v in conversations.items() if k.startswith("conversation_")}
+        data["conversations"] = {k: v for k, v in conversations.items(
+        ) if k.startswith(f"clients_{client_number}_conversation_")}
+    st.write(f"Debug: Conversations data: {data['conversations']}")
 
     return data
 
@@ -133,7 +131,10 @@ def display_conversation(conversation):
 
             st.markdown("---")
     else:
-        st.write("No conversation data available.")
+        st.write(
+            "No conversation data available or conversation data is not in the expected format.")
+        st.write("Debug: Conversation data structure:")
+        st.json(conversation)
 
 
 def main():
@@ -175,15 +176,9 @@ def main():
         if st.session_state.client_data is None:
             st.session_state.client_data = load_client_data(
                 firebase_ref, client_number, profile_version, beh_dir_version)
-            if any(st.session_state.client_data.values()):
-                st.success("Data loaded successfully!")
-            conversation_path = f"clients_{client_number}"
-            conversations = firebase_ref.child(conversation_path).get()
-            if conversations:
-                st.session_state.conversation_keys = [
-                    k for k in conversations.keys() if k.startswith("conversation_")]
 
-        if st.session_state.client_data["profile"] or st.session_state.client_data["history"] or st.session_state.client_data["beh_dir"]:
+        if any(st.session_state.client_data.values()):
+            st.success("Data loaded successfully!")
             tab1, tab2, tab3, tab4 = st.tabs(
                 ["Profile", "History", "Behavioral Direction", "Conversation"])
 
@@ -197,15 +192,19 @@ def main():
                 display_beh_dir(st.session_state.client_data["beh_dir"])
 
             with tab4:
-                if len(st.session_state.conversation_keys) > 1:
-                    selected_key = st.selectbox(
-                        "Select conversation:", st.session_state.conversation_keys)
-                    conversation_data = firebase_ref.child(
-                        f"clients/{client_number}/{selected_key}/data").get()
+                if st.session_state.client_data["conversations"]:
+                    conversation_keys = list(
+                        st.session_state.client_data["conversations"].keys())
+                    if len(conversation_keys) > 1:
+                        selected_key = st.selectbox(
+                            "Select conversation:", conversation_keys)
+                        conversation_data = st.session_state.client_data["conversations"][selected_key]
+                    else:
+                        conversation_data = next(
+                            iter(st.session_state.client_data["conversations"].values()))
+                    display_conversation(conversation_data)
                 else:
-                    conversation_data = st.session_state.client_data["conversation"]
-
-                display_conversation(conversation_data)
+                    st.write("No conversation data available.")
         else:
             st.warning(
                 f"No data found for Client {client_number} with Profile Version {profile_version} and Behavioral Direction Version {beh_dir_version}")
