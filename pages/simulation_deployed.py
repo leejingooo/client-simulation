@@ -31,7 +31,8 @@ instructions = """
     1. Setting 을 조정하세요.
     
     * 정식 실험용 Client number는 2001번부터 진행해주세요.
-    * 연습 테스트용 Clietn number는 1001번부터 진행해주세요. (이미 존재하는 Client가 있을 수도 있습니다. 이 경우 새로운 Client를 생성할 수 없습니다.)
+    * 연습 테스트용 Client number는 1001번부터 진행해주세요.
+    * 이미 존재하는 Client number로 Create new data -> Generate하면 이미 존재하는 데이터를 Load 해옵니다.
     
     2. 원하는 Patient Information을 입력하세요.
     
