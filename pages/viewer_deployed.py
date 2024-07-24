@@ -49,11 +49,12 @@ def load_client_data(firebase_ref, client_number, profile_version, beh_dir_versi
     st.write(f"Debug: Beh_dir data: {data['beh_dir']}")
 
     # Load conversations
-    conversations = firebase_ref.get()
-    if conversations:
-        data["conversations"] = {k: v for k, v in conversations.items(
+    all_data = firebase_ref.get()
+    if all_data:
+        data["conversations"] = {k: v for k, v in all_data.items(
         ) if k.startswith(f"clients_{client_number}_conversation_")}
-    st.write(f"Debug: Conversations data: {data['conversations']}")
+    st.write(
+        f"Debug: Number of conversations: {len(data['conversations'] or {})}")
 
     return data
 
@@ -194,12 +195,9 @@ def main():
                     "conversations")
                 if conversations:
                     conversation_keys = list(conversations.keys())
-                    if len(conversation_keys) > 1:
-                        selected_key = st.selectbox(
-                            "Select conversation:", conversation_keys)
-                        conversation_data = conversations[selected_key]
-                    else:
-                        conversation_data = next(iter(conversations.values()))
+                    selected_key = st.selectbox(
+                        "Select conversation:", conversation_keys, format_func=lambda x: f"Conversation {x.split('_')[-1]}")
+                    conversation_data = conversations[selected_key]
                     display_conversation(conversation_data)
                 else:
                     st.write("No conversation data available.")

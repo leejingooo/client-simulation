@@ -466,6 +466,7 @@ def save_conversation_to_firebase(firebase_ref, client_number, messages, con_age
     # Save the conversation data to Firebase
     save_to_firebase(firebase_ref, client_number, conversation_id, content)
 
+    st.success(f"Conversation saved with ID: {conversation_id}")
     return conversation_id
 # Streamlit UI
 
