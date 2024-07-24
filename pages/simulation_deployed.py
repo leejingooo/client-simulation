@@ -243,13 +243,11 @@ def load_existing_client_data(client_number, profile_version, beh_dir_version):
         st.session_state.profile = profile
         st.session_state.history = history
         st.session_state.beh_dir = beh_dir
-        # Reset the conversation memory
-        st.session_state.messages = []
         return True
     else:
         st.error(
             f"Could not find existing client data or the specified prompt versions.")
-        return False, None
+        return False
 
 # Module 1: Profile-maker
 
@@ -413,8 +411,6 @@ def beh_dir_maker(profile_version, beh_dir_version, client_number, system_prompt
 
 # Module 3: Conversational agent
 # Initialize session state
-if 'messages' not in st.session_state:
-    st.session_state.messages = []
 if 'agent_and_memory' not in st.session_state:
     st.session_state.agent_and_memory = None
 if 'client_number' not in st.session_state:
