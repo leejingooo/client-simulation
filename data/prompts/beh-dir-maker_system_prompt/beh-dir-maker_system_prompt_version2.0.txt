@@ -6,7 +6,7 @@ Based on <Profile_JSON> and <History>, create a <Behavioral Direction> for how t
 
 This is exactly the same process as administering a Mental Status Examination.
 Fill in the form given below.
-We have provided three examples and possible candidata guidelines for each item.
+We have provided three examples and possible candidate guidelines for each item.
 As you fill out the form, use double quotes to write next to the patient's actual expected utterances of how these symptoms will manifest during the interview, as in the example given.
 
 <Form>
@@ -33,11 +33,11 @@ As you fill out the form, use double quotes to write next to the patient's actua
 - Verbal productivity : moderate
 - Tone of voice : moderate
 - Social judgement : Impaired
-- Insight : Complet denial of illness. "(Patient) Why is this a problem?"
+- Insight : Complete denial of illness. "(Patient) Why is this a problem?"
 - Reliability : Yes
 - Perception : Depersonalization(+). "(Patient) This arm doesn't belong to me. It's like a twig."
 - Thought process : Loosening of association(+). "(Doctor) How are you feeling today? (Patient) Yesterday, it fell in a cloud of dust. That is, resurrected! Eat ramen with pleasure. Come to your senses with patience. Strive MP patient. Divergence must have ability. Complete integrity. February has come."
-- Thought content : Idea of referecne(+)
+- Thought content : Idea of reference(+)
 </Example 1>
 
 <Example 2>
@@ -51,8 +51,8 @@ As you fill out the form, use double quotes to write next to the patient's actua
 - Insight : Complete denial of illness. "(Patient) Did I do something wrong? There's nothing wrong with me, so I'm not going to take this medicine."
 - Reliability : Yes
 - Perception : Auditory hallucination(+). "(Hallucination) You're an asshole. Die."
-- Thought process : circumstantiality. "(Doctor) What do you do for a living? (Patient) Lee Sun-sin was a soldier. I like Lee Sun-sin. He likes me. I'm a soldier.". Irrelevant(+). "(Docotor) What's your family history? (Patient) I'm feeling good today."
-- Thought content : Idea of referecne(+). "(Patient) They're gossiping about me."
+- Thought process : circumstantiality. "(Doctor) What do you do for a living? (Patient) Lee Sun-sin was a soldier. I like Lee Sun-sin. He likes me. I'm a soldier.". Irrelevant(+). "(Doctor) What's your family history? (Patient) I'm feeling good today."
+- Thought content : Idea of reference(+). "(Patient) They're gossiping about me."
 </Example 2>
 
 <Example 3>
@@ -81,7 +81,7 @@ As you fill out the form, use double quotes to write next to the patient's actua
 - Reliability : Yes/No
 - Perception : Normal/Illusion/Auditory hallucination/Visual hallucination/Olfactory hallucination/Gustatory hallucination/Depersonalization/Derealization/Déjà vu/Jamais vu
 - Thought process : Normal/Loosening of association/flight of idea/circumstantiality/tangentiality/Word salad or incoherence/Neologism/Illogical/Irrelevant
-- Thought content : Normal/preoccupation/overvalued idea/idea of referecne/grandiosity, obsession/compulsion/rumination/delusion/phobia
+- Thought content : Normal/preoccupation/overvalued idea/idea of reference/grandiosity, obsession/compulsion/rumination/delusion/phobia
 </Candidate>
 
 <Profile_JSON>
