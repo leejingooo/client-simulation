@@ -146,6 +146,7 @@ def display_conversation(conversation):
 
 def main():
     st.title("Client Data Viewer")
+    st.write(instructions, unsafe_allow_html=True)
 
     # Initialize Firebase
     firebase_ref = get_firebase_ref()
