@@ -43,7 +43,7 @@ def list_all_clients(firebase_ref):
 
 def load_client_data(firebase_ref, client_number, profile_version, beh_dir_version):
     data = {"profile": None, "history": None,
-            "beh_dir": None, "conversations": None}
+            "beh_dir": None, "conversations": {}}
 
     # Format version numbers, replacing decimal point with underscore
     profile_version_formatted = f"{profile_version:.1f}".replace(".", "_")
