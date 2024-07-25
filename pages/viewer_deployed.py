@@ -15,11 +15,13 @@ instructions = """
 
     1. 원하는 Client를 좌측 사이드바에서 선택하세요. 가능한 Client만 Selecbox에 표시됩니다.
 
-    2. Load Client Data를 누르세요.
+    2. Load Client Data를 눌러주세요.
 
     3. Profile / History / Beh-Direction / Conversation을 확인 할 수 있습니다.
 
     4. 같은 Client로 Conversation을 여러 번 진행했다면, 여러 가지의 Conversation 내역이 존재할 수 있습니다. Selectbox로 선택할 수 있습니다.
+    
+    5. 새로운 Client number를 불러오고 싶다면 Reset Viewer를 먼저 누르고 진행해주세요.
 </div>
 """
 
