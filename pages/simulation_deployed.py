@@ -658,10 +658,10 @@ def main():
     if st.button("Start New Conversation"):
         if st.session_state.agent_and_memory:
             # Reset the memory of the existing agent
-            _, memory = st.session_state.agent_and_memory
+            agent, memory = st.session_state.agent_and_memory
             memory.chat_memory.clear()
             st.success("New conversation started with the same client data.")
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.error(
                 "Please load client data first before starting a new conversation.")
