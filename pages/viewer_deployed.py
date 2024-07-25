@@ -124,23 +124,24 @@ def display_conversation(conversation):
     st.subheader("Conversation")
     if conversation and 'data' in conversation:
         for entry in conversation['data']:
-            # Human message
-            st.markdown(
-                f"<div style='background-color: #E6E6FA; padding: 10px; border-radius: 10px; margin-bottom: 10px; max-width: 80%; float: left;'>{entry['human']}</div>",
-                unsafe_allow_html=True
-            )
-            st.markdown("<div style='clear: both;'></div>",
-                        unsafe_allow_html=True)
+            if 'human' in entry and 'simulated_client' in entry:
+                # Human message
+                st.markdown(
+                    f"<div style='background-color: #E6E6FA; padding: 10px; border-radius: 10px; margin-bottom: 10px; max-width: 80%; float: left;'>{entry['human']}</div>",
+                    unsafe_allow_html=True
+                )
+                st.markdown("<div style='clear: both;'></div>",
+                            unsafe_allow_html=True)
 
-            # AI message
-            st.markdown(
-                f"<div style='background-color: #F0FFF0; padding: 10px; border-radius: 10px; margin-bottom: 10px; max-width: 80%; float: right;'>{entry['simulated_client']}</div>",
-                unsafe_allow_html=True
-            )
-            st.markdown("<div style='clear: both;'></div>",
-                        unsafe_allow_html=True)
+                # AI message
+                st.markdown(
+                    f"<div style='background-color: #F0FFF0; padding: 10px; border-radius: 10px; margin-bottom: 10px; max-width: 80%; float: right;'>{entry['simulated_client']}</div>",
+                    unsafe_allow_html=True
+                )
+                st.markdown("<div style='clear: both;'></div>",
+                            unsafe_allow_html=True)
 
-            st.markdown("---")
+                st.markdown("---")
     else:
         st.write(
             "No conversation data available or conversation data is not in the expected format.")
