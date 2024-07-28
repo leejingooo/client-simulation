@@ -1,28 +1,28 @@
 {
     "Identifying data": {
-        "patient name": "blank (data_type:string, range_candidate_guide:None)",
+        "patient name": "blank (data_type:string, range_candidate_guide:null)",
         "age": "blank (data_type:number, range_candidate_guide:19-64)",
         "sex": "blank (data_type:string, range_candidate_guide:male/female)",
         "marital status": "blank (data_type:string, range_candidate_guide:single/married/divorced/widowed)",
-        "occupation": "blank (data_type:string, range_candidate_guide:None)"
+        "occupation": "blank (data_type:string, range_candidate_guide:null)"
     },
     "Chief complaint": {
         "cc_description": "blank (data_type:string, range_candidate_guide:Describe in the patient's words)"
     },
     "Present illness": {
         "symptom_{n}": {
-            "symptom name": "blank (data_type:string, range_candidate_guide:None)",
+            "symptom name": "blank (data_type:string, range_candidate_guide:null)",
             "length": "blank (data_type:number, range_candidate_guide:0-24 (Unit: week, over 24 is represented as 24))",
-            "alleviating factor": "blank (data_type:string, range_candidate_guide:None)",
-            "exacerbating factor": "blank (data_type:string, range_candidate_guide:None)"
+            "alleviating factor": "blank (data_type:string, range_candidate_guide:null)",
+            "exacerbating factor": "blank (data_type:string, range_candidate_guide:null)"
         },
         "triggering factor": "blank (data_type:string, range_candidate_guide:The reason patient came to the hospital at this time)",
-        "stressor": "blank (data_type:string, range_candidate_guide:(multiple answers available) home/work/school/legal issue/medical comorbidity/interpersonal difficulty/none)"
+        "stressor": "blank (data_type:string, range_candidate_guide:(multiple answers available) home/work/school/legal issue/medical comorbidity/interpersonal difficulty/null)"
     },
     "Past psychiatric history": {
         "presence": "blank (data_type:boolean, range_candidate_guide:Randomize(50%) the presence or absence of past psychiatric history. If 'false', then remove all children of 'Past psychiatric history' except this 'presence' which has 'false' as a child.)",
         "diagnosis_{n}": {
-            "diagnosis name": "blank (data_type:string, range_candidate_guide:None)",
+            "diagnosis name": "blank (data_type:string, range_candidate_guide:null)",
             "when": "blank (data_type:number, range_candidate_guide:Enter the patient's age at the time of the event, not the date)",
             "length": "blank (data_type:number, range_candidate_guide:0-24 (Unit: week, over 24 is represented as 24))",
             "frequency": "blank (data_type:number, range_candidate_guide:number of episodes)",
@@ -32,8 +32,8 @@
             "encounter type": "blank (data_type:string, range_candidate_guide:outpatient clinic/day hospital/inpatient/vocational training)",
             "modality": "blank (data_type:string, range_candidate_guide:(multiple answers available) medication/CBT/psychotherapy/light therapy/biofeedback/ECT/group therapy/other)",
             "effect": "blank (data_type:string, range_candidate_guide:effective/partially effective/non-effective)",
-            "side effect": "blank (data_type:string, range_candidate_guide:If there was a side effect, fill in this item. Otherwise, leave it as None.)",
-            "reason for discontinuing": "blank (data_type:string, range_candidate_guide:non-effective/financial problem/moving to new town/None (If there was discontinuing, fill in this item. Otherwise, leave it as None.))",
+            "side effect": "blank (data_type:string, range_candidate_guide:If there was a side effect, fill in this item. Otherwise, leave it as null.)",
+            "reason for discontinuing": "blank (data_type:string, range_candidate_guide:non-effective/financial problem/moving to new town/null (If there was discontinuing, fill in this item. Otherwise, leave it as null.))",
             "compliance": "blank (data_type:string, range_candidate_guide:good/bad)"
         }
     },
@@ -45,7 +45,7 @@
             "duration": "blank (data_type:number, range_candidate_guide:(Unit: week))",
             "compliance": "blank (data_type:string, range_candidate_guide:good/bad)",
             "effect": "blank (data_type:string, range_candidate_guide:effective/partially effective/non-effective)",
-            "side effect": "blank (data_type:string, range_candidate_guide:If there was a side effect, fill in this item. Otherwise, leave it as None.)"
+            "side effect": "blank (data_type:string, range_candidate_guide:If there was a side effect, fill in this item. Otherwise, leave it as null.)"
         }
     },
     "Family history": {
@@ -54,23 +54,23 @@
         "substance_use_{n}": "blank (data_type:string, range_candidate_guide:Describe a family history of substance use (alcohol, drugs, etc.).)"
     },
     "Developmental/Social history": {
-        "abnormality in prenatal/birthing history": "blank (data_type:string, range_candidate_guide:Randomize presence/absence (50%). If yes, write a description; otherwise, enter None.)",
-        "delay in developmental milestone": "blank (data_type:string, range_candidate_guide:Randomize presence/absence (50%). If yes, write a description; otherwise, enter None.)",
+        "abnormality in prenatal/birthing history": "blank (data_type:string, range_candidate_guide:Randomize presence/absence (50%). If yes, write a description; otherwise, enter null.)",
+        "delay in developmental milestone": "blank (data_type:string, range_candidate_guide:Randomize presence/absence (50%). If yes, write a description; otherwise, enter null.)",
         "childhood history": {
-            "home environment": "blank (data_type:string, range_candidate_guide:None)",
-            "members of family": "blank (data_type:string, range_candidate_guide:None)",
+            "home environment": "blank (data_type:string, range_candidate_guide:null)",
+            "members of family": "blank (data_type:string, range_candidate_guide:null)",
             "social environment": "blank (data_type:string, range_candidate_guide:Describe things like number and quality of friends.)"
         },
         "school history": "blank (data_type:string, range_candidate_guide:special education/learning disorder/behavioral problem/low academic performance/problem in extracurricular activity)",
         "work history": "blank (data_type:string, range_candidate_guide:Describe things like job, performance, reason for switching jobs, relationship with supervisor, coworker, etc.)"
     },
     "Marriage/relationship history": {
-        "current family structure": "blank (data_type:string, range_candidate_guide:None)"
+        "current family structure": "blank (data_type:string, range_candidate_guide:null)"
     },
     "Impulsivity": {
-        "suicidal ideation": "blank (data_type:boolean, range_candidate_guide:None)",
-        "suicidal plan": "blank (data_type:boolean, range_candidate_guide:None)",
-        "suicidal attempt": "blank (data_type:boolean, range_candidate_guide:None)",
+        "suicidal ideation": "blank (data_type:boolean, range_candidate_guide:null)",
+        "suicidal plan": "blank (data_type:boolean, range_candidate_guide:null)",
+        "suicidal attempt": "blank (data_type:boolean, range_candidate_guide:null)",
         "self mutilating behavior risk": "blank (data_type:string, range_candidate_guide:high/moderate/low)",
         "homicide risk": "blank (data_type:string, range_candidate_guide:high/moderate/low)"
     }
