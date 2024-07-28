@@ -351,9 +351,9 @@ def history_maker(profile_version, client_number, system_prompt):
             (
                 "human",
                 """
-                <JSON>
+                <Profile_JSON>
                 {profile_json}
-                </JSON>
+                </Profile_JSON>
                 """
             )
         ]
