@@ -32,7 +32,7 @@
             "encounter type": "blank (data_type:string, range_candidate_guide:outpatient clinic/day hospital/inpatient/vocational training)",
             "modality": "blank (data_type:string, range_candidate_guide:(multiple answers available) medication/CBT/psychotherapy/light therapy/biofeedback/ECT/group therapy/other)",
             "effect": "blank (data_type:string, range_candidate_guide:effective/partially effective/non-effective)",
-            "side effect": "blank (data_type:string, range_candidate_guide:If there was a side effect, fill in this item. Otherwise, leave it as null.)",
+            "side effect": "blank (data_type:string, range_candidate_guide: If there was any side effect (weight gain or loss, GI symptoms, abuse/dependence, sexual dysfunctions, injury of organ like liver/kidney, extrapyramidal syndrome, etc.), fill in this item. Otherwise, leave it as null.)",
             "reason for discontinuing": "blank (data_type:string, range_candidate_guide:non-effective/financial problem/moving to new town/null (If there was discontinuing, fill in this item. Otherwise, leave it as null.))",
             "compliance": "blank (data_type:string, range_candidate_guide:good/bad)"
         }
@@ -49,13 +49,13 @@
         }
     },
     "Family history": {
-        "presence": "blank (data_type:boolean, range_candidate_guide:Randomize(50%) the presence or absence of family history. If 'false', then remove all children of 'Family history' except this 'presence' which has 'false' as a child.)",
-        "diagnosis_{n}": "blank (data_type:string, range_candidate_guide:Describe a psychiatric family history)",
-        "substance_use_{n}": "blank (data_type:string, range_candidate_guide:Describe a family history of substance use (alcohol, drugs, etc.).)"
+        "presence": "blank (data_type:boolean, range_candidate_guide: Randomize(50%) the presence or absence of family history. If 'false', then remove all children of 'Family history' except this 'presence' which has 'false' as a child.)",
+        "diagnosis_{n}": "blank (data_type:string, range_candidate_guide: Describe a psychiatric family history. Given the patient's current diagnosis, set a probable family history.)",
+        "substance_use_{n}": "blank (data_type:string, range_candidate_guide: Describe a family history of substance use (alcohol, opioid, cannabinoid, hallucinogen, stimulant, narcotic, etc.).)"
     },
     "Developmental/Social history": {
-        "abnormality in prenatal/birthing history": "blank (data_type:string, range_candidate_guide:Randomize presence/absence (50%). If yes, write a description; otherwise, enter null.)",
-        "delay in developmental milestone": "blank (data_type:string, range_candidate_guide:Randomize presence/absence (50%). If yes, write a description; otherwise, enter null.)",
+        "abnormality in prenatal/birthing history": "blank (data_type:string, range_candidate_guide:Randomize(50%) presence/absence. If yes, write a description; otherwise, enter null.)",
+        "delay in developmental milestone": "blank (data_type:string, range_candidate_guide:Randomize(50%) presence/absence. If yes, write a description; otherwise, enter null.)",
         "childhood history": {
             "home environment": "blank (data_type:string, range_candidate_guide:null)",
             "members of family": "blank (data_type:string, range_candidate_guide:null)",
