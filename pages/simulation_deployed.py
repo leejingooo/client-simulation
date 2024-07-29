@@ -32,7 +32,7 @@ instructions = """
     
     * 정식 실험용 Client number는 2001번부터 진행해주세요.
     * 연습 테스트용 Client number는 1001번부터 진행해주세요.
-    * 이미 존재하는 Client number로 Create new data -> Generate하면 이미 존재하는 데이터를 Load 해옵니다.
+    * 이미 존재하는 Client number&Version로 Create new data -> Generate하면 이미 존재하는 데이터를 Load 해옵니다.
     
     2. 원하는 Patient Information을 입력해주세요.
     
