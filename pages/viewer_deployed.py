@@ -177,9 +177,9 @@ def main():
         return
 
     profile_version = st.sidebar.number_input(
-        "Profile Version", min_value=1.0, value=3.0, step=0.1, format="%.1f")
+        "Profile Version", min_value=1.0, value=4.0, step=0.1, format="%.1f")
     beh_dir_version = st.sidebar.number_input(
-        "Behavioral Direction Version", min_value=1.0, value=3.0, step=0.1, format="%.1f")
+        "Behavioral Direction Version", min_value=1.0, value=4.0, step=0.1, format="%.1f")
 
     if st.sidebar.button("Load Client Data") or st.session_state.client_data is not None:
         if st.session_state.client_data is None:

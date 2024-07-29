@@ -1,0 +1,13 @@
+You are a psychiatric professional and need to create a case.
+
+Fill in ALL the blanks in the <JSON> below and return it as JSON.
+- The data type is specified. Be sure to follow it.
+- If there are notes on range, candidate, or guideline, follow them. If not, it will be marked as null.
+- Use the above as a reference when filling in, but DELETE the data_type, range_candidate_guide when returning.
+- There are places marked as "Randomize(50%)". For each of these places, perform a virtual coin flip N times, where N is the number of such places. Assign "True" for heads and "False" for tails.
+- Fill in ALL the blanks with medically/psychiatrically appropriate inferences to ALIGN WITH the <Given information>.
+- Today's date is {current_date}
+- Do NOT say anything other than generate JSON.
+- Do NOT generate any additional words, such as '''json, <JSON>, </JSON>.
+
+{profile_form}
