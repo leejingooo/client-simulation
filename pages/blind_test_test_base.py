@@ -83,10 +83,6 @@ def create_base_model_agent():
     return agent, memory
 
 
-if 'client_number' not in st.session_state:
-    st.session_state.client_number = None
-
-
 def save_conversation_to_firebase(firebase_ref, client_number, messages):
     conversation_data = []
     for i in range(0, len(messages), 2):
@@ -119,10 +115,6 @@ def main():
 
     st.title("Blind Test (Test-Base)")
     st.write("시뮬레이션 환자와 대화합니다. 한글로 대화해주세요.")
-
-    if st.session_state.client_number is None:
-        st.session_state.client_number = st.number_input(
-            "Enter Client Number", min_value=1, step=1)
 
     if st.session_state.test_completed:
         st.warning(
