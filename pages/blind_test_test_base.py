@@ -32,6 +32,8 @@ if 'agent_and_memory' not in st.session_state:
     st.session_state.agent_and_memory = None
 if 'test_completed' not in st.session_state:
     st.session_state.test_completed = False
+if 'utterance_count' not in st.session_state:
+    st.session_state.utterance_count = 0
 
 
 def create_base_model_agent():
@@ -137,6 +139,9 @@ def main():
 
     st.title("Blind Test (Test-Base)")
     st.write("시뮬레이션 환자와 대화합니다. 한글로 대화해주세요.")
+    # Display utterance count in the top right corner
+    st.sidebar.markdown(
+        f"<h1 style='text-align: right;'>Utterances: {st.session_state.utterance_count}</h1>", unsafe_allow_html=True)
 
     if st.session_state.test_completed:
         st.warning(
@@ -170,6 +175,10 @@ def display_conversation():
             message_placeholder = st.empty()
             full_response = agent(prompt)
             message_placeholder.markdown(full_response)
+        # Increment utterance count after each exchange
+        st.session_state.utterance_count += 1
+        st.sidebar.markdown(
+            f"<h1 style='text-align: right;'>Utterances: {st.session_state.utterance_count}</h1>", unsafe_allow_html=True)
 
 
 def end_test():
