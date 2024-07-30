@@ -14,37 +14,49 @@ Here are the <Profile_JSON>, <History>, <Example>, <Candidate>, and <Form>:
 {history}
 </History>
 
-<Example 1>
-- General appearance/Attitude/Behavior : During the interview, poor eye contact by not making adequate eye contact with the interviewer and looking off into the distance, not listening to the questions until the end, giving half-answers that are not related to the questions, and smiling silly smiles in the middle of the interview were not submissive, not attentive, and not cooperative. After finishing the meal, he went out to the lounge for a while and watched some videos on the computer before lying down on the bed. No increase or decrease in general activity was observed, and no psychomotor retardation or agitation was observed. 
-- Mood : dysphoric. "(Patient) I hate this situation right now"
-- Affect : blunt, anxious, tense
-- Spontaneity : Yes
-- Verbal productivity : moderate
-- Tone of voice : moderate
-- Social judgement : Impaired
-- Insight : Complete denial of illness. "(Patient) Why is this a problem?"
-- Reliability : Yes
-- Perception : Depersonalization(+). "(Patient) This arm doesn't belong to me. It's like a twig."
-- Thought process : Loosening of association(+). "(Doctor) How are you feeling today? (Patient) Yesterday, it fell in a cloud of dust. That is, resurrected! Eat ramen with pleasure. Come to your senses with patience. Strive MP patient. Divergence must have ability. Complete integrity. February has come."
-- Thought content : Idea of reference(+)
-</Example 1>
+<Example 1: Bipolar I Disorder>
+- General appearance/Attitude/Behavior: A woman in her 40s of average height (about 160 cm) and a plump build, with prominent double eyelids, flashy earrings, and heavy makeup giving her a striking appearance suitable for her age. Her nails were polished and well-kept, indicating good hygiene, and her shiny skin suggested good nutritional status. She maintained good eye contact with the interviewer. However, she often interrupted the interviewer’s questions and answered irritably, showing she was not submissive, not attentive, and not cooperative. Her general activity was increased, as she spent most of the day sending emails on her laptop or talking loudly on her phone while pacing the hallways. During the interview, she was observed tapping her fingers on the table, showing psychomotor agitation, but no psychomotor retardation. Tremor, rigidity, gait disturbance, and other abnormal involuntary movements were not observed.
+- Mood: Irritable. “I’m very busy, so get to the point quickly and let me go.”
+- ffect: Broad, not anxious, not tense, labile, not shallow, not inadequate, not inappropriate
+- Spontaneity: Yes
+- Verbal productivity: Increased
+- Tone of voice: Moderate
+- Social judgment: Impaired
+- Insight: Complete denial of illness “Stop bothering me and let me out.”
+- Reliability: Yes
+- Perception: Normal
+- Thought process: Loosening of association (-), Flight of ideas (+) “Listen, I have an amazing business idea. I’ll start a café with the best coffee. I met a coffee seller in Italy when I was working there. I was sent to Italy because my company was doing really well. This coffee seller imports beans from Ethiopia, and they taste fantastic. I found a place just like the café in Italy with cheap land, so I need to secure the contract quickly. If I stay here and lose the deal, who will take responsibility? This is a violation of my rights, and I know people in human rights organizations, so I could report this.” (abbreviated), Circumstantiality (-), Tangentiality (-), Word salad or incoherence (-), Neologism (-), Not illogical, not irrelevant
+- Thought content: Preoccupation (-), Overvalued idea (-), Ideas of reference (-), Grandiosity (+), Obsession (-), Compulsion (-), Rumination (-), Persecutory delusion (-), Grandiose delusion (-), Somatic delusion (-), Delusion of reference (-), Erotomanic delusion (-), Delusion of being controlled (-), Delusion of infidelity (-), Thought withdrawal/insertion/broadcasting (-/-/-), Phobia (-)
 
-<Example 2>
-- General appearance/Attitude/Behavior : Poor eye contact as evidenced by inability to make adequate eye contact with the interviewer during the interview; submissive, not attentive, not cooperative as evidenced by attempting to respond respectfully but moving away before finishing the question or not answering the question appropriately. Increased general activity observed as pacing around the room with newspapers and walking nonstop, and psychomotor agitation observed as inability to remain in one place during the interview.
-- Mood : irritable. "(Patient) Go away. I don't want to talk to you."
-- Affect : Restricted, Anxious, Tense, Not labile, Not shallow, Not inadequate, Not inappropriate
-- Spontaneity : Yes
-- Verbal productivity : Increased
-- Tone of voice : Moderate
-- Social judgement : Impaired
-- Insight : Complete denial of illness. "(Patient) Did I do something wrong? There's nothing wrong with me, so I'm not going to take this medicine."
-- Reliability : Yes
-- Perception : Auditory hallucination(+). "(Hallucination) You're an asshole. Die."
-- Thought process : circumstantiality. "(Doctor) What do you do for a living? (Patient) Lee Sun-sin was a soldier. I like Lee Sun-sin. He likes me. I'm a soldier.". Irrelevant(+). "(Doctor) What's your family history? (Patient) I'm feeling good today."
-- Thought content : Idea of reference(+). "(Patient) They're gossiping about me."
-</Example 2>
+<Example 2: Panic Disorder>
+- General appearance/Attitude/Behavior: A woman in her 40s of average height (about 160 cm) and a plump build, with prominent double eyelids and a round face giving her a cute appearance suitable for her age. Her well-groomed hair indicated good hygiene, and her shiny skin suggested good nutritional status. She maintained good eye contact with the interviewer, carefully watching for reactions. She smiled in response to the interviewer’s questions and answered politely and cautiously, showing she was submissive, attentive, and cooperative. Her general activity was neither increased nor decreased, as she was seen chatting with family and a priest who visited her. During the interview, she was observed repeatedly rubbing a cross in her hand, showing psychomotor agitation, but no psychomotor retardation. Tremor, rigidity, gait disturbance, and other abnormal involuntary movements were not observed.
+- Mood: Depressed “I’ve been feeling very down lately.”
+- Affect: Restricted, anxious, not tense, not labile, not shallow, not inadequate, not inappropriate
+- Spontaneity: (+)
+- Verbal productivity: Moderate
+- Tone of voice: Moderate-pitched
+- Social judgment: Normal
+- Insight: Awareness of being sick but blaming it on others, external events, or unknown medical factors. “I’ve been so stressed out because of my son that I’ve had no energy and didn’t want to do anything. I got admitted to get some rest away from home.”
+- Reliability: Yes
+- Perception: Illusion (-), Auditory hallucination (-), Visual hallucination (-), Olfactory hallucination (-), Gustatory hallucination (-), Depersonalization (-), Derealization (-), Déjà vu/ Jamais vu (-/-)
+- Thought process: Loosening of association (-), Flight of ideas (-), Circumstantiality (-), Tangentiality (-), Word salad or incoherence (-), Neologism (-), Not illogical, not irrelevant
+- Thought content: Preoccupation (-), Overvalued idea (-), Ideas of reference (-), Grandiosity (-), Obsession (-), Compulsion (-), Rumination (-), Persecutory delusion (-), Grandiose delusion (-), Somatic delusion (-), Delusion of reference (-), Erotomanic delusion (-), Delusion of being controlled (-), Delusion of infidelity (-), Thought withdrawal/insertion/broadcasting (-/-/-), Phobia (-)
 
-<Example 3>
+<Example 3: Major Depressive Disorder>
+- General appearance/Attitude/Behavior: A man in his late 40s of average height (about 170 cm) and thin build, with disheveled hair that looked unwashed for 2-3 days, a cast on his left arm, furrowed brows, tightly closed lips, and drooping mouth corners, giving him a weary appearance suitable for his age. His dirty and untrimmed nails indicated poor hygiene, and his rough skin suggested poor nutritional status. During the interview, he briefly looked at the interviewer before looking down at the floor again, showing poor eye contact. He answered slowly but politely, showing he was submissive, attentive, and cooperative. His general activity was decreased, as he mostly stayed in bed on the ward, and no psychomotor agitation or retardation was observed. Tremor, rigidity, gait disturbance, and other abnormal involuntary movements were not observed.
+- Mood: Depressed “I feel powerless and like everything is dark.”
+- Affect: Restricted, anxious, slightly tense, not labile, not shallow, not inadequate, not inappropriate
+- Spontaneity: (+)
+- Verbal productivity: Decreased
+- Tone of voice: Low
+- Social judgment: Impaired
+- Insight: Awareness of being sick but blaming it on others, external factors, or organic factors. “The pressure at work is too much for me to handle. Will I get better with treatment?”
+- Reliability: Yes
+- Perception: Illusion (-), Auditory hallucination (-), Visual hallucination (-), Olfactory hallucination (-), Depersonalization (-), Derealization (-), Déjà vu/ Jamais vu (-/-)
+- Thought process: Loosening of association (-), Circumstantiality (-), Tangentiality (-), Word salad or incoherence (-), Neologism (-), Illogical (-), Irrelevant (-)
+- Thought content: Preoccupation (+) “I’m a burden to my company and family because of my inadequacy,” Paranoid ideation (-), Persecutory delusion (-), Idea of reference (-), Rumination (-), Hypochondrial ideas (-), Delusion of reference (-), Grandiosity (-), Grandiose delusion (-), Erotomanic delusion (-), Delusion of infidelity (-), Excessive guilt feeling (-), Delusion of guilt (-), Thought withdrawal/thought broadcasting/thought insertion (-/-/-), Delusion of being controlled (-), Obsession/compulsion (-/-)
+
+<Example 4 : Major Depressive Disorder>
 - General appearance/Attitude/Behavior : During the interview, she made adequate eye contact with the interviewer and was submissive, attentive, and cooperative, listening to questions and trying to explain things in a respectful and thorough manner. Decreased general activity was observed, as evidenced by lying in bed without turning around except during meal times, and psychomotor retardation and agitation were not observed.
 - Mood : depressed. "(Patient) "I didn't mean to do it... it's ruined my life."
 - Affect : restricted, not anxious, not tense
@@ -57,7 +69,37 @@ Here are the <Profile_JSON>, <History>, <Example>, <Candidate>, and <Form>:
 - Perception : Normal
 - Thought process : Normal
 - Thought content : Normal
-</Example 3>
+</Example 4>
+
+<Example 5 : Schizophrenia>
+- General appearance/Attitude/Behavior : During the interview, poor eye contact by not making adequate eye contact with the interviewer and looking off into the distance, not listening to the questions until the end, giving half-answers that are not related to the questions, and smiling silly smiles in the middle of the interview were not submissive, not attentive, and not cooperative. After finishing the meal, he went out to the lounge for a while and watched some videos on the computer before lying down on the bed. No increase or decrease in general activity was observed, and no psychomotor retardation or agitation was observed. 
+- Mood : dysphoric. "(Patient) I hate this situation right now"
+- Affect : blunt, anxious, tense
+- Spontaneity : Yes
+- Verbal productivity : moderate
+- Tone of voice : moderate
+- Social judgement : Impaired
+- Insight : Complete denial of illness. "(Patient) Why is this a problem?"
+- Reliability : Yes
+- Perception : Depersonalization(+). "(Patient) This arm doesn't belong to me. It's like a twig."
+- Thought process : Loosening of association(+). "(Doctor) How are you feeling today? (Patient) Yesterday, it fell in a cloud of dust. That is, resurrected! Eat ramen with pleasure. Come to your senses with patience. Strive MP patient. Divergence must have ability. Complete integrity. February has come."
+- Thought content : Idea of reference(+)
+</Example 5>
+
+<Example 6 : Schizophrenia>
+- General appearance/Attitude/Behavior : Poor eye contact as evidenced by inability to make adequate eye contact with the interviewer during the interview; submissive, not attentive, not cooperative as evidenced by attempting to respond respectfully but moving away before finishing the question or not answering the question appropriately. Increased general activity observed as pacing around the room with newspapers and walking nonstop, and psychomotor agitation observed as inability to remain in one place during the interview.
+- Mood : irritable. "(Patient) Go away. I don't want to talk to you."
+- Affect : Restricted, Anxious, Tense, Not labile, Not shallow, Not inadequate, Not inappropriate
+- Spontaneity : Yes
+- Verbal productivity : Increased
+- Tone of voice : Moderate
+- Social judgement : Impaired
+- Insight : Complete denial of illness. "(Patient) Did I do something wrong? There's nothing wrong with me, so I'm not going to take this medicine."
+- Reliability : Yes
+- Perception : Auditory hallucination(+). "(Hallucination) You're an asshole. Die."
+- Thought process : circumstantiality. "(Doctor) What do you do for a living? (Patient) Lee Sun-sin was a soldier. I like Lee Sun-sin. He likes me. I'm a soldier.". Irrelevant(+). "(Doctor) What's your family history? (Patient) I'm feeling good today."
+- Thought content : Idea of reference(+). "(Patient) They're gossiping about me."
+</Example 6>
 
 <Candidate>
 - Mood : euphoric/elated/euthymic/dysphoric/depressed/irritable
