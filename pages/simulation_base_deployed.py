@@ -7,6 +7,7 @@ from langchain.callbacks import StreamingStdOutCallbackHandler
 from langchain.memory import ConversationBufferMemory
 from firebase_config import get_firebase_ref
 from Home import check_password
+import re
 
 st.set_page_config(
     page_title="Base Model Simulation",
@@ -62,6 +63,22 @@ def create_base_model_agent(client_number, system_prompt):
     return agent, memory
 
 
+def sanitize_key(key):
+    # Replace invalid characters with underscores
+    sanitized = re.sub(r'[$#\[\]/.]', '_', str(key))
+    # Ensure the key is not empty
+    return sanitized if sanitized else '_'
+
+
+def sanitize_dict(data):
+    if isinstance(data, dict):
+        return {sanitize_key(k): sanitize_dict(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [sanitize_dict(item) for item in data]
+    else:
+        return data
+
+
 def save_conversation_to_firebase(firebase_ref, client_number, messages):
     conversation_data = []
     for i in range(0, len(messages), 2):
@@ -73,7 +90,7 @@ def save_conversation_to_firebase(firebase_ref, client_number, messages):
         })
 
     timestamp = int(time.time())
-    conversation_id = f"conversation_base_{timestamp}"
+    conversation_id = f"conversation_{timestamp}"
 
     content = {
         'version': 'base',
@@ -81,11 +98,16 @@ def save_conversation_to_firebase(firebase_ref, client_number, messages):
         'data': conversation_data
     }
 
-    firebase_ref.child(
-        f"clients/{client_number}/{conversation_id}").set(content)
+    sanitized_path = sanitize_key(f"clients/{client_number}/{conversation_id}")
+    sanitized_content = sanitize_dict(content)
 
-    st.success(f"Conversation saved with ID: {conversation_id}")
-    return conversation_id
+    try:
+        firebase_ref.child(sanitized_path).set(sanitized_content)
+        st.success(f"Conversation saved with ID: {conversation_id}")
+        return conversation_id
+    except Exception as e:
+        st.error(f"Failed to save conversation to Firebase: {str(e)}")
+        return None
 
 
 def main():
