@@ -1,9 +1,26 @@
 import streamlit as st
+import subprocess
 
 st.set_page_config(
     page_title="Client-Simulation Home",
     page_icon="🔥",
 )
+
+# Playwright 설치 및 모든 브라우저 다운로드
+
+
+@st.cache_resource
+def setup_playwright():
+    try:
+        # 모든 브라우저 설치
+        subprocess.run(["playwright", "install"], check=True)
+        return True
+    except subprocess.CalledProcessError as e:
+        st.error(f"Failed to install Playwright browsers. Error: {e}")
+        return False
+    except Exception as e:
+        st.error(f"An unexpected error occurred during Playwright setup: {e}")
+        return False
 
 
 def check_password():
@@ -40,6 +57,15 @@ def main():
         st.success("You are logged in!")
         st.title("Welcome to the Client-Simulation")
         st.write("Please select a page from the sidebar to continue.")
+
+        # Playwright 설정 실행
+        with st.spinner("Setting up Playwright..."):
+            if setup_playwright():
+                st.success(
+                    "Playwright setup completed successfully. All browsers installed.")
+            else:
+                st.warning(
+                    "Playwright setup failed. Some features may not work correctly.")
     else:
         st.stop()
 
