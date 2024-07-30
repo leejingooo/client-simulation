@@ -588,29 +588,40 @@ def main():
                 st.error(
                     f"Client {st.session_state.client_number} already exists. Please choose a different client number.")
             elif all([profile_system_prompt, history_system_prompt, con_agent_system_prompt, beh_dir_system_prompt]):
-                with st.spinner(""):
+                with st.spinner("Generating profile..."):
                     profile = profile_maker(format_version(
                         profile_version), given_information, st.session_state.client_number, profile_system_prompt)
                     if profile is not None:
                         st.session_state.profile = profile
+                        st.success("Profile generated!")
 
-                        with st.spinner(""):
+                        with st.spinner("Generating history..."):
                             history = history_maker(format_version(
                                 profile_version), st.session_state.client_number, history_system_prompt)
                             if history is not None:
                                 st.session_state.history = history
+                                st.success("History generated!")
 
-                                with st.spinner(""):
+                                with st.spinner("Generating behavioral direction..."):
                                     beh_dir = beh_dir_maker(format_version(
                                         profile_version), format_version(
                                         beh_dir_version), st.session_state.client_number, beh_dir_system_prompt)
                                     if beh_dir is not None:
                                         st.session_state.beh_dir = beh_dir
+                                        st.success(
+                                            "Behavioral direction generated!")
 
                                         st.session_state.agent_and_memory = create_conversational_agent(
                                             format_version(profile_version), format_version(
                                                 beh_dir_version), st.session_state.client_number, con_agent_system_prompt)
 
+                                        # Display loaded versions
+                                        st.success(
+                                            f"Profile version {actual_profile_version} successfully loaded")
+                                        st.success(
+                                            f"Beh-dir-maker version {actual_beh_dir_version} successfully loaded")
+                                        st.success(
+                                            f"Con-agent version {actual_con_agent_version} successfully loaded")
                                     else:
                                         st.error(
                                             "Failed to generate behavioral direction.")
