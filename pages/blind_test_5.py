@@ -42,8 +42,7 @@ if firebase_ref is None:
 # Initialize session state
 if 'agent_and_memory' not in st.session_state:
     st.session_state.agent_and_memory = None
-if 'test_completed' not in st.session_state:
-    st.session_state.test_completed = False
+
 if 'utterance_count' not in st.session_state:
     st.session_state.utterance_count = 0
 
@@ -55,11 +54,6 @@ def main():
     st.title("Blind Test (5)")
     st.write(
         "시뮬레이션 환자와 대화합니다. Start 버튼을 눌러주세요. \n한글로 대화해주세요. \n최초 환자와 대화했던 발화수와 비슷하게 맞춰주세요.")
-
-    if st.session_state.test_completed:
-        st.warning(
-            "This blind test has been completed. Thank you for participating.")
-        return
 
     if st.session_state.agent_and_memory is None:
         if st.button("Start"):
@@ -145,7 +139,6 @@ def end_test():
         )
         st.success(
             "Test completed and conversation saved. Thank you for participating.")
-        st.session_state.test_completed = True
         st.session_state.agent_and_memory = None
     else:
         st.error(

@@ -9,16 +9,16 @@ from firebase_config import get_firebase_ref
 from Home import check_password
 
 st.set_page_config(
-    page_title="Blind Test (2)",
+    page_title="Blind Test (6)",
     page_icon="🔬",
 )
 
 # Preset values (hidden from the user)
-PRESET_CLIENT_NUMBER = 2002
-PRESET_AGE = 40
+PRESET_CLIENT_NUMBER = 2007
+PRESET_AGE = 25
 PRESET_GENDER = "Female"
 PRESET_NATIONALITY = "South Korea"
-PRESET_DIAGNOSIS = "Major Depressive Disorder"
+PRESET_DIAGNOSIS = "Panic disorder"
 
 # Initialize Firebase
 firebase_ref = get_firebase_ref()
@@ -135,7 +135,7 @@ def main():
     if not check_password():
         st.stop()
 
-    st.title("Blind Test (2)")
+    st.title("Blind Test (6)")
     st.write(
         "시뮬레이션 환자와 대화합니다. Start 버튼을 눌러주세요. \n한글로 대화해주세요. \n최초 환자와 대화했던 발화수와 비슷하게 맞춰주세요.")
 
