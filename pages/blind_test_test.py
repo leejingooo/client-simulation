@@ -23,14 +23,14 @@ st.set_page_config(
 )
 
 # Preset values (hidden from the user)
-PRESET_CLIENT_NUMBER = 3001
+PRESET_CLIENT_NUMBER = 3051
 PRESET_PROFILE_VERSION = 4.0
 PRESET_BEH_DIR_VERSION = 4.0
 PRESET_CON_AGENT_VERSION = 4.0
-PRESET_AGE = 40
-PRESET_GENDER = "Female"
+PRESET_AGE = 25
+PRESET_GENDER = "Male"
 PRESET_NATIONALITY = "South Korea"
-PRESET_DIAGNOSIS = "Major Depressive Disorder"
+PRESET_DIAGNOSIS = "Bipolar 1 Disorder"
 
 # Initialize Firebase
 firebase_ref = get_firebase_ref()
