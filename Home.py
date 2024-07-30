@@ -12,8 +12,7 @@ st.set_page_config(
 @st.cache_resource
 def setup_playwright():
     try:
-        # 모든 브라우저 설치
-        subprocess.run(["playwright", "install"], check=True)
+        subprocess.run(["playwright", "install", "chromium"], check=True)
         return True
     except subprocess.CalledProcessError as e:
         st.error(f"Failed to install Playwright browsers. Error: {e}")
