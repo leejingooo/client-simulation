@@ -138,10 +138,8 @@ def main():
         st.stop()
 
     st.title("Blind Test (Test-Base)")
-    st.write("시뮬레이션 환자와 대화합니다. 한글로 대화해주세요.")
-    # Display utterance count in the top right corner
-    st.sidebar.markdown(
-        f"<h1 style='text-align: right;'>Utterances: {st.session_state.utterance_count}</h1>", unsafe_allow_html=True)
+    st.write(
+        "시뮬레이션 환자와 대화합니다. Start 버튼을 눌러주세요. \n한글로 대화해주세요. \n최초 환자와 대화했던 발화수와 비슷하게 맞춰주세요.")
 
     if st.session_state.test_completed:
         st.warning(
@@ -153,7 +151,7 @@ def main():
             with st.spinner("Preparing the simulated patient..."):
                 st.session_state.agent_and_memory = create_base_model_agent()
                 st.success(
-                    "Simulated patient is ready. You can start the conversation.")
+                    "준비가 완료되었습니다. Start 버튼을 다시 눌러주세요.")
     else:
         display_conversation()
 
@@ -178,7 +176,7 @@ def display_conversation():
         # Increment utterance count after each exchange
         st.session_state.utterance_count += 1
         st.sidebar.markdown(
-            f"<h1 style='text-align: right;'>Utterances: {st.session_state.utterance_count}</h1>", unsafe_allow_html=True)
+            f"<h1 style='text-align: right;'>발화수: {st.session_state.utterance_count}</h1>", unsafe_allow_html=True)
 
 
 def end_test():
