@@ -33,15 +33,14 @@ instructions = """
 def list_all_clients(firebase_ref):
     clients = firebase_ref.get()
     if clients:
-        client_numbers = []
-        for key in clients.keys():
-            if key.startswith("clients_"):
-                client_number = key.split("_")[1]
-                if client_number not in client_numbers:
-                    client_numbers.append(client_number)
+        client_numbers = set()
+        for key, value in clients.items():
+            if key.startswith("clients/"):
+                client_number = key.split("/")[1]
+                client_numbers.add(client_number)
                 # Check for base model tests
-                if client_number == "3002":
-                    client_numbers.append("3002_base")
+                if any(conv.get('version') == 'base' for conv in value.values() if isinstance(conv, dict)):
+                    client_numbers.add(f"{client_number}_base")
         return sorted(client_numbers)
     else:
         st.write("No clients found in the database.")
@@ -53,10 +52,9 @@ def load_client_data(firebase_ref, client_number, profile_version, beh_dir_versi
             "beh_dir": None, "conversations": {}}
 
     # Handle base model test case
-    if client_number == "3002_base":
-        actual_client_number = "3002"
-    else:
-        actual_client_number = client_number
+    is_base_model = client_number.endswith("_base")
+    actual_client_number = client_number[:-
+                                         5] if is_base_model else client_number
 
     # Format version numbers, replacing decimal point with underscore
     profile_version_formatted = f"{profile_version:.1f}".replace(".", "_")
@@ -75,18 +73,16 @@ def load_client_data(firebase_ref, client_number, profile_version, beh_dir_versi
     data["beh_dir"] = firebase_ref.child(beh_dir_path).get()
 
     # Load conversations
-    all_data = firebase_ref.get()
+    all_data = firebase_ref.child(f"clients/{actual_client_number}").get()
     if all_data:
-        if client_number == "3002_base":
+        if is_base_model:
             # Only load conversations with 'version': 'base'
             data["conversations"] = {k: v for k, v in all_data.items()
-                                     if k.startswith(f"clients/{actual_client_number}/conversation_")
-                                     and v.get('version') == 'base'}
+                                     if isinstance(v, dict) and v.get('version') == 'base'}
         else:
             # Load all conversations except those with 'version': 'base'
             data["conversations"] = {k: v for k, v in all_data.items()
-                                     if k.startswith(f"clients/{actual_client_number}/conversation_")
-                                     and v.get('version') != 'base'}
+                                     if isinstance(v, dict) and v.get('version') != 'base'}
 
     return data
 
@@ -251,7 +247,8 @@ def main():
     if available_clients:
         client_number = st.sidebar.selectbox(
             "Select Client", available_clients,
-            format_func=lambda x: f"{x} (Base Model Test)" if x == "3002_base" else x
+            format_func=lambda x: f"{x} (Base Model Test)" if x.endswith(
+                "_base") else x
         )
     else:
         st.warning(
