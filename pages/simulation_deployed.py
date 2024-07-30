@@ -105,7 +105,6 @@ def save_to_firebase(firebase_ref, client_number, data_type, content):
                 f"clients/{client_number}/{data_type}")
             sanitized_content = sanitize_dict(content)
             firebase_ref.child(sanitized_path).set(sanitized_content)
-            st.success(f"Data saved successfully for client {client_number}")
         except Exception as e:
             st.error(f"Failed to save data to Firebase: {str(e)}")
     else:
