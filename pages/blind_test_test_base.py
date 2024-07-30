@@ -98,7 +98,7 @@ def save_conversation_to_firebase(firebase_ref, client_number, messages):
         })
 
     timestamp = int(time.time())
-    conversation_id = f"conversation_base_{timestamp}"
+    conversation_id = f"conversation_{timestamp}"  # Remove 'base_' from here
 
     content = {
         'version': 'base',
