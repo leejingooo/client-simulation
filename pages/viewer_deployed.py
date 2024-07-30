@@ -124,37 +124,35 @@ def display_beh_dir(beh_dir):
         st.write("No behavioral direction data available.")
 
 
-def capture_conversation_screenshot(conversation_html):
-    with sync_playwright() as p:
-        browser = p.chromium.launch()
-        page = browser.new_page()
-        page.set_content(conversation_html)
-        page.set_viewport_size({"width": 1000, "height": 800})
-        screenshot = page.screenshot(full_page=True)
-        browser.close()
-        return screenshot
-
-
-def capture_conversation_screenshot(conversation_html):
-    with sync_playwright() as p:
-        browser = p.chromium.launch()
-        page = browser.new_page()
-        page.set_content(conversation_html)
-        page.set_viewport_size({"width": 1000, "height": 800})
-        screenshot = page.screenshot(full_page=True)
-        browser.close()
-        return screenshot
-
-
 def get_conversation_html(conversation):
     html = """
     <html>
     <head>
+        <meta charset="UTF-8">
         <style>
-            body { font-family: Arial, sans-serif; }
-            .message { padding: 10px; border-radius: 10px; margin-bottom: 10px; max-width: 80%; }
-            .human { background-color: #E6E6FA; float: left; clear: both; }
-            .ai { background-color: #F0FFF0; float: right; clear: both; }
+            @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR&display=swap');
+            body { 
+                font-family: 'Noto Sans KR', Arial, sans-serif; 
+                font-size: 14px;
+                line-height: 1.6;
+            }
+            .message { 
+                padding: 10px; 
+                border-radius: 10px; 
+                margin-bottom: 10px; 
+                max-width: 80%; 
+                word-wrap: break-word;
+            }
+            .human { 
+                background-color: #E6E6FA; 
+                float: left; 
+                clear: both; 
+            }
+            .ai { 
+                background-color: #F0FFF0; 
+                float: right; 
+                clear: both; 
+            }
         </style>
     </head>
     <body>
@@ -165,6 +163,19 @@ def get_conversation_html(conversation):
             html += f'<div class="message ai">{entry["simulated_client"]}</div>'
     html += "</body></html>"
     return html
+
+
+def capture_conversation_screenshot(conversation_html):
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page()
+        page.set_content(conversation_html)
+        page.set_viewport_size({"width": 1000, "height": 800})
+        # Wait for fonts to load
+        page.wait_for_load_state('networkidle')
+        screenshot = page.screenshot(full_page=True)
+        browser.close()
+        return screenshot
 
 
 def display_conversation(conversation):
