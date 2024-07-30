@@ -7,7 +7,7 @@ from langchain.callbacks import StreamingStdOutCallbackHandler
 from langchain.memory import ConversationBufferMemory
 from firebase_config import get_firebase_ref
 from Home import check_password
-from simulation_deployed import (
+from pages.simulation_deployed import (
     load_prompt_and_get_version,
     profile_maker,
     history_maker,
