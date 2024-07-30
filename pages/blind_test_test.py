@@ -50,7 +50,7 @@ def main():
     if not check_password():
         st.stop()
 
-    st.title("Blind Test (1)")
+    st.title("Blind Test (test)")
     st.write("시뮬레이션 환자와 대화합니다. 한글로 대화해주세요.")
 
     if st.session_state.test_completed:

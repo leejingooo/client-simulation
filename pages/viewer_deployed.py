@@ -1,6 +1,10 @@
 import streamlit as st
 import pandas as pd
 from firebase_config import get_firebase_ref
+from playwright.sync_api import sync_playwright
+import base64
+import os
+
 
 st.set_page_config(page_title="Firebase Viewer", page_icon="👁️", layout="wide")
 
@@ -120,28 +124,75 @@ def display_beh_dir(beh_dir):
         st.write("No behavioral direction data available.")
 
 
+def capture_conversation_screenshot(conversation_html):
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page()
+        page.set_content(conversation_html)
+        page.set_viewport_size({"width": 1000, "height": 800})
+        screenshot = page.screenshot(full_page=True)
+        browser.close()
+        return screenshot
+
+
+def capture_conversation_screenshot(conversation_html):
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page()
+        page.set_content(conversation_html)
+        page.set_viewport_size({"width": 1000, "height": 800})
+        screenshot = page.screenshot(full_page=True)
+        browser.close()
+        return screenshot
+
+
+def get_conversation_html(conversation):
+    html = """
+    <html>
+    <head>
+        <style>
+            body { font-family: Arial, sans-serif; }
+            .message { padding: 10px; border-radius: 10px; margin-bottom: 10px; max-width: 80%; }
+            .human { background-color: #E6E6FA; float: left; clear: both; }
+            .ai { background-color: #F0FFF0; float: right; clear: both; }
+        </style>
+    </head>
+    <body>
+    """
+    for entry in conversation['data']:
+        if 'human' in entry and 'simulated_client' in entry:
+            html += f'<div class="message human">{entry["human"]}</div>'
+            html += f'<div class="message ai">{entry["simulated_client"]}</div>'
+    html += "</body></html>"
+    return html
+
+
 def display_conversation(conversation):
     st.subheader("Conversation")
     if conversation and 'data' in conversation:
         for entry in conversation['data']:
             if 'human' in entry and 'simulated_client' in entry:
-                # Human message
                 st.markdown(
                     f"<div style='background-color: #E6E6FA; padding: 10px; border-radius: 10px; margin-bottom: 10px; max-width: 80%; float: left;'>{entry['human']}</div>",
                     unsafe_allow_html=True
                 )
                 st.markdown("<div style='clear: both;'></div>",
                             unsafe_allow_html=True)
-
-                # AI message
                 st.markdown(
                     f"<div style='background-color: #F0FFF0; padding: 10px; border-radius: 10px; margin-bottom: 10px; max-width: 80%; float: right;'>{entry['simulated_client']}</div>",
                     unsafe_allow_html=True
                 )
                 st.markdown("<div style='clear: both;'></div>",
                             unsafe_allow_html=True)
-
                 st.markdown("---")
+
+        # Add download button
+        if st.button("Download Conversation as Image"):
+            html = get_conversation_html(conversation)
+            screenshot = capture_conversation_screenshot(html)
+            b64 = base64.b64encode(screenshot).decode()
+            href = f'<a href="data:image/png;base64,{b64}" download="conversation.png">Download Image</a>'
+            st.markdown(href, unsafe_allow_html=True)
     else:
         st.write(
             "No conversation data available or conversation data is not in the expected format.")
