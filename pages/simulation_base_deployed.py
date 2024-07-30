@@ -41,7 +41,7 @@ def create_base_model_agent(client_number, system_prompt):
 
     llm = ChatOpenAI(
         temperature=0.7,
-        model="gpt-4",
+        model="gpt-4o",
         streaming=True,
         callbacks=[StreamingStdOutCallbackHandler()]
     )

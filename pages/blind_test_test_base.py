@@ -163,7 +163,7 @@ def end_test():
         _, memory = st.session_state.agent_and_memory
         save_conversation_to_firebase(
             firebase_ref,
-            st.session_state.client_number,
+            PRESET_CLIENT_NUMBER,
             memory.chat_memory.messages
         )
         st.success(
