@@ -140,7 +140,7 @@ def main():
         "시뮬레이션 환자와 대화합니다. Start 버튼을 눌러주세요. \n한글로 대화해주세요. \n최초 환자와 대화했던 발화수와 비슷하게 맞춰주세요.")
 
     if st.session_state.agent_and_memory is None:
-        if st.button("Start Blind Test"):
+        if st.button("Start"):
             with st.spinner("Preparing the simulated patient..."):
                 st.session_state.agent_and_memory = create_base_model_agent()
                 st.success(
