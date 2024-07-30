@@ -71,36 +71,6 @@ Here are the <Profile_JSON>, <History>, <Example>, <Candidate>, and <Form>:
 - Thought content : Normal
 </Example 4>
 
-<Example 5 : Schizophrenia>
-- General appearance/Attitude/Behavior : During the interview, poor eye contact by not making adequate eye contact with the interviewer and looking off into the distance, not listening to the questions until the end, giving half-answers that are not related to the questions, and smiling silly smiles in the middle of the interview were not submissive, not attentive, and not cooperative. After finishing the meal, he went out to the lounge for a while and watched some videos on the computer before lying down on the bed. No increase or decrease in general activity was observed, and no psychomotor retardation or agitation was observed. 
-- Mood : dysphoric. "(Patient) I hate this situation right now"
-- Affect : blunt, anxious, tense
-- Spontaneity : Yes
-- Verbal productivity : moderate
-- Tone of voice : moderate
-- Social judgement : Impaired
-- Insight : Complete denial of illness. "(Patient) Why is this a problem?"
-- Reliability : Yes
-- Perception : Depersonalization(+). "(Patient) This arm doesn't belong to me. It's like a twig."
-- Thought process : Loosening of association(+). "(Doctor) How are you feeling today? (Patient) Yesterday, it fell in a cloud of dust. That is, resurrected! Eat ramen with pleasure. Come to your senses with patience. Strive MP patient. Divergence must have ability. Complete integrity. February has come."
-- Thought content : Idea of reference(+)
-</Example 5>
-
-<Example 6 : Schizophrenia>
-- General appearance/Attitude/Behavior : Poor eye contact as evidenced by inability to make adequate eye contact with the interviewer during the interview; submissive, not attentive, not cooperative as evidenced by attempting to respond respectfully but moving away before finishing the question or not answering the question appropriately. Increased general activity observed as pacing around the room with newspapers and walking nonstop, and psychomotor agitation observed as inability to remain in one place during the interview.
-- Mood : irritable. "(Patient) Go away. I don't want to talk to you."
-- Affect : Restricted, Anxious, Tense, Not labile, Not shallow, Not inadequate, Not inappropriate
-- Spontaneity : Yes
-- Verbal productivity : Increased
-- Tone of voice : Moderate
-- Social judgement : Impaired
-- Insight : Complete denial of illness. "(Patient) Did I do something wrong? There's nothing wrong with me, so I'm not going to take this medicine."
-- Reliability : Yes
-- Perception : Auditory hallucination(+). "(Hallucination) You're an asshole. Die."
-- Thought process : circumstantiality. "(Doctor) What do you do for a living? (Patient) Lee Sun-sin was a soldier. I like Lee Sun-sin. He likes me. I'm a soldier.". Irrelevant(+). "(Doctor) What's your family history? (Patient) I'm feeling good today."
-- Thought content : Idea of reference(+). "(Patient) They're gossiping about me."
-</Example 6>
-
 <Candidate>
 - Mood : euphoric/elated/euthymic/dysphoric/depressed/irritable
 - Affect : broad/restricted/blunt/flat/labile/anxious/tense/shallow/inadequate/inappropriate
