@@ -11,7 +11,7 @@
     },
     "Present illness": {
         "symptom_{n}": {
-            "symptom name": "blank (data_type:string, range_candidate_guide:null)",
+            "name": "blank (data_type:string, range_candidate_guide:null)",
             "length": "blank (data_type:number, range_candidate_guide:0-24 (Unit: week, over 24 is represented as 24))",
             "alleviating factor": "blank (data_type:string, range_candidate_guide:null)",
             "exacerbating factor": "blank (data_type:string, range_candidate_guide:null)"
