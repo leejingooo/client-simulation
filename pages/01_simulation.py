@@ -1,7 +1,7 @@
 import streamlit as st
 from Home import check_password
 from firebase_config import get_firebase_ref
-from utils import *
+from SP_utils import *
 
 st.set_page_config(
     page_title="Simulation",
