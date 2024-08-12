@@ -9,12 +9,6 @@ st.set_page_config(
 )
 
 instructions = """
-<style>
-    .orange-text {
-        color: orange;
-    }
-</style>
-<div class="orange-text">
     1. Setting 을 조정해주세요.
 
     * 정식 실험용 Client number는 2001번부터 진행해주세요.
@@ -33,7 +27,6 @@ instructions = """
     5. 대화가 끝나면 End/Save로 대화를 저장하세요.
 
     6. 저장된 대화내역 / Profile / History / Beh-Direction은 Viewer 페이지에서 확인할 수 있습니다.
-</div>
 """
 
 # Initialize Firebase
