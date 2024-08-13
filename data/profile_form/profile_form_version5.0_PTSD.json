@@ -10,7 +10,7 @@
         "description": "blank (data_type:string, range_candidate_guide:Describe in the patient's words)"
     },
     "Present illness": {
-        "symptom_{n}": {
+        "symptom_n": {
             "name": "blank (data_type:string, range_candidate_guide:null)",
             "length": "blank (data_type:number, range_candidate_guide:0-24 (Unit: week, over 24 is represented as 24))",
             "alleviating factor": "blank (data_type:string, range_candidate_guide:null)",
@@ -25,8 +25,8 @@
     },
     "Past medical history": {
         "presence": "blank (data_type:boolean, range_candidate_guide:Randomize(50%) the presence or absence of past medical history. If 'false', then remove all children of 'Past medical history' except this 'presence' which has 'false' as a child.)",
-        "history_{n}": "blank (data_type:string, range_candidate_guide:Describe a past medical history)",
-        "current medication_{n}": {
+        "history_n": "blank (data_type:string, range_candidate_guide:Describe a past medical history)",
+        "current medication_n": {
             "medication name": "blank (data_type:string, range_candidate_guide:Name of the medication the patient is currently taking)",
             "duration": "blank (data_type:number, range_candidate_guide:(Unit: week))",
             "compliance": "blank (data_type:string, range_candidate_guide:good/bad)",
@@ -36,8 +36,8 @@
     },
     "Family history": {
         "presence": "blank (data_type:boolean, range_candidate_guide: Randomize(50%) the presence or absence of family history. If 'false', then remove all children of 'Family history' except this 'presence' which has 'false' as a child.)",
-        "diagnosis_{n}": "blank (data_type:string, range_candidate_guide: Describe a psychiatric family history. Given the patient's current diagnosis, set a probable family history.)",
-        "substance_use_{n}": "blank (data_type:string, range_candidate_guide: Describe a family history of substance use (alcohol, opioid, cannabinoid, hallucinogen, stimulant, narcotic, etc.).)"
+        "diagnosis_n": "blank (data_type:string, range_candidate_guide: Describe a psychiatric family history. Given the patient's current diagnosis, set a probable family history.)",
+        "substance_use_n": "blank (data_type:string, range_candidate_guide: Describe a family history of substance use (alcohol, opioid, cannabinoid, hallucinogen, stimulant, narcotic, etc.).)"
     },
     "Developmental/Social history (guide: History of exposure to (directly experiencing, repeated exposure witnessing in person, learning of occurrence in close acquaintance) actual threatened death, severe injury, or sexual trauma)": {
         "abnormality in prenatal/birthing history": "blank (data_type:string, range_candidate_guide:Randomize(50%) presence/absence. If yes, write a description; otherwise, enter null.)",
