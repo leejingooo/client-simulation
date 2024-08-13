@@ -174,20 +174,21 @@ def get_diag_from_given_information(given_information):
 
 @st.cache_data
 def profile_maker(profile_version, given_information, client_number, prompt):
+
     diag = get_diag_from_given_information(given_information)
     if diag is None:
         st.error("Invalid or unsupported diagnosis in given information.")
         return None
 
-    profile_form_path = f"data/profile_form/profile_form_version{format_version(profile_version)}_{diag}.json"
+    profile_form_path_dsa = f"data/profile_form/profile_form_version{format_version(profile_version)}_{diag}.json"
 
-    if not os.path.exists(profile_form_path):
+    if not os.path.exists(profile_form_path_dsa):
         st.error(
-            f"Profile form version {format_version(profile_version)} for {diag} not found.")
+            f"Profile form version {format_version(profile_version)} not found.")
         return None
 
     try:
-        with open(profile_form_path, "r") as f:
+        with open(profile_form_path_dsa, "r") as f:
             profile_form_content = f.read()
         profile_form = json.loads(profile_form_content)
     except json.JSONDecodeError as e:
@@ -202,12 +203,6 @@ def profile_maker(profile_version, given_information, client_number, prompt):
 
     chain = chat_prompt | llm
 
-    # Add debug information
-    st.write("Debug: Inputs to language model")
-    st.write(f"Current date: {FIXED_DATE}")
-    st.write(f"Profile form: {json.dumps(profile_form, indent=2)}")
-    st.write(f"Given information: {given_information}")
-
     try:
         result = chain.invoke({
             "current_date": FIXED_DATE,
@@ -216,12 +211,6 @@ def profile_maker(profile_version, given_information, client_number, prompt):
         })
     except Exception as e:
         st.error(f"Error invoking language model: {str(e)}")
-        st.error(f"Error type: {type(e).__name__}")
-        st.error(f"Error args: {e.args}")
-        return None
-
-    if result is None or result.content is None:
-        st.error("Language model returned None or empty result")
         return None
 
     try:
@@ -232,10 +221,6 @@ def profile_maker(profile_version, given_information, client_number, prompt):
         json_string = json.dumps(cleaned_result, indent=2)
     except json.JSONDecodeError as e:
         st.error(f"Error parsing result JSON: {str(e)}")
-        st.error(f"Raw result content: {result.content}")
-        return None
-    except Exception as e:
-        st.error(f"Unexpected error while processing result: {str(e)}")
         st.error(f"Raw result content: {result.content}")
         return None
 
