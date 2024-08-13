@@ -174,14 +174,12 @@ def get_diag_from_given_information(given_information):
 
 @st.cache_data
 def profile_maker(profile_version, given_information, client_number, prompt):
-
     diag = get_diag_from_given_information(given_information)
     if diag is None:
         st.error("Invalid or unsupported diagnosis in given information.")
         return None
 
     profile_form_path_dsa = f"data/profile_form/profile_form_version{format_version(profile_version)}_{diag}.json"
-
     if not os.path.exists(profile_form_path_dsa):
         st.error(
             f"Profile form version {format_version(profile_version)} not found.")
@@ -200,9 +198,7 @@ def profile_maker(profile_version, given_information, client_number, prompt):
         return None
 
     chat_prompt = PromptTemplate.from_template(prompt)
-
     chain = chat_prompt | llm
-
     try:
         result = chain.invoke({
             "current_date": FIXED_DATE,
@@ -217,8 +213,13 @@ def profile_maker(profile_version, given_information, client_number, prompt):
         return None
 
     try:
+        # Remove ```json prefix if present
+        result_content = re.sub(r'^```json\s*', '', result.content)
+        # Remove </JSON> suffix if present
+        result_content = re.sub(r'\s*</JSON>$', '', result_content)
+
         cleaned_result = clean_data(json.loads(
-            result.content, object_pairs_hook=OrderedDict))
+            result_content, object_pairs_hook=OrderedDict))
         if isinstance(cleaned_result, str):
             cleaned_result = re.sub(r'<\/?JSON>', '', cleaned_result).strip()
         json_string = json.dumps(cleaned_result, indent=2)
