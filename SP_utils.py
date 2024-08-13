@@ -209,8 +209,11 @@ def profile_maker(profile_version, given_information, client_number, prompt):
             "given_information": given_information,
             "profile_form": json.dumps(profile_form, indent=2),
         })
+    except KeyError as e:
+        st.error(f"Error: Missing key in prompt template: {e}")
+        return None
     except Exception as e:
-        st.error(f"Error invoking language model: {str(e)}")
+        st.error(f"An unexpected error occurred: {e}")
         return None
 
     try:
