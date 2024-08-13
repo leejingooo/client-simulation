@@ -253,12 +253,6 @@ def beh_dir_maker(profile_version, beh_dir_version, client_number, system_prompt
     chat_prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
         ("human", """
-            <Profile_JSON>
-            {profile_json}
-            </Profile_JSON>
-            <History>
-            {history}
-            </History>
         """)
     ])
 
