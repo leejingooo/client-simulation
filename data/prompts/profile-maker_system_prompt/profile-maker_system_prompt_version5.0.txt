@@ -7,7 +7,7 @@ Fill in ALL the blanks in the <JSON> below and return it as JSON.
 - In the <JSON>, the values already populated are fixed and should not be changed.
 - <Given information> is the patient's Diagnosis/Age/Sex/Nationality. 
 - Fill in ALL the blanks with medically/psychiatrically appropriate inferences to ALIGN WITH the <Given information> and the values already populated.
-- Where "_n" is written, you can create multiple to ALIGN WITH the <Given information> and the values already populated.
+- Where "_{n}" is written, you can create multiple to ALIGN WITH the <Given information> and the values already populated.
 - Today's date is {current_date}
 - Do NOT say anything other than generate JSON.
 - Do NOT generate any additional words, such as '''json, <JSON>, </JSON>.
