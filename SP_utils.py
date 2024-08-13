@@ -203,15 +203,11 @@ def profile_maker(profile_version, given_information, client_number, prompt):
 
     chain = chat_prompt | llm
 
-    try:
-        result = chain.invoke({
-            "current_date": FIXED_DATE,
-            "profile_form": json.dumps(profile_form, indent=2),
-            "given_information": given_information
-        })
-    except Exception as e:
-        st.error(f"Error invoking language model: {str(e)}")
-        return None
+    result = chain.invoke({
+        "current_date": FIXED_DATE,
+        "profile_form": json.dumps(profile_form, indent=2),
+        "given_information": given_information
+    })
 
     try:
         cleaned_result = clean_data(json.loads(
