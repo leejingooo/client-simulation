@@ -8,3 +8,7 @@ It is a DYNAMIC LIFE STORY of the patient that ALIGNS WITH the <Profile_JSON>.
 Use your creativity to construct various interconnected events as if telling the story of a REAL patient.
 
 Today's date is {current_date}
+
+<Profile_JSON>
+{profile_json}
+</Profile_JSON>

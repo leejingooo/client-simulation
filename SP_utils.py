@@ -2,7 +2,7 @@ import json
 import os
 import re
 from langchain.chat_models import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain.prompts import ChatPromptTemplate, PromptTemplate, MessagesPlaceholder
 from langchain.schema import HumanMessage, SystemMessage
 from langchain.callbacks import StreamingStdOutCallbackHandler
 from langchain.memory import ConversationBufferMemory
@@ -151,16 +151,44 @@ def load_prompt_and_get_version(module_name: str, version: float) -> Tuple[str, 
         return None, None
 
 
+def get_diag_from_given_information(given_information):
+    diagnosis_match = re.search(r'Diagnosis\s*:\s*(.+)', given_information)
+    if diagnosis_match:
+        diagnosis = diagnosis_match.group(1).strip()
+        if "Major depressive disorder" in diagnosis:
+            return "MDD"
+        elif "Bipolar 1 disorder" in diagnosis:
+            return "BD"
+        elif "Panic disorder" in diagnosis:
+            return "PD"
+        elif "Generalized anxiety disorder" in diagnosis:
+            return "GAD"
+        elif "Social anxiety disorder" in diagnosis:
+            return "SAD"
+        elif "Obsessive-compulsive disorder" in diagnosis:
+            return "OCD"
+        elif "Post-traumatic stress disorder" in diagnosis:
+            return "PTSD"
+    return None
+
+
 @st.cache_data
-def profile_maker(profile_version, given_information, client_number, system_prompt):
-    profile_form_path = f"data/profile_form/profile_form_version{format_version(profile_version)}.json"
-    if not os.path.exists(profile_form_path):
+def profile_maker(profile_version, given_information, client_number, prompt):
+
+    diag = get_diag_from_given_information(given_information)
+    if diag is None:
+        st.error("Invalid or unsupported diagnosis in given information.")
+        return None
+
+    profile_form_path_dsa = f"data/profile_form/profile_form_version{format_version(profile_version)}_{diag}.json"
+
+    if not os.path.exists(profile_form_path_dsa):
         st.error(
             f"Profile form version {format_version(profile_version)} not found.")
         return None
 
     try:
-        with open(profile_form_path, "r") as f:
+        with open(profile_form_path_dsa, "r") as f:
             profile_form_content = f.read()
         profile_form = json.loads(profile_form_content)
     except json.JSONDecodeError as e:
@@ -171,10 +199,7 @@ def profile_maker(profile_version, given_information, client_number, system_prom
         st.error(f"Error reading profile form: {str(e)}")
         return None
 
-    chat_prompt = ChatPromptTemplate.from_messages([
-        ("system", system_prompt),
-        ("human", given_information)
-    ])
+    chat_prompt = PromptTemplate.from_template(prompt)
 
     chain = chat_prompt | llm
 
@@ -212,7 +237,7 @@ def profile_maker(profile_version, given_information, client_number, system_prom
 
 
 @st.cache_data
-def history_maker(profile_version, client_number, system_prompt):
+def history_maker(profile_version, client_number, prompt):
     profile_json = load_from_firebase(
         firebase_ref, client_number, f"profile_version{profile_version}")
 
@@ -221,14 +246,7 @@ def history_maker(profile_version, client_number, system_prompt):
             "Failed to load profile data from Firebase. Unable to generate history.")
         return None
 
-    chat_prompt = ChatPromptTemplate.from_messages([
-        ("system", system_prompt),
-        ("human", """
-            <Profile_JSON>
-            {profile_json}
-            </Profile_JSON>
-        """)
-    ])
+    chat_prompt = PromptTemplate.from_template(prompt)
 
     chain = chat_prompt | llm
 
@@ -244,23 +262,43 @@ def history_maker(profile_version, client_number, system_prompt):
 
 
 @st.cache_data
-def beh_dir_maker(profile_version, beh_dir_version, client_number, system_prompt):
+def beh_dir_maker(profile_version, beh_dir_version, client_number, prompt, given_information):
     profile_json = load_from_firebase(
         firebase_ref, client_number, f"profile_version{profile_version}")
     history = load_from_firebase(
         firebase_ref, client_number, f"history_version{profile_version}")
 
-    chat_prompt = ChatPromptTemplate.from_messages([
-        ("system", system_prompt),
-        ("human", """
-        """)
-    ])
+    chat_prompt = PromptTemplate.from_template(prompt)
 
     chain = chat_prompt | llm
 
+    diag = get_diag_from_given_information(given_information)
+    if diag is None:
+        st.error("Invalid or unsupported diagnosis in given information.")
+        return None
+
+    mse_few_shot_path = f"data/prompts/mse_few_shot/mse_{diag}.txt"
+
+    instruction_form_path = f"data/prompts/instruction_form/instruction_form_{diag}.txt"
+
+    try:
+        with open(mse_few_shot_path, "r") as f:
+            mse_few_shot_content = f.read()
+        with open(instruction_form_path, "r") as f:
+            instruction_form_content = f.read()
+    except FileNotFoundError as e:
+        st.error(f"Error: Required file not found - {e}")
+        return None
+    except Exception as e:
+        st.error(f"Error reading required files: {str(e)}")
+        return None
+
     result = chain.invoke({
+        "given_information": given_information,
         "profile_json": json.dumps(profile_json, indent=2),
-        "history": history
+        "history": history,
+        "mse_few_shot": mse_few_shot_content,
+        "instruction_form": instruction_form_content
     })
 
     save_to_firebase(firebase_ref, client_number,

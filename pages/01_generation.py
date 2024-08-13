@@ -82,11 +82,11 @@ def main():
 
     if action == "Load existing data":
         profile_version = st.sidebar.number_input(
-            "Profile Version : profile_form=profile-maker=history-maker", min_value=1.0, value=4.0, step=0.1, format="%.1f")
+            "Profile Version : profile_form=profile-maker=history-maker", min_value=1.0, value=5.0, step=0.1, format="%.1f")
         con_agent_version = st.sidebar.number_input(
-            "Con-agent System Prompt Version", min_value=1.0, value=4.0, step=0.1, format="%.1f")
+            "Con-agent System Prompt Version", min_value=1.0, value=5.0, step=0.1, format="%.1f")
         beh_dir_version = st.sidebar.number_input(
-            "beh_dir Version", min_value=1.0, value=4.0, step=0.1, format="%.1f")
+            "beh_dir Version", min_value=1.0, value=5.0, step=0.1, format="%.1f")
 
         if st.sidebar.button("Load Data", key="load_data_button"):
             success = load_existing_client_data(
@@ -114,11 +114,11 @@ def main():
     else:  # Create new data
         st.sidebar.subheader("Version Settings")
         profile_version = st.sidebar.number_input(
-            "Profile Version", min_value=1.0, value=4.0, step=0.1, format="%.1f")
+            "Profile Version", min_value=1.0, value=5.0, step=0.1, format="%.1f")
         beh_dir_version = st.sidebar.number_input(
-            "Beh-dir-maker Version", min_value=1.0, value=4.0, step=0.1, format="%.1f")
+            "Beh-dir-maker Version", min_value=1.0, value=5.0, step=0.1, format="%.1f")
         con_agent_version = st.sidebar.number_input(
-            "Con-agent Version", min_value=1.0, value=4.0, step=0.1, format="%.1f")
+            "Con-agent Version", min_value=1.0, value=5.0, step=0.1, format="%.1f")
 
         # Load prompts based on versions
         profile_system_prompt, actual_profile_version = load_prompt_and_get_version(
@@ -140,10 +140,10 @@ def main():
 
         given_information = f"""
         <Given information>
-        Age : {age}
-        Gender : {gender}
-        Nationality: {nationality}
         Diagnosis : {diagnosis}
+        Age : {age}
+        Sex : {gender}
+        Nationality: {nationality}
         </Given information>
         """
 
