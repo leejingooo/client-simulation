@@ -166,7 +166,7 @@ def main():
 
                                 with st.spinner(""):
                                     beh_dir = beh_dir_maker(format_version(profile_version), format_version(
-                                        beh_dir_version), st.session_state.client_number, beh_dir_system_prompt)
+                                        beh_dir_version), st.session_state.client_number, beh_dir_system_prompt, given_information)
                                     if beh_dir is not None:
                                         st.session_state.beh_dir = beh_dir
 
