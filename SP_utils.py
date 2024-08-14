@@ -410,7 +410,7 @@ def save_conversation_to_firebase(firebase_ref, client_number, messages, con_age
 
 def self_improving_agent(utterance, instruction, client_number):
     prompt = f"""
-    Check if the following <utterance> meets the given <instruction>. Focus on judging based on the word count limit, paralanguage, and restrictions on information that can be given in the <instruction> below. Score how well it meets the <instruction> out of 5. If there are any problems, write them down and suggest a Revision. When writing the Revision, NEVER change the original language. Generate output according to the given format. Do not attach any additional words, including quotation marks, except in the given format.
+    Check if the following <utterance> meets the given <instruction>. The most important criterion is the word count limit, which must be met without exception. The next considerations are paralanguage, and restrictions on information. Score how well it meets the <instruction> out of 5. If there are any problems, write them down and suggest a Revision. When writing the Revision, NEVER change the original language and check if the entire sentence is in a consistent language. Generate output according to the given format. Do not attach any additional words, including quotation marks, except in the given format.
 
     <instruction>
     {instruction}
