@@ -99,8 +99,7 @@ def main():
 
                 st.session_state.agent_and_memory = create_conversational_agent(
                     format_version(profile_version), format_version(
-                        beh_dir_version, given_information),
-                    st.session_state.client_number, con_agent_system_prompt
+                        beh_dir_version), st.session_state.client_number, con_agent_system_prompt, given_information
                 )
 
                 st.success(
@@ -172,8 +171,8 @@ def main():
 
                                         st.session_state.agent_and_memory = create_conversational_agent(
                                             format_version(profile_version), format_version(
-                                                beh_dir_version, given_information),
-                                            st.session_state.client_number, con_agent_system_prompt
+                                                beh_dir_version),
+                                            st.session_state.client_number, con_agent_system_prompt, given_information
                                         )
                                     else:
                                         st.error(
