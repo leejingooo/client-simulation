@@ -457,7 +457,7 @@ def self_improving_agent(utterance, instruction, client_number):
 def apply_sia(utterance, instruction, client_number, max_iterations=5):
     for i in range(max_iterations):
         score, problem, revision = self_improving_agent(
-            utterance, instruction, client_number, firebase_ref)
+            utterance, instruction, client_number)
         if score == 5:
             return utterance
         utterance = revision if revision else utterance
