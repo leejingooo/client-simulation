@@ -199,6 +199,7 @@ def profile_maker(profile_version, given_information, client_number, prompt):
 
     chat_prompt = PromptTemplate.from_template(prompt)
     chain = chat_prompt | llm
+
     try:
         result = chain.invoke({
             "current_date": FIXED_DATE,
@@ -213,26 +214,31 @@ def profile_maker(profile_version, given_information, client_number, prompt):
         return None
 
     try:
-        # Remove ```json prefix if present
-        result_content = re.sub(r'^```json\s*', '', result.content)
-        # Remove </JSON> suffix if present
-        result_content = re.sub(r'\s*</JSON>$', '', result_content)
+        # Remove any prefix before the actual JSON content
+        result_content = re.sub(
+            r'^.*?(\{)', r'\1', result.content, flags=re.DOTALL)
+        # Remove any suffix after the JSON content
+        result_content = re.sub(
+            r'(\})[^}]*$', r'\1', result_content, flags=re.DOTALL)
 
-        cleaned_result = clean_data(json.loads(
-            result_content, object_pairs_hook=OrderedDict))
-        if isinstance(cleaned_result, str):
-            cleaned_result = re.sub(r'<\/?JSON>', '', cleaned_result).strip()
+        # Parse the JSON content
+        parsed_json = json.loads(result_content, object_pairs_hook=OrderedDict)
+
+        # Clean the data
+        cleaned_result = clean_data(parsed_json)
+
+        # Convert back to JSON string
         json_string = json.dumps(cleaned_result, indent=2)
-    except json.JSONDecodeError as e:
-        st.error(f"Error parsing result JSON: {str(e)}")
-        st.error(f"Raw result content: {result.content}")
-        return None
 
-    try:
+        # Parse again to ensure it's valid JSON
         parsed_result = json.loads(json_string, object_pairs_hook=OrderedDict)
     except json.JSONDecodeError as e:
-        st.error(f"Error parsing final JSON: {str(e)}")
-        st.error(f"Processed JSON string: {json_string}")
+        st.error(f"Error parsing JSON: {str(e)}")
+        st.error(f"Problematic content: {result_content}")
+        return None
+    except Exception as e:
+        st.error(
+            f"An unexpected error occurred while processing the result: {str(e)}")
         return None
 
     save_to_firebase(firebase_ref, client_number,
