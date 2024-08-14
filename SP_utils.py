@@ -410,7 +410,7 @@ def save_conversation_to_firebase(firebase_ref, client_number, messages, con_age
 
 def self_improving_agent(utterance, instruction, client_number):
     prompt = f"""
-    Check if the following meets the criteria below, and write the Score/Problem/Revision according to the <output format>. The importance of CRITERIA is 1>2>3.
+    Check if the following meets the criteria below, and write the Score/Problem/Word count limit/Revision according to the <output format>. The importance of CRITERIA is 1>2>3.
     CRITERIA:
     (1) The word count limit specified in <instruction>. This condition must be met without exception.
     (2) Whether paralanguage and restrictions on information are well incorporated according to <instruction>.
@@ -419,6 +419,7 @@ def self_improving_agent(utterance, instruction, client_number):
     Score how well it meets the above criteria out of 5. If it's not a 5, write down the Problem explaining why, and write a Revision that can solve that problem.
     When writing the Revision, make sure to write it all in Korean and be careful not to generate a Revision that violates CRITERIA (1) above.
     Also, DO NOT attach ANY additional symbols such as "QUOTATION MARKS", and write ONLY natural language in the Revision.
+    To strictly adhere to CRITERIA (1) and language consistency, [Self-check] has been added to the <output format>. Here, write the word count limit specified in the instruction, and whether the Revision satisfies it and maintains speaking in Korean.
 
     <instruction>
     {instruction}
@@ -430,6 +431,7 @@ def self_improving_agent(utterance, instruction, client_number):
     Score: 
     Problem: 
     Revision: 
+    Self-check:
     """
 
     response = llm.invoke(prompt)
