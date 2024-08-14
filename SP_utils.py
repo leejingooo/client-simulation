@@ -318,12 +318,12 @@ def beh_dir_maker(profile_version, beh_dir_version, client_number, prompt, given
 
 
 @st.cache_resource
-def create_conversational_agent(profile_version, beh_dir_version, client_number, system_prompt):
+def create_conversational_agent(profile_version, beh_dir_version, client_number, system_prompt, given_information):
     profile_json = load_from_firebase(
         firebase_ref, client_number, f"profile_version{profile_version}")
     history = load_from_firebase(
         firebase_ref, client_number, f"history_version{profile_version}")
-    behavioral_direction = load_from_firebase(
+    behavioral_instruction = load_from_firebase(
         firebase_ref, client_number, f"beh_dir_version{beh_dir_version}")
 
     chat_prompt = ChatPromptTemplate.from_messages([
@@ -339,10 +339,11 @@ def create_conversational_agent(profile_version, beh_dir_version, client_number,
 
     def agent(human_input):
         response = chain.invoke({
+            "given_information": given_information,
             "current_date": FIXED_DATE,
             "profile_json": json.dumps(profile_json, indent=2),
             "history": history,
-            "behavioral_direction": behavioral_direction,
+            "behavioral_instruction": behavioral_instruction,
             "chat_history": memory.chat_memory.messages,
             "human_input": human_input
         })
