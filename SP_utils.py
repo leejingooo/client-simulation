@@ -334,13 +334,23 @@ def create_conversational_agent(profile_version, beh_dir_version, client_number,
         "behavioral_instruction"
     ]
 
-    con_agent_system_prompt = PromptTemplate(
+    var_values = {
+        "given_information": given_information,
+        "current_date": FIXED_DATE,
+        "profile_json": json.dumps(profile_json, indent=2),
+        "history": history,
+        "behavioral_instruction": behavioral_instruction,
+    }
+
+    con_agent_system_prompt_template = PromptTemplate(
         input_variables=input_variables,
         template=system_prompt
     )
+    con_agent_system_prompt = con_agent_system_prompt_template.format(
+        **var_values)
 
     chat_prompt = ChatPromptTemplate.from_messages([
-        ("system", con_agent_system_prompt),
+        ("system", system_prompt),
         MessagesPlaceholder(variable_name="chat_history"),
         ("human", "{human_input}")
     ])
@@ -403,7 +413,7 @@ def self_improving_agent(utterance, con_agent_system_prompt):
     Check if the following <utterance> meets the given <instruction>. Score how well it meets the <instruction> out of 5. If there are any problems, write them down and suggest a Revision. Generate output according to the given format. Do not attach any additional words except in the given format.
 
     <instruction>
-    {con_agent_system_prompt.template}
+    {con_agent_system_prompt}
     </instruction>
 
     <utterance>
