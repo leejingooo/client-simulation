@@ -332,6 +332,19 @@ def create_conversational_agent(profile_version, beh_dir_version, client_number,
         ("human", "{human_input}")
     ])
 
+    input_variables = {
+        "given_information": given_information,
+        "current_date": FIXED_DATE,
+        "profile_json": json.dumps(profile_json, indent=2),
+        "history": history,
+        "behavioral_instruction": behavioral_instruction,
+    }
+
+    con_agent_system_prompt = PromptTemplate(
+        input_variables=input_variables,
+        template=system_prompt
+    )
+
     memory = ConversationBufferMemory(
         return_messages=True, memory_key="chat_history")
 
@@ -348,10 +361,14 @@ def create_conversational_agent(profile_version, beh_dir_version, client_number,
             "human_input": human_input
         })
 
-        memory.chat_memory.add_user_message(human_input)
-        memory.chat_memory.add_ai_message(response.content)
+        # Apply SIA to improve the response
+        improved_response = apply_sia(
+            response.content, con_agent_system_prompt)
 
-        return response.content
+        memory.chat_memory.add_user_message(human_input)
+        memory.chat_memory.add_ai_message(improved_response)
+
+        return improved_response
 
     return agent, memory
 
@@ -379,3 +396,43 @@ def save_conversation_to_firebase(firebase_ref, client_number, messages, con_age
 
     st.success(f"Conversation saved with ID: {conversation_id}")
     return conversation_id
+
+
+def self_improving_agent(utterance, con_agent_system_prompt):
+    prompt = f"""
+    Check if the following <utterance> meets the given <instruction>. Score how well it meets the <instruction> out of 5. If there are any problems, write them down and suggest a Revision. Generate output according to the given format. Do not attach any additional words except in the given format.
+
+    <instruction>
+    {con_agent_system_prompt}
+    </instruction>
+
+    <utterance>
+    {utterance}
+    </utterance>
+
+    <Output format>
+    Score: 
+    Problem: 
+    Revision: 
+    </Output format>
+    """
+
+    response = llm.invoke(prompt)
+
+    # Parse the response
+    lines = response.content.strip().split('\n')
+    score = int(lines[0].split(':')[1].strip())
+    problem = lines[1].split(':')[1].strip() if len(lines) > 1 else ''
+    revision = lines[2].split(':')[1].strip() if len(lines) > 2 else ''
+
+    return score, problem, revision
+
+
+def apply_sia(utterance, con_agent_system_prompt, max_iterations=5):
+    for _ in range(max_iterations):
+        score, problem, revision = self_improving_agent(
+            utterance, con_agent_system_prompt)
+        if score == 5:
+            return utterance
+        utterance = revision
+    return utterance  # Return the best version after max_iterations
