@@ -410,7 +410,15 @@ def save_conversation_to_firebase(firebase_ref, client_number, messages, con_age
 
 def self_improving_agent(utterance, instruction, client_number):
     prompt = f"""
-    Check if the following <utterance> meets the given <instruction>. The most important criterion is the word count limit, which must be met without exception. The next considerations are paralanguage, and restrictions on information. Score how well it meets the <instruction> out of 5. If there are any problems, write them down and suggest a Revision. When writing the Revision, NEVER change the original language and check if the entire sentence is in a consistent language. Generate output according to the given format. Do not attach any additional words, including quotation marks, except in the given format.
+    Check if the following meets the criteria below, and write the Score/Problem/Revision according to the <output format>. The importance of CRITERIA is 1>2>3.
+    CRITERIA:
+    (1) The word count limit specified in <instruction>. This condition must be met without exception.
+    (2) Whether paralanguage and restrictions on information are well incorporated according to <instruction>.
+    (3) Overall, it should align with <instruction>.
+    
+    Score how well it meets the above criteria out of 5. If it's not a 5, write down the Problem explaining why, and write a Revision that can solve that problem.
+    When writing the Revision, make sure to write it all in Korean and be careful not to generate a Revision that violates CRITERIA (1) above.
+    Also, DO NOT attach ANY additional symbols such as "QUOTATION MARKS", and write ONLY natural language in the Revision.
 
     <instruction>
     {instruction}
