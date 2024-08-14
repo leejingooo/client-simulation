@@ -414,7 +414,7 @@ def self_improving_agent(utterance, instruction, client_number):
     CRITERIA:
     (1) The word count limit specified in <instruction>. This condition must be met without exception.
     (2) Whether paralanguage and restrictions on information are well incorporated according to <instruction>.
-    (3) Overall, it should align with <instruction>.
+    (3) Overall, it should align with <instruction>. But, REMEMBER CRITERIA (1) takes precedence over everything else.
     
     Score how well it meets the above criteria out of 5. If it's not a 5, write down the Problem explaining why, and write a Revision that can solve that problem.
     When writing the Revision, make sure to write it all in Korean and be careful not to generate a Revision that violates CRITERIA (1) above.
@@ -441,10 +441,13 @@ def self_improving_agent(utterance, instruction, client_number):
     problem_match = re.search(r'Problem:\s*(.+)', response.content, re.DOTALL)
     revision_match = re.search(
         r'Revision:\s*(.+)', response.content, re.DOTALL)
+    self_check_match = re.search(
+        r'Self-check:\s*(.+)', response.content, re.DOTALL)
 
     score = int(score_match.group(1)) if score_match else 0
     problem = problem_match.group(1).strip() if problem_match else ''
     revision = revision_match.group(1).strip() if revision_match else ''
+    self_check = self_check_match.group(1).strip() if revision_match else ''
 
     # Store the SIA output in Firebase
     timestamp = int(time.time())
@@ -453,7 +456,8 @@ def self_improving_agent(utterance, instruction, client_number):
         'original_utterance': utterance,
         'score': score,
         'problem': problem,
-        'revision': revision
+        'revision': revision,
+        'self_check': self_check
     }
     save_to_firebase(firebase_ref, client_number,
                      f"sia_output_{timestamp}", sia_output)
@@ -461,7 +465,7 @@ def self_improving_agent(utterance, instruction, client_number):
     return score, problem, revision
 
 
-def apply_sia(utterance, instruction, client_number, max_iterations=5):
+def apply_sia(utterance, instruction, client_number, max_iterations=10):
     for i in range(max_iterations):
         score, problem, revision = self_improving_agent(
             utterance, instruction, client_number)
