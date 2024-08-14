@@ -326,24 +326,24 @@ def create_conversational_agent(profile_version, beh_dir_version, client_number,
     behavioral_instruction = load_from_firebase(
         firebase_ref, client_number, f"beh_dir_version{beh_dir_version}")
 
-    chat_prompt = ChatPromptTemplate.from_messages([
-        ("system", system_prompt),
-        MessagesPlaceholder(variable_name="chat_history"),
-        ("human", "{human_input}")
-    ])
-
-    input_variables = {
-        "given_information": given_information,
-        "current_date": FIXED_DATE,
-        "profile_json": json.dumps(profile_json, indent=2),
-        "history": history,
-        "behavioral_instruction": behavioral_instruction,
-    }
+    input_variables = [
+        "given_information",
+        "current_date",
+        "profile_json",
+        "history",
+        "behavioral_instruction"
+    ]
 
     con_agent_system_prompt = PromptTemplate(
         input_variables=input_variables,
         template=system_prompt
     )
+
+    chat_prompt = ChatPromptTemplate.from_messages([
+        ("system", con_agent_system_prompt),
+        MessagesPlaceholder(variable_name="chat_history"),
+        ("human", "{human_input}")
+    ])
 
     memory = ConversationBufferMemory(
         return_messages=True, memory_key="chat_history")
@@ -399,11 +399,11 @@ def save_conversation_to_firebase(firebase_ref, client_number, messages, con_age
 
 
 def self_improving_agent(utterance, con_agent_system_prompt):
-    prompt = f"""
+    sia_prompt = f"""
     Check if the following <utterance> meets the given <instruction>. Score how well it meets the <instruction> out of 5. If there are any problems, write them down and suggest a Revision. Generate output according to the given format. Do not attach any additional words except in the given format.
 
     <instruction>
-    {con_agent_system_prompt}
+    {con_agent_system_prompt.template}
     </instruction>
 
     <utterance>
@@ -417,7 +417,7 @@ def self_improving_agent(utterance, con_agent_system_prompt):
     </Output format>
     """
 
-    response = llm.invoke(prompt)
+    response = llm.invoke(sia_prompt)
 
     # Parse the response
     lines = response.content.strip().split('\n')
