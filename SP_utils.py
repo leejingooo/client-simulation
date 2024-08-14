@@ -373,7 +373,7 @@ def create_conversational_agent(profile_version, beh_dir_version, client_number,
 
         # Apply SIA to improve the response
         improved_response = apply_sia(
-            response.content, con_agent_system_prompt)
+            response.content, con_agent_system_prompt, client_number)
 
         memory.chat_memory.add_user_message(human_input)
         memory.chat_memory.add_ai_message(improved_response)
@@ -408,12 +408,12 @@ def save_conversation_to_firebase(firebase_ref, client_number, messages, con_age
     return conversation_id
 
 
-def self_improving_agent(utterance, con_agent_system_prompt):
-    sia_prompt = f"""
+def self_improving_agent(utterance, instruction, client_number):
+    prompt = f"""
     Check if the following <utterance> meets the given <instruction>. Score how well it meets the <instruction> out of 5. If there are any problems, write them down and suggest a Revision. Generate output according to the given format. Do not attach any additional words except in the given format.
 
     <instruction>
-    {con_agent_system_prompt}
+    {instruction}
     </instruction>
 
     <utterance>
@@ -427,22 +427,38 @@ def self_improving_agent(utterance, con_agent_system_prompt):
     </Output format>
     """
 
-    response = llm.invoke(sia_prompt)
+    response = llm.invoke(prompt)
 
-    # Parse the response
-    lines = response.content.strip().split('\n')
-    score = int(lines[0].split(':')[1].strip())
-    problem = lines[1].split(':')[1].strip() if len(lines) > 1 else ''
-    revision = lines[2].split(':')[1].strip() if len(lines) > 2 else ''
+    # Parse the response using regular expressions
+    score_match = re.search(r'Score:\s*(\d+)', response.content)
+    problem_match = re.search(r'Problem:\s*(.+)', response.content, re.DOTALL)
+    revision_match = re.search(
+        r'Revision:\s*(.+)', response.content, re.DOTALL)
+
+    score = int(score_match.group(1)) if score_match else 0
+    problem = problem_match.group(1).strip() if problem_match else ''
+    revision = revision_match.group(1).strip() if revision_match else ''
+
+    # Store the SIA output in Firebase
+    timestamp = int(time.time())
+    sia_output = {
+        'timestamp': timestamp,
+        'original_utterance': utterance,
+        'score': score,
+        'problem': problem,
+        'revision': revision
+    }
+    save_to_firebase(firebase_ref, client_number,
+                     f"sia_output_{timestamp}", sia_output)
 
     return score, problem, revision
 
 
-def apply_sia(utterance, con_agent_system_prompt, max_iterations=5):
-    for _ in range(max_iterations):
+def apply_sia(utterance, instruction, client_number, max_iterations=5):
+    for i in range(max_iterations):
         score, problem, revision = self_improving_agent(
-            utterance, con_agent_system_prompt)
+            utterance, instruction, client_number, firebase_ref)
         if score == 5:
             return utterance
-        utterance = revision
+        utterance = revision if revision else utterance
     return utterance  # Return the best version after max_iterations
