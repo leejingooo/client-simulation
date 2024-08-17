@@ -370,15 +370,18 @@ def create_conversational_agent(profile_version, beh_dir_version, client_number,
             "chat_history": memory.chat_memory.messages,
             "human_input": human_input
         })
-
-        # Apply SIA to improve the response
-        improved_response = apply_sia(
-            response.content, con_agent_system_prompt, client_number)
-
         memory.chat_memory.add_user_message(human_input)
-        memory.chat_memory.add_ai_message(improved_response)
+        memory.chat_memory.add_ai_message(response.content)
+        return response.content
 
-        return improved_response
+        # # Apply SIA to improve the response
+        # improved_response = apply_sia(
+        #     response.content, con_agent_system_prompt, client_number)
+
+        # memory.chat_memory.add_user_message(human_input)
+        # memory.chat_memory.add_ai_message(improved_response)
+
+        # return improved_response
 
     return agent, memory
 
@@ -408,68 +411,68 @@ def save_conversation_to_firebase(firebase_ref, client_number, messages, con_age
     return conversation_id
 
 
-def self_improving_agent(utterance, instruction, client_number):
-    prompt = f"""
-    Check if the following meets the criteria below, and write the Score/Problem/Word count limit/Revision according to the <output format>. The importance of CRITERIA is 1>2>3.
-    CRITERIA:
-    (1) The word count limit specified in <instruction>. This condition must be met without exception.
-    (2) Whether paralanguage and restrictions on information are well incorporated according to <instruction>.
-    (3) Overall, it should align with <instruction>. But, REMEMBER CRITERIA (1) takes precedence over everything else.
-    
-    Score how well it meets the above criteria out of 5. If it's not a 5, write down the Problem explaining why, and write a Revision that can solve that problem.
-    When writing the Revision, make sure to write it all in Korean and be careful not to generate a Revision that violates CRITERIA (1) above.
-    Also, DO NOT attach ANY additional symbols such as "QUOTATION MARKS", and write ONLY natural language in the Revision.
-    To strictly adhere to CRITERIA (1) and language consistency, [Self-check] has been added to the <output format>. Here, write the word count limit specified in the instruction, and whether the Revision satisfies it and maintains speaking in Korean.
+# def self_improving_agent(utterance, instruction, client_number):
+#     prompt = f"""
+#     Check if the following meets the criteria below, and write the Score/Problem/Word count limit/Revision according to the <output format>. The importance of CRITERIA is 1>2>3.
+#     CRITERIA:
+#     (1) The word count limit specified in <instruction>. This condition must be met without exception.
+#     (2) Whether paralanguage and restrictions on information are well incorporated according to <instruction>.
+#     (3) Overall, it should align with <instruction>. But, REMEMBER CRITERIA (1) takes precedence over everything else.
 
-    <instruction>
-    {instruction}
+#     Score how well it meets the above criteria out of 5. If it's not a 5, write down the Problem explaining why, and write a Revision that can solve that problem.
+#     When writing the Revision, make sure to write it all in Korean and be careful not to generate a Revision that violates CRITERIA (1) above.
+#     Also, DO NOT attach ANY additional symbols such as "QUOTATION MARKS", and write ONLY natural language in the Revision.
+#     To strictly adhere to CRITERIA (1) and language consistency, [Self-check] has been added to the <output format>. Here, write the word count limit specified in the instruction, and whether the Revision satisfies it and maintains speaking in Korean.
 
-    <utterance>
-    {utterance}
+#     <instruction>
+#     {instruction}
 
-    <output format>
-    Score: 
-    Problem: 
-    Revision: 
-    Self-check:
-    """
+#     <utterance>
+#     {utterance}
 
-    response = llm.invoke(prompt)
+#     <output format>
+#     Score:
+#     Problem:
+#     Self-check:
+#     Revision:
+#     """
 
-    # Parse the response using regular expressions
-    score_match = re.search(r'Score:\s*(\d+)', response.content)
-    problem_match = re.search(r'Problem:\s*(.+)', response.content, re.DOTALL)
-    revision_match = re.search(
-        r'Revision:\s*(.+)', response.content, re.DOTALL)
-    self_check_match = re.search(
-        r'Self-check:\s*(.+)', response.content, re.DOTALL)
+#     response = llm.invoke(prompt)
 
-    score = int(score_match.group(1)) if score_match else 0
-    problem = problem_match.group(1).strip() if problem_match else ''
-    revision = revision_match.group(1).strip() if revision_match else ''
-    self_check = self_check_match.group(1).strip() if revision_match else ''
+#     # Parse the response using regular expressions
+#     score_match = re.search(r'Score:\s*(\d+)', response.content)
+#     problem_match = re.search(r'Problem:\s*(.+)', response.content, re.DOTALL)
+#     revision_match = re.search(
+#         r'Revision:\s*(.+)', response.content, re.DOTALL)
+#     self_check_match = re.search(
+#         r'Self-check:\s*(.+)', response.content, re.DOTALL)
 
-    # Store the SIA output in Firebase
-    timestamp = int(time.time())
-    sia_output = {
-        'timestamp': timestamp,
-        'original_utterance': utterance,
-        'score': score,
-        'problem': problem,
-        'revision': revision,
-        'self_check': self_check
-    }
-    save_to_firebase(firebase_ref, client_number,
-                     f"sia_output_{timestamp}", sia_output)
+#     score = int(score_match.group(1)) if score_match else 0
+#     problem = problem_match.group(1).strip() if problem_match else ''
+#     revision = revision_match.group(1).strip() if revision_match else ''
+#     self_check = self_check_match.group(1).strip() if revision_match else ''
 
-    return score, problem, revision
+#     # Store the SIA output in Firebase
+#     timestamp = int(time.time())
+#     sia_output = {
+#         'timestamp': timestamp,
+#         'original_utterance': utterance,
+#         'score': score,
+#         'problem': problem,
+#         'revision': revision,
+#         'self_check': self_check
+#     }
+#     save_to_firebase(firebase_ref, client_number,
+#                      f"sia_output_{timestamp}", sia_output)
+
+#     return score, problem, revision
 
 
-def apply_sia(utterance, instruction, client_number, max_iterations=10):
-    for i in range(max_iterations):
-        score, problem, revision = self_improving_agent(
-            utterance, instruction, client_number)
-        if score == 5:
-            return utterance
-        utterance = revision if revision else utterance
-    return utterance  # Return the best version after max_iterations
+# def apply_sia(utterance, instruction, client_number, max_iterations=10):
+#     for i in range(max_iterations):
+#         score, problem, revision = self_improving_agent(
+#             utterance, instruction, client_number)
+#         if score == 5:
+#             return utterance
+#         utterance = revision if revision else utterance
+#     return utterance  # Return the best version after max_iterations
