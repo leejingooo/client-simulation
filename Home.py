@@ -30,11 +30,11 @@ def check_participant():
         else:
             st.session_state["name_correct"] = False
 
-    if "name_correct" not in st.session_state:
+    if "name" not in st.session_state or "name_correct" not in st.session_state:
         # First run, show input for name.
         st.text_input(
             "이름을 입력하세요 (한글)", on_change=name_entered, key="name"
-        ) = st.session_state['name']
+        )
         return False
     elif not st.session_state["name_correct"]:
         # Name not in the list, show input + error.

@@ -33,6 +33,13 @@ def main():
 
     st.title("Validation")
 
+    # Add this debugging information
+    st.write("Debug Information:")
+    st.write(
+        f"Name in session state: {st.session_state.get('name', 'Not set')}")
+    st.write(
+        f"Name correct: {st.session_state.get('name_correct', 'Not set')}")
+
     st.write(instructions, unsafe_allow_html=True)
 
     profile = load_from_firebase(
@@ -97,19 +104,23 @@ def main():
     if st.button("End/Save Conversation"):
         if 'agent_and_memory' in st.session_state and st.session_state.agent_and_memory is not None:
             _, memory = st.session_state.agent_and_memory
-            participant_name = st.session_state['name']
-            filename = save_conversation_to_firebase(
-                firebase_ref,
-                client_number,
-                memory.chat_memory.messages,
-                con_agent_version,
-                participant_name
-            )
-            if filename:
-                st.success(
-                    f"Conversation saved to Firebase for Client {client_number} by {participant_name}!")
+            if 'name' in st.session_state and st.session_state['name_correct']:
+                participant_name = st.session_state['name']
+                filename = save_conversation_to_firebase(
+                    firebase_ref,
+                    client_number,
+                    memory.chat_memory.messages,
+                    con_agent_version,
+                    participant_name
+                )
+                if filename:
+                    st.success(
+                        f"Conversation saved to Firebase for Client {client_number} by {participant_name}!")
+                else:
+                    st.error("Failed to save conversation.")
             else:
-                st.error("Failed to save conversation.")
+                st.error(
+                    "Please ensure you've entered a valid name on the home page before saving.")
         else:
             st.error(
                 "Unable to save conversation. No conversation has taken place.")
