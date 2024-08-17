@@ -45,9 +45,18 @@ def validation_page(client_number):
         st.session_state.history = history
         st.session_state.beh_dir = beh_dir
 
-        # Load the conversational agent system prompt
-        con_agent_system_prompt, actual_con_agent_version = load_prompt_and_get_version(
-            "con-agent", con_agent_version)
+        given_information = load_from_firebase(
+            firebase_ref, client_number, "given_information")
+       # Get the diagnosis from the profile
+        diag = get_diag_from_given_information(
+            given_information)
+
+        if diag == "BD":
+            con_agent_system_prompt, actual_con_agent_version = load_prompt_and_get_version(
+                "con-agent", con_agent_version, diag)
+        else:
+            con_agent_system_prompt, actual_con_agent_version = load_prompt_and_get_version(
+                "con-agent", con_agent_version)
 
         if con_agent_system_prompt:
             st.session_state.agent_and_memory = create_conversational_agent(

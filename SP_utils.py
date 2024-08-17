@@ -133,12 +133,26 @@ def extract_version(filename):
     return match.group(1) if match else None
 
 
-def load_prompt_and_get_version(module_name: str, version: float) -> Tuple[str, str]:
+def load_prompt_and_get_version(module_name: str, version: float, diagnosis: str = None) -> Tuple[str, str]:
     folder_path = f"data/prompts/{module_name}_system_prompt"
     file_list = get_file_list(folder_path)
     formatted_version = format_version(version)
+
+    # First, try to find a diagnosis-specific file
+    if diagnosis:
+        diagnosis_file = f"{module_name}_system_prompt_version{formatted_version}_{diagnosis}.txt"
+        if diagnosis_file in file_list:
+            file_path = os.path.join(folder_path, diagnosis_file)
+            prompt_content = load_prompt(file_path)
+            actual_version = extract_version(diagnosis_file)
+            return prompt_content, actual_version
+
+    # If no diagnosis-specific file found, fall back to the general file
     matching_files = [
-        f for f in file_list if f"{module_name}_system_prompt_version{formatted_version}" in f]
+        f for f in file_list if f"{module_name}_system_prompt_version{formatted_version}" in f
+        # Exclude diagnosis-specific files
+        and not f.endswith(f"_{diagnosis}.txt")
+    ]
 
     if matching_files:
         file_path = os.path.join(folder_path, matching_files[0])

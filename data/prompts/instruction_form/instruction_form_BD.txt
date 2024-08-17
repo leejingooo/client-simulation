@@ -8,5 +8,5 @@
 - Insight : Complete denial of illness
 - Reliability : 
 - Perception : 
-- Thought process : Flight of ideas, Circumstantiality
+- Thought process : Flight of ideas (+), Circumstantiality (+)
 - Thought content : Grandiosity
