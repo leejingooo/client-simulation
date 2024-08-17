@@ -30,6 +30,35 @@ instructions = """
 """
 
 
+def check_password():
+    """Returns `True` if the user had the correct password."""
+
+    def password_entered():
+        """Checks whether a password entered by the user is correct."""
+        if st.session_state["password"] == st.secrets["password"]:
+            st.session_state["password_correct"] = True
+            del st.session_state["password"]  # don't store password
+        else:
+            st.session_state["password_correct"] = False
+
+    if "password_correct" not in st.session_state:
+        # First run, show input for password.
+        st.text_input(
+            "Password", type="password", on_change=password_entered, key="password"
+        )
+        return False
+    elif not st.session_state["password_correct"]:
+        # Password incorrect, show input + error.
+        st.text_input(
+            "Password", type="password", on_change=password_entered, key="password"
+        )
+        st.error("😕 Password incorrect")
+        return False
+    else:
+        # Password correct.
+        return True
+
+
 def list_all_clients(firebase_ref):
     clients = firebase_ref.get()
     if clients:
@@ -212,6 +241,8 @@ def display_conversation(conversation):
 
 
 def main():
+    if not check_password():
+        st.stop()
     st.title("Client Data Viewer")
     st.write(instructions, unsafe_allow_html=True)
 

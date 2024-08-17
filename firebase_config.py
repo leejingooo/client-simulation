@@ -43,7 +43,7 @@ def initialize_firebase():
             firebase_admin.initialize_app(cred, {
                 'databaseURL': st.secrets["firebase_database_url"]
             })
-            st.success("Firebase app initialized successfully")
+            st.success("시스템 준비가 완료되었습니다.")
             return db.reference()
         except Exception as e:
             st.error(f"Failed to initialize Firebase: {str(e)}")

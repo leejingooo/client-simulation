@@ -6,8 +6,6 @@ st.set_page_config(
     page_icon="🔥",
 )
 
-# Playwright 설치 및 모든 브라우저 다운로드
-
 
 @st.cache_resource
 def setup_playwright():
@@ -22,49 +20,46 @@ def setup_playwright():
         return False
 
 
-def check_password():
-    """Returns `True` if the user had the correct password."""
+def check_participant():
+    """Returns `True` if the user's name is in the list of participants."""
 
-    def password_entered():
-        """Checks whether a password entered by the user is correct."""
-        if st.session_state["password"] == st.secrets["password"]:
-            st.session_state["password_correct"] = True
-            del st.session_state["password"]  # don't store password
+    def name_entered():
+        """Checks whether the entered name is in the list of participants."""
+        if st.session_state["name"] in st.secrets["participant"]:
+            st.session_state["name_correct"] = True
         else:
-            st.session_state["password_correct"] = False
+            st.session_state["name_correct"] = False
 
-    if "password_correct" not in st.session_state:
-        # First run, show input for password.
+    if "name_correct" not in st.session_state:
+        # First run, show input for name.
         st.text_input(
-            "Password", type="password", on_change=password_entered, key="password"
+            "이름을 입력하세요 (한글)", on_change=name_entered, key="name"
         )
         return False
-    elif not st.session_state["password_correct"]:
-        # Password incorrect, show input + error.
+    elif not st.session_state["name_correct"]:
+        # Name not in the list, show input + error.
         st.text_input(
-            "Password", type="password", on_change=password_entered, key="password"
+            "이름을 입력하세요 (한글)", on_change=name_entered, key="name"
         )
-        st.error("😕 Password incorrect")
+        st.error("😕 등록되지 않은 이름입니다.")
         return False
     else:
-        # Password correct.
+        # Name is in the list.
         return True
 
 
 def main():
-    if check_password():
-        st.success("You are logged in!")
-        st.title("Welcome to the Client-Simulation")
-        st.write("Please select a page from the sidebar to continue.")
+    if check_participant():
+        st.success(f"환영합니다, {st.session_state['name']}님!")
+        st.title("Client-Simulation에 오신 것을 환영합니다")
+        st.write("계속하려면 사이드바에서 페이지를 선택하세요.")
 
         # Playwright 설정 실행
-        with st.spinner("Setting up Playwright..."):
+        with st.spinner("Playwright 설정 중..."):
             if setup_playwright():
-                st.success(
-                    "Playwright setup completed successfully. All browsers installed.")
+                st.success("Playwright 설정이 성공적으로 완료되었습니다. 모든 브라우저가 설치되었습니다.")
             else:
-                st.warning(
-                    "Playwright setup failed. Some features may not work correctly.")
+                st.warning("Playwright 설정에 실패했습니다. 일부 기능이 제대로 작동하지 않을 수 있습니다.")
     else:
         st.stop()
 

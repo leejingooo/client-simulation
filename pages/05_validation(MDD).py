@@ -1,10 +1,10 @@
 import streamlit as st
-from Home import check_password
+from Home import check_participant
 from firebase_config import get_firebase_ref
 from SP_utils import *
 
 st.set_page_config(
-    page_title="Validation (MDD)",
+    page_title="Validation 1",
     page_icon="🔬",
 )
 
@@ -24,10 +24,10 @@ con_agent_version = 5.0
 
 
 def main():
-    if not check_password():
+    if not check_participant():
         st.stop()
 
-    st.title("Validation - Major Depressive Disorder (MDD)")
+    st.title("Validation")
 
     profile = load_from_firebase(
         firebase_ref, client_number, f"profile_version{profile_version:.1f}".replace(".", "_"))
@@ -52,14 +52,14 @@ def main():
                 client_number,
                 con_agent_system_prompt
             )
-            st.success(f"Client {client_number} data loaded successfully.")
+            st.success(f"Start a conversation.")
         else:
             st.error("Failed to load conversational agent system prompt.")
     else:
         st.error(
             "Failed to load client data. Please check if the data exists for the specified versions.")
 
-    st.header("Conversation with Simulated MDD Client")
+    st.header("Simulated Session")
 
     if 'agent_and_memory' in st.session_state and st.session_state.agent_and_memory:
         agent, memory = st.session_state.agent_and_memory
@@ -91,15 +91,17 @@ def main():
     if st.button("End/Save Conversation"):
         if 'agent_and_memory' in st.session_state and st.session_state.agent_and_memory is not None:
             _, memory = st.session_state.agent_and_memory
+            participant_name = st.session_state['name']
             filename = save_conversation_to_firebase(
                 firebase_ref,
                 client_number,
                 memory.chat_memory.messages,
-                con_agent_version
+                con_agent_version,
+                participant_name
             )
             if filename:
                 st.success(
-                    f"Conversation saved to Firebase for Client {client_number}!")
+                    f"Conversation saved to Firebase for Client {client_number} by {participant_name}!")
             else:
                 st.error("Failed to save conversation.")
         else:

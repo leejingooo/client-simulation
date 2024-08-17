@@ -356,7 +356,7 @@ def create_conversational_agent(profile_version, beh_dir_version, client_number,
     return agent, memory
 
 
-def save_conversation_to_firebase(firebase_ref, client_number, messages, con_agent_version):
+def save_conversation_to_firebase(firebase_ref, client_number, messages, con_agent_version, participant_name):
     conversation_data = []
     for i in range(0, len(messages), 2):
         human_message = messages[i].content if i < len(messages) else ""
@@ -367,11 +367,12 @@ def save_conversation_to_firebase(firebase_ref, client_number, messages, con_age
         })
 
     timestamp = int(time.time())
-    conversation_id = f"conversation_{con_agent_version}_{timestamp}"
+    conversation_id = f"conversation_{con_agent_version}_{participant_name}_{timestamp}"
 
     content = {
         'version': con_agent_version,
         'timestamp': timestamp,
+        'participant': participant_name,
         'data': conversation_data
     }
 
