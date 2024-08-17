@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from firebase_config import get_firebase_ref
 from playwright.sync_api import sync_playwright
+from Home import check_password
 import base64
 import os
 
@@ -28,35 +29,6 @@ instructions = """
     5. 새로운 Client number를 불러오고 싶다면 Reset Viewer를 먼저 누르고 진행해주세요.
 </div>
 """
-
-
-def check_password():
-    """Returns `True` if the user had the correct password."""
-
-    def password_entered():
-        """Checks whether a password entered by the user is correct."""
-        if st.session_state["password"] == st.secrets["password"]:
-            st.session_state["password_correct"] = True
-            del st.session_state["password"]  # don't store password
-        else:
-            st.session_state["password_correct"] = False
-
-    if "password_correct" not in st.session_state:
-        # First run, show input for password.
-        st.text_input(
-            "Password", type="password", on_change=password_entered, key="password"
-        )
-        return False
-    elif not st.session_state["password_correct"]:
-        # Password incorrect, show input + error.
-        st.text_input(
-            "Password", type="password", on_change=password_entered, key="password"
-        )
-        st.error("😕 Password incorrect")
-        return False
-    else:
-        # Password correct.
-        return True
 
 
 def list_all_clients(firebase_ref):
