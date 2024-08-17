@@ -54,6 +54,7 @@ def validation_page(client_number):
         if diag == "BD":
             con_agent_system_prompt, actual_con_agent_version = load_prompt_and_get_version(
                 "con-agent", con_agent_version, diag)
+            st.success("BD success")
         else:
             con_agent_system_prompt, actual_con_agent_version = load_prompt_and_get_version(
                 "con-agent", con_agent_version)
