@@ -8,24 +8,7 @@ st.set_page_config(
 )
 
 instructions = """
-    1. Setting 을 조정해주세요.
-
-    * 정식 실험용 Client number는 2001번부터 진행해주세요.
-    * 연습 테스트용 Client number는 1001번부터 진행해주세요.
-    * 이미 존재하는 Client number&Version로 Create new data -> Generate하면 이미 존재하는 데이터를 Load 해옵니다.
-
-    2. 원하는 Patient Information을 입력해주세요.
-
-    * 미리 세팅되어 있는 값은 40/Female/South Korea/MDD 입니다.
-    * 변경 가능합니다.
-
-    3. Generate 버튼을 눌러주세요.
-
-    4. 생성이 완료되면 대화를 시작하세요.
-
-    5. 대화가 끝나면 End/Save로 대화를 저장하세요.
-
-    6. 저장된 대화내역 / Profile / History / Beh-Direction은 Viewer 페이지에서 확인할 수 있습니다.
+    여기서 대화하지 말것
 """
 
 # Initialize Firebase
@@ -163,7 +146,7 @@ def main():
         gender = st.sidebar.selectbox("Gender", ["Female", "Male", "Other"])
         nationality = st.sidebar.text_input("Nationality", "South Korea")
         diagnosis = st.sidebar.text_input(
-            "Diagnosis", "Major depressive disorder")
+            "Diagnosis", "")
 
         given_information = f"""
         <Given information>
