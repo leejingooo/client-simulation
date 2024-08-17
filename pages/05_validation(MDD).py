@@ -22,12 +22,18 @@ profile_version = 5.0
 beh_dir_version = 5.0
 con_agent_version = 5.0
 
+instructions = """
+지시사항...
+"""
+
 
 def main():
     if not check_participant():
         st.stop()
 
     st.title("Validation")
+
+    st.write(instructions, unsafe_allow_html=True)
 
     profile = load_from_firebase(
         firebase_ref, client_number, f"profile_version{profile_version:.1f}".replace(".", "_"))

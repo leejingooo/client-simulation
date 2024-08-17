@@ -1,12 +1,12 @@
 - General appearance/Attitude/Behavior :
-- Mood :
-- Affect : 
+- Mood : Dysphoric
+- Affect : Anxious
 - Spontaneity : 
 - Verbal productivity : 
 - Tone of voice :
 - Social judgement : 
 - Insight : 
-- Reliability : 
-- Perception : 
+- Reliability : Yes
+- Perception : Normal
 - Thought process : 
 - Thought content : 

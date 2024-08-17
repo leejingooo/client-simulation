@@ -169,6 +169,8 @@ def get_diag_from_given_information(given_information):
             return "OCD"
         elif "Post-traumatic stress disorder" in diagnosis:
             return "PTSD"
+        elif "Specific phobia" in diagnosis:
+            return "SP"
     return None
 
 
