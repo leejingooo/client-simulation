@@ -21,30 +21,21 @@ def setup_playwright():
 
 
 def check_participant():
-    """Returns `True` if the user's name is in the list of participants."""
-
     def name_entered():
-        """Checks whether the entered name is in the list of participants."""
-        if st.session_state["name"] in st.secrets["participant"]:
+        if st.session_state["name_input"] in st.secrets["participant"]:
+            st.session_state["name"] = st.session_state["name_input"]
             st.session_state["name_correct"] = True
         else:
             st.session_state["name_correct"] = False
 
-    if "name" not in st.session_state or "name_correct" not in st.session_state:
-        # First run, show input for name.
+    if "name" not in st.session_state or not st.session_state.get("name_correct", False):
         st.text_input(
-            "이름을 입력하세요 (한글)", on_change=name_entered, key="name"
+            "이름을 입력하세요 (한글)", on_change=name_entered, key="name_input"
         )
-        return False
-    elif not st.session_state["name_correct"]:
-        # Name not in the list, show input + error.
-        st.text_input(
-            "이름을 입력하세요 (한글)", on_change=name_entered, key="name"
-        )
-        st.error("😕 등록되지 않은 이름입니다.")
+        if "name_correct" in st.session_state and not st.session_state["name_correct"]:
+            st.error("😕 등록되지 않은 이름입니다.")
         return False
     else:
-        # Name is in the list.
         return True
 
 
