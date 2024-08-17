@@ -328,29 +328,6 @@ def create_conversational_agent(profile_version, beh_dir_version, client_number,
     behavioral_instruction = load_from_firebase(
         firebase_ref, client_number, f"beh_dir_version{beh_dir_version}")
 
-    input_variables = [
-        "given_information",
-        "current_date",
-        "profile_json",
-        "history",
-        "behavioral_instruction"
-    ]
-
-    var_values = {
-        "given_information": given_information,
-        "current_date": FIXED_DATE,
-        "profile_json": json.dumps(profile_json, indent=2),
-        "history": history,
-        "behavioral_instruction": behavioral_instruction,
-    }
-
-    con_agent_system_prompt_template = PromptTemplate(
-        input_variables=input_variables,
-        template=system_prompt
-    )
-    con_agent_system_prompt = con_agent_system_prompt_template.format(
-        **var_values)
-
     chat_prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
         MessagesPlaceholder(variable_name="chat_history"),
