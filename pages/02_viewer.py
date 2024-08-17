@@ -270,9 +270,9 @@ def main():
         return
 
     profile_version = st.sidebar.number_input(
-        "Profile Version", min_value=1.0, value=4.0, step=0.1, format="%.1f")
+        "Profile Version", min_value=1.0, value=5.0, step=0.1, format="%.1f")
     beh_dir_version = st.sidebar.number_input(
-        "Behavioral Direction Version", min_value=1.0, value=4.0, step=0.1, format="%.1f")
+        "Behavioral Direction Version", min_value=1.0, value=5.0, step=0.1, format="%.1f")
 
     if st.sidebar.button("Load Client Data") or st.session_state.client_data is not None:
         if st.session_state.client_data is None:
@@ -299,7 +299,7 @@ def main():
                 if conversations:
                     conversation_keys = list(conversations.keys())
                     selected_key = st.selectbox(
-                        "Select conversation:", conversation_keys, format_func=lambda x: f"Conversation {x.split('_')[-1]}")
+                        "Select conversation:", conversation_keys, format_func=lambda x: f"Conversation {x.split('_')[-2]} {x.split('_')[-1]}")
                     conversation_data = conversations[selected_key]
                     display_conversation(conversation_data)
                 else:
