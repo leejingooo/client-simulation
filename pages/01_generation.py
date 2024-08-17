@@ -99,7 +99,7 @@ def main():
 
                 st.session_state.agent_and_memory = create_conversational_agent(
                     format_version(profile_version), format_version(
-                        beh_dir_version), st.session_state.client_number, con_agent_system_prompt, given_information
+                        beh_dir_version), st.session_state.client_number, con_agent_system_prompt
                 )
 
                 st.success(
@@ -152,6 +152,9 @@ def main():
                     f"Client {st.session_state.client_number} already exists. Please choose a different client number.")
             elif all([profile_system_prompt, history_system_prompt, con_agent_system_prompt, beh_dir_system_prompt]):
                 with st.spinner(""):
+                    save_to_firebase(
+                        firebase_ref, st.session_state.client_number, "given_information", given_information)
+
                     profile = profile_maker(format_version(
                         profile_version), given_information, st.session_state.client_number, profile_system_prompt)
                     if profile is not None:
@@ -172,7 +175,7 @@ def main():
                                         st.session_state.agent_and_memory = create_conversational_agent(
                                             format_version(profile_version), format_version(
                                                 beh_dir_version),
-                                            st.session_state.client_number, con_agent_system_prompt, given_information
+                                            st.session_state.client_number, con_agent_system_prompt
                                         )
                                     else:
                                         st.error(
