@@ -142,7 +142,7 @@ def main():
 
         st.sidebar.subheader("Patient Information")
         age = st.sidebar.number_input(
-            "Age", min_value=0, max_value=120, value=40)
+            "Age", min_value=0, max_value=120)
         gender = st.sidebar.selectbox("Gender", ["Female", "Male", "Other"])
         nationality = st.sidebar.text_input("Nationality", "South Korea")
         diagnosis = st.sidebar.text_input(
