@@ -89,7 +89,7 @@ def experiment_page(client_number):
             except StopIteration:
                 st.warning("The conversation has reached its maximum length.")
 
-            st.experimental_rerun()
+            st.rerun()
 
         # Display the conversation
         for speaker, message in st.session_state.conversation:
