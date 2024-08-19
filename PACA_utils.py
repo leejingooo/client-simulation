@@ -22,11 +22,16 @@ firebase_ref = get_firebase_ref()
 
 def load_paca_prompt(paca_version):
     with open(f"data/prompts/paca_system_prompt/paca_system_prompt_version{paca_version}.txt", "r") as f:
-        return f.read()
+        system_prompt = f.read()
+
+    with open(f"data/prompts/paca_system_prompt/given_form_version{paca_version}.json", "r") as f:
+        given_form = f.read()
+
+    return system_prompt, given_form
 
 
 def create_paca_agent(paca_version):
-    system_prompt = load_paca_prompt(paca_version)
+    system_prompt, given_form = load_paca_prompt(paca_version)
 
     chat_prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
@@ -42,7 +47,8 @@ def create_paca_agent(paca_version):
     def paca_agent(human_input):
         response = chain.invoke({
             "chat_history": memory.chat_memory.messages,
-            "human_input": human_input
+            "human_input": human_input,
+            "given_form": given_form
         })
         memory.chat_memory.add_user_message(human_input)
         memory.chat_memory.add_ai_message(response.content)
