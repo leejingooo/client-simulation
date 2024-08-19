@@ -3,6 +3,15 @@ from Home import check_participant
 from firebase_config import get_firebase_ref
 from SP_utils import *
 
+# PRESET
+profile_version = 5.0
+beh_dir_version = 5.0
+con_agent_version = 5.0
+
+instructions = """
+    지시사항...
+    """
+
 
 def validation_page(client_number):
     st.set_page_config(
@@ -16,15 +25,6 @@ def validation_page(client_number):
         st.error(
             "Firebase initialization failed. Please check your configuration and try again.")
         st.stop()
-
-    # PRESET
-    profile_version = 5.0
-    beh_dir_version = 5.0
-    con_agent_version = 5.0
-
-    instructions = """
-    지시사항...
-    """
 
     if not check_participant():
         st.stop()
