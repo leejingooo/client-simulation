@@ -3,7 +3,7 @@ Conduct the interview professionally and kindly.
 Conduct the interview in a way that allows you to fill out all the <Given form>.
 
 <Given form>
-{
+{{
     "Chief complaint": {
         "description": "blank (data_type:string, range_candidate_guide:Describe in the patient's words)"
     },
@@ -44,6 +44,6 @@ Conduct the interview in a way that allows you to fill out all the <Given form>.
         "self mutilating behavior risk": "blank (data_type:string, range_candidate_guide:high/moderate/low)",
         "homicide risk": "blank (data_type:string, range_candidate_guide:high/moderate/low)"
     }
-}
+}}
 </Given form>
 
