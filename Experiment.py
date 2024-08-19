@@ -71,40 +71,37 @@ def experiment_page(client_number):
 
         st.success("Both SP and PACA agents loaded successfully.")
 
-        # Initialize or display conversation
+        # Initialize conversation
         if 'conversation' not in st.session_state:
             st.session_state.conversation = []
-
-        for speaker, message in st.session_state.conversation:
-            with st.chat_message(speaker):
-                st.write(message)
 
         # Button to generate next turn
         if st.button("Generate Next Turn"):
             if not st.session_state.conversation:
-                initial_prompt = "Hello, I'm here to conduct a psychiatric assessment. How are you feeling today?"
-                paca_response, sp_response = simulate_conversation(
+                initial_prompt = "Hello, I'm Dr.Kim. What brings you here today?"
+                conversation_generator = simulate_conversation(
                     paca_agent, sp_agent, initial_prompt)
-                st.session_state.conversation.extend(
-                    [("PACA", paca_response), ("SP", sp_response)])
-            else:
-                last_message = st.session_state.conversation[-1][1]
-                if st.session_state.conversation[-1][0] == "SP":
-                    paca_response = paca_agent(last_message)
-                    st.session_state.conversation.append(
-                        ("PACA", paca_response))
-                else:
-                    sp_response = sp_agent(last_message)
-                    st.session_state.conversation.append(("SP", sp_response))
+                st.session_state.conversation_generator = conversation_generator
+
+            try:
+                next_turn = next(st.session_state.conversation_generator)
+                st.session_state.conversation.append(next_turn)
+            except StopIteration:
+                st.warning("The conversation has reached its maximum length.")
+
             st.experimental_rerun()
+
+        # Display the conversation
+        for speaker, message in st.session_state.conversation:
+            with st.chat_message(speaker):
+                st.write(message)
 
         # Save conversation button
         if st.button("Save Conversation"):
             conversation_id = save_ai_conversation_to_firebase(
                 firebase_ref,
                 client_number,
-                paca_memory,
-                sp_memory,
+                st.session_state.conversation,  # 변경된 부분
                 actual_paca_version,
                 actual_con_agent_version
             )

@@ -1,12 +1,13 @@
 import json
 from langchain.chat_models import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
+from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.schema import HumanMessage, AIMessage
 from langchain.callbacks import StreamingStdOutCallbackHandler
 from langchain.memory import ConversationBufferMemory
 import streamlit as st
 from SP_utils import create_conversational_agent, save_conversation_to_firebase
 from firebase_config import get_firebase_ref
+import time
 
 # Initialize the language models
 paca_llm = ChatOpenAI(
@@ -29,38 +30,44 @@ def create_paca_agent(paca_version):
 
     chat_prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
+        MessagesPlaceholder(variable_name="chat_history"),
         ("human", "{human_input}")
     ])
+
+    memory = ConversationBufferMemory(
+        return_messages=True, memory_key="chat_history")
 
     chain = chat_prompt | paca_llm
 
     def paca_agent(human_input):
-        response = chain.invoke({"human_input": human_input})
+        response = chain.invoke({
+            "chat_history": memory.chat_memory.messages,
+            "human_input": human_input
+        })
+        memory.chat_memory.add_user_message(human_input)
+        memory.chat_memory.add_ai_message(response.content)
         return response.content
 
-    return paca_agent
+    return paca_agent, memory, paca_version
 
 
-def simulate_conversation(paca_agent, sp_agent, sp_memory, initial_prompt, max_turns=100):
-    conversation = []
+def simulate_conversation(paca_agent, sp_agent, initial_prompt, max_turns=100):
     current_speaker = "PACA"
+    current_message = initial_prompt
 
     for _ in range(max_turns):
         if current_speaker == "PACA":
-            if not conversation:
-                response = paca_agent(initial_prompt)
-            else:
-                response = paca_agent(conversation[-1][1])
-            conversation.append(("PACA", response))
+            response = paca_agent(current_message)
+            yield ("PACA", response)
             current_speaker = "SP"
         else:
-            response = sp_agent(conversation[-1][1])
-            conversation.append(("SP", response))
+            response = sp_agent(current_message)
+            yield ("SP", response)
             current_speaker = "PACA"
 
-        yield conversation[-1]
+        current_message = response
 
-    return conversation
+    return
 
 
 def save_ai_conversation_to_firebase(firebase_ref, client_number, conversation, paca_version, sp_version):
@@ -69,13 +76,16 @@ def save_ai_conversation_to_firebase(firebase_ref, client_number, conversation, 
         for speaker, message in conversation
     ]
 
+    timestamp = int(time.time())
+
     content = {
         'paca_version': paca_version,
         'sp_version': sp_version,
+        'timestamp': timestamp,
         'data': conversation_data
     }
 
-    conversation_id = f"ai_conversation_paca{paca_version}_sp{sp_version}"
+    conversation_id = f"ai_conversation_paca{paca_version}_sp{sp_version}_{timestamp}"
     save_conversation_to_firebase(
         firebase_ref, client_number, conversation_id, content)
 
