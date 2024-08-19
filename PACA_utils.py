@@ -19,13 +19,13 @@ paca_llm = ChatOpenAI(
 firebase_ref = get_firebase_ref()
 
 
-def load_paca_prompt():
-    with open("data/prompts/paca_system_prompt/paca_system_prompt_version1.0.txt", "r") as f:
+def load_paca_prompt(paca_version):
+    with open(f"data/prompts/paca_system_prompt/paca_system_prompt_version{paca_version}.txt", "r") as f:
         return f.read()
 
 
-def create_paca_agent():
-    system_prompt = load_paca_prompt()
+def create_paca_agent(paca_version):
+    system_prompt = load_paca_prompt(paca_version)
 
     chat_prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
