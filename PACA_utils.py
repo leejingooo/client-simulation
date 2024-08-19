@@ -12,7 +12,7 @@ import time
 # Initialize the language models
 paca_llm = ChatOpenAI(
     temperature=0.7,
-    model="gpt-4",
+    model="gpt-4o",
     streaming=True,
     callbacks=[StreamingStdOutCallbackHandler()]
 )
