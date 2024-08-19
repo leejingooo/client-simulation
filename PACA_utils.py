@@ -44,25 +44,31 @@ def create_paca_agent(paca_version):
 
     chain = chat_prompt | paca_llm
 
-    def paca_agent(human_input):
+    def paca_agent(human_input, is_initial_prompt=False):
         response = chain.invoke({
             "chat_history": memory.chat_memory.messages,
             "human_input": human_input,
             "given_form": given_form
         })
-        memory.chat_memory.add_user_message(human_input)
+        if is_initial_prompt:
+            memory.chat_memory.add_ai_message(human_input)
+        else:
+            memory.chat_memory.add_user_message(human_input)
         memory.chat_memory.add_ai_message(response.content)
         return response.content
 
     return paca_agent, memory, paca_version
 
 
-def simulate_conversation(paca_agent, sp_agent, initial_prompt, max_turns=100):
-    # Start with SP (patient) responding to the initial prompt
+def simulate_conversation(paca_agent, sp_agent, max_turns=100):
+    initial_prompt = "안녕하세요, 저는 정신과 의사 김민수입니다. 이름이 어떻게 되시나요?"
+
     current_speaker = "SP"
     current_message = initial_prompt
 
-    yield ("PACA", initial_prompt)  # First, yield the doctor's initial prompt
+    # Add initial prompt to PACA's memory
+    paca_agent(initial_prompt, is_initial_prompt=True)
+    yield ("PACA", initial_prompt)
 
     for _ in range(max_turns):
         if current_speaker == "SP":

@@ -71,16 +71,18 @@ def experiment_page(client_number):
 
         st.success("Both SP and PACA agents loaded successfully.")
 
-        # Initialize conversation
+        # Initialize session state for conversation and generator
         if 'conversation' not in st.session_state:
             st.session_state.conversation = []
+        if 'conversation_generator' not in st.session_state:
+            st.session_state.conversation_generator = simulate_conversation(
+                paca_agent, sp_agent)
 
         # Button to generate next turn
         if st.button("Generate Next Turn"):
             if not st.session_state.conversation:
-                initial_prompt = "Hello, I'm Dr.Kim. What brings you here today?"
                 conversation_generator = simulate_conversation(
-                    paca_agent, sp_agent, initial_prompt)
+                    paca_agent, sp_agent)
                 st.session_state.conversation_generator = conversation_generator
 
             try:
