@@ -27,7 +27,7 @@ def create_construct_generator():
     1. Carefully review the content within the <Given transcript> tags.
     2. Examine the structured <Given form> which contains fields for patient information.
     3. Fill in the <Given form> using information extracted from the transcript, following the specific data types and guidelines for each field.
-    4. Use English for all entries in the form.
+    4. 
     
     - If specific information is not available in the transcript, enter "Not provided" for that field.
     - Ensure all entered information is accurate and directly supported by the transcript.
@@ -42,7 +42,7 @@ def create_construct_generator():
     {given_form}
     </Given form>
     
-    Present the completed form in a structured JSON format, maintaining the hierarchy and field names of the original form:
+    Present the completed form in a structured JSON format, maintaining the hierarchy and field names of the original form. Use English for all entries in the form:
     """
 
     prompt = PromptTemplate(
