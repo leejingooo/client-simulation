@@ -27,7 +27,7 @@ Here are the <Given information>, <Profile_JSON>, <History>, <Example>, <Candida
 - Affect : broad/restricted/blunt/flat/labile/anxious/tense/shallow/inadequate/inappropriate
 - Spontaneity : (+)/(-)
 - Verbal productivity : increased/moderate/decreased
-- Tone of voice : increased/moderate/decreased
+- Tone of voice : low-pitched/moderate-pitched/high-pitched
 - Social judgement : Normal/impaired
 - Insight : Complete denial of illness/Slight awareness of being sick and needing help, but denying it at the same time/Awareness of being sick but blaming it on others, external events/Intellectual insight/True emotional insight
 - Reliability : Yes/No

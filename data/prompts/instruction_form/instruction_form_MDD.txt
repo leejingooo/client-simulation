@@ -3,7 +3,7 @@
 - Affect : Restricted/Blunt
 - Spontaneity : 
 - Verbal productivity : Decreased
-- Tone of voice :Decreased
+- Tone of voice : low-pitched
 - Social judgement : 
 - Insight : Slight awareness of being sick and needing help, but denying it at the same time
 - Reliability : 
