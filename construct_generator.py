@@ -22,9 +22,17 @@ def format_transcript(transcript):
 def create_construct_generator():
 
     prompt_template = """
-    1. View the <Given transcript>
-    2. The <Given form> is for information about the patient, which is all blank.
-    3. Fill in the <Given form> based on the transcript.
+    Complete the given patient information form based on the provided transcript of a psychiatric assessment, adhering strictly to the structure and guidelines provided in the form.
+    
+    1. Carefully review the content within the <Given transcript> tags.
+    2. Examine the structured <Given form> which contains fields for patient information.
+    3. Fill in the <Given form> using information extracted from the transcript, following the specific data types and guidelines for each field.
+    4. Use English for all entries in the form.
+    
+    - If specific information is not available in the transcript, enter "Not provided" for that field.
+    - Ensure all entered information is accurate and directly supported by the transcript.
+    - If there are inconsistencies or ambiguities in the transcript, note them in [square brackets] after the relevant field.
+    - Adhere to the data types and range/candidate/guides specified for each field.
 
     <Given transcript>
     {given_transcript}
@@ -33,6 +41,8 @@ def create_construct_generator():
     <Given form>
     {given_form}
     </Given form>
+    
+    Present the completed form in a structured JSON format, maintaining the hierarchy and field names of the original form:
     """
 
     prompt = PromptTemplate(

@@ -93,10 +93,14 @@ def construct_generation_page():
 
                 # Display input prompt
                 st.subheader("Input Prompt")
-                st.text_area("", generator.prompt.format(
-                    given_transcript=json.dumps(transcript, indent=2),
-                    given_form=json.dumps(form, indent=2)
-                ), height=300)
+                formatted_transcript = json.dumps(
+                    transcript, ensure_ascii=False, indent=2)
+                formatted_form = json.dumps(form, ensure_ascii=False, indent=2)
+                input_prompt = generator.prompt.format(
+                    given_transcript=formatted_transcript,
+                    given_form=formatted_form
+                )
+                st.text_area("", input_prompt, height=300)
 
                 # Display output
                 st.subheader("Generated Construct")
