@@ -5,7 +5,7 @@ from langchain.schema import HumanMessage, AIMessage
 from langchain.callbacks import StreamingStdOutCallbackHandler
 from langchain.memory import ConversationBufferMemory
 import streamlit as st
-from SP_utils import create_conversational_agent, save_conversation_to_firebase
+from SP_utils import create_conversational_agent, save_to_firebase
 from firebase_config import get_firebase_ref
 import time
 
@@ -92,7 +92,7 @@ def save_ai_conversation_to_firebase(firebase_ref, client_number, conversation, 
     }
 
     conversation_id = f"ai_conversation_paca{paca_version}_sp{sp_version}_{timestamp}"
-    save_conversation_to_firebase(
+    save_to_firebase(
         firebase_ref, client_number, conversation_id, content)
 
     return conversation_id
