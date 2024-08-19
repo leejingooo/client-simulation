@@ -58,18 +58,21 @@ def create_paca_agent(paca_version):
 
 
 def simulate_conversation(paca_agent, sp_agent, initial_prompt, max_turns=100):
-    current_speaker = "PACA"
+    # Start with SP (patient) responding to the initial prompt
+    current_speaker = "SP"
     current_message = initial_prompt
 
+    yield ("PACA", initial_prompt)  # First, yield the doctor's initial prompt
+
     for _ in range(max_turns):
-        if current_speaker == "PACA":
-            response = paca_agent(current_message)
-            yield ("PACA", response)
-            current_speaker = "SP"
-        else:
+        if current_speaker == "SP":
             response = sp_agent(current_message)
             yield ("SP", response)
             current_speaker = "PACA"
+        else:
+            response = paca_agent(current_message)
+            yield ("PACA", response)
+            current_speaker = "SP"
 
         current_message = response
 
