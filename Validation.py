@@ -3,17 +3,13 @@ from Home import check_participant
 from firebase_config import get_firebase_ref
 from SP_utils import *
 
-# PRESET
-profile_version = 5.0
-beh_dir_version = 5.0
-con_agent_version = 5.0
 
 instructions = """
     지시사항...
     """
 
 
-def validation_page(client_number):
+def validation_page(client_number, profile_version=5.0, beh_dir_version=5.0, con_agent_version=5.0):
     st.set_page_config(
         page_title=f"Validation - Client {client_number}",
         page_icon="🔬",
