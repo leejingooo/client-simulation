@@ -3,13 +3,9 @@ from typing import Dict, Any, List, Tuple
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
+from SP_utils import load_from_firebase, get_firebase_ref
 
 llm = ChatOpenAI(temperature=0, model="gpt-4")
-
-
-def load_construct(construct_path: str) -> Dict[str, Any]:
-    with open(construct_path, 'r') as file:
-        return json.load(file)
 
 
 def compare_multiple_choice(sp_construct: Dict[str, Any], paca_construct: Dict[str, Any]) -> Tuple[int, int]:
@@ -86,9 +82,16 @@ def calculate_overall_score(scores: Dict[str, float]) -> float:
     return sum(scores.values()) / len(scores) if scores else 0
 
 
-def evaluate_paca_performance(sp_construct_path: str, paca_construct_path: str) -> Tuple[Dict[str, float], float]:
-    sp_construct = load_construct(sp_construct_path)
-    paca_construct = load_construct(paca_construct_path)
+def evaluate_paca_performance(client_number: str, sp_construct_version: str, paca_construct_version: str) -> Tuple[Dict[str, float], float]:
+    firebase_ref = get_firebase_ref()
+
+    sp_construct = load_from_firebase(
+        firebase_ref, client_number, f"profile_version{sp_construct_version}")
+    paca_construct = load_from_firebase(
+        firebase_ref, client_number, f"construct_version{paca_construct_version}")
+
+    if sp_construct is None or paca_construct is None:
+        raise ValueError("Failed to load constructs from Firebase")
 
     scores = evaluate_constructs(sp_construct, paca_construct)
     overall_score = calculate_overall_score(scores)

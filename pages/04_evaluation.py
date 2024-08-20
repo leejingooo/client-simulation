@@ -1,17 +1,7 @@
 import streamlit as st
 import json
 from evaluator import evaluate_paca_performance
-from firebase_config import get_firebase_ref
-
-
-def load_from_firebase(firebase_ref, client_number, data_type):
-    if firebase_ref is not None:
-        try:
-            sanitized_path = f"clients/{client_number}/{data_type}"
-            return firebase_ref.child(sanitized_path).get()
-        except Exception as e:
-            st.error(f"Error loading data from Firebase: {str(e)}")
-    return None
+from SP_utils import load_from_firebase, get_firebase_ref, check_client_exists
 
 
 def evaluation_page():
@@ -29,40 +19,47 @@ def evaluation_page():
     client_number = st.sidebar.text_input("Enter Client Number")
 
     if client_number:
-        # Load SP construct
-        sp_construct = load_from_firebase(
-            firebase_ref, client_number, "profile_version5.0")
-        if sp_construct is None:
-            st.error("Failed to load SP construct from Firebase.")
+        if not check_client_exists(firebase_ref, client_number):
+            st.error(f"Client {client_number} does not exist.")
             st.stop()
 
-        # Load PACA construct
-        paca_construct = load_from_firebase(
-            firebase_ref, client_number, "construct_version1.0")
-        if paca_construct is None:
-            st.error("Failed to load PACA construct from Firebase.")
-            st.stop()
+        # Version selection
+        sp_construct_version = st.sidebar.text_input(
+            "Enter SP Construct Version (e.g., 5.0)")
+        paca_construct_version = st.sidebar.text_input(
+            "Enter PACA Construct Version (e.g., 1.0)")
 
-        # Evaluate PACA performance
-        scores, overall_score = evaluate_paca_performance(
-            sp_construct, paca_construct)
+        if sp_construct_version and paca_construct_version:
+            try:
+                # Evaluate PACA performance
+                scores, overall_score = evaluate_paca_performance(
+                    client_number, sp_construct_version, paca_construct_version)
 
-        # Display results
-        st.header("Evaluation Results")
-        st.subheader(f"Overall Score: {overall_score:.2f}")
+                # Display results
+                st.header("Evaluation Results")
+                st.subheader(f"Overall Score: {overall_score:.2f}")
 
-        st.subheader("Detailed Scores")
-        for key, score in scores.items():
-            st.write(f"{key}: {score:.2f}")
+                st.subheader("Detailed Scores")
+                for key, score in scores.items():
+                    st.write(f"{key}: {score:.2f}")
 
-        # Display constructs
-        col1, col2 = st.columns(2)
-        with col1:
-            st.subheader("SP Construct")
-            st.json(sp_construct)
-        with col2:
-            st.subheader("PACA Construct")
-            st.json(paca_construct)
+                # Display constructs
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.subheader("SP Construct")
+                    sp_construct = load_from_firebase(
+                        firebase_ref, client_number, f"profile_version{sp_construct_version}")
+                    st.json(sp_construct)
+                with col2:
+                    st.subheader("PACA Construct")
+                    paca_construct = load_from_firebase(
+                        firebase_ref, client_number, f"construct_version{paca_construct_version}")
+                    st.json(paca_construct)
+
+            except ValueError as e:
+                st.error(str(e))
+            except Exception as e:
+                st.error(f"An error occurred during evaluation: {str(e)}")
 
 
 if __name__ == "__main__":
