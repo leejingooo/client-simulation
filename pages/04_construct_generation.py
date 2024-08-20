@@ -2,6 +2,7 @@ import streamlit as st
 import json
 from construct_generator import load_form, create_construct_generator, generate_construct
 from firebase_config import get_firebase_ref
+from SP_utils import save_to_firebase
 
 
 def list_all_clients(firebase_ref):
@@ -56,6 +57,10 @@ def construct_generation_page():
             "No clients found in the database. Please create a client using the simulation page first.")
         return
 
+    # Input for construct version
+    construct_version = st.sidebar.text_input(
+        "Enter Construct Version (e.g., 1.0)", "1.0")
+
     if st.sidebar.button("Load AI-AI Conversations") or st.session_state.ai_ai_conversations is not None:
         if st.session_state.ai_ai_conversations is None:
             st.session_state.ai_ai_conversations = load_ai_ai_conversations(
@@ -105,6 +110,18 @@ def construct_generation_page():
                 # Display output
                 st.subheader("Generated Construct")
                 st.text_area("", result, height=300)
+
+                # Parse the result JSON
+                try:
+                    parsed_result = json.loads(result)
+                    # Save the construct to Firebase
+                    save_to_firebase(
+                        firebase_ref, client_number, f"construct_version{construct_version}", parsed_result)
+                    st.success(
+                        f"Construct version {construct_version} saved to Firebase for client {client_number}")
+                except json.JSONDecodeError:
+                    st.error(
+                        "Failed to parse the generated construct as JSON. The construct was not saved to Firebase.")
         else:
             st.warning(
                 f"No AI-AI conversation data found for Client {client_number}")
