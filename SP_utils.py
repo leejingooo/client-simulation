@@ -82,7 +82,7 @@ def load_from_firebase(firebase_ref, client_number, data_type):
 
 def check_client_exists(firebase_ref, client_number):
     try:
-        client_path = f"clients/{client_number}"
+        client_path = f"clients_{client_number}_given_information"
         client_data = firebase_ref.child(client_path).get()
         return client_data is not None
     except Exception as e:
