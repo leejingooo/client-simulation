@@ -86,9 +86,9 @@ def evaluate_paca_performance(client_number: str, sp_construct_version: str, pac
     firebase_ref = get_firebase_ref()
 
     sp_construct = load_from_firebase(
-        firebase_ref, client_number, f"profile_version{sp_construct_version}")
+        firebase_ref, client_number, f"sp_construct_version{sp_construct_version}")
     paca_construct = load_from_firebase(
-        firebase_ref, client_number, f"construct_version{paca_construct_version}")
+        firebase_ref, client_number, f"paca_construct_version{paca_construct_version}")
 
     if sp_construct is None or paca_construct is None:
         raise ValueError("Failed to load constructs from Firebase")

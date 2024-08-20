@@ -55,10 +55,10 @@
         "current family structure": "blank (data_type:string, range_candidate_guide:null)"
     },
     "Impulsivity": {
-        "suicidal ideation": "moderate",
-        "suicidal plan": "blank (data_type:boolean, range_candidate_guide:null)",
-        "suicidal attempt": "blank (data_type:boolean, range_candidate_guide:null)",
-        "self mutilating behavior risk": "moderate",
+        "suicidal ideation": "blank (data_type:string, range_candidate_guide:high/moderate/low)",
+        "suicidal plan": "blank (data_type:string, range_candidate_guide:presence/absence)",
+        "suicidal attempt": "blank (data_type:string, range_candidate_guide:presence/absence)",
+        "self mutilating behavior risk": "blank (data_type:string, range_candidate_guide:high/moderate/low)",
         "homicide risk": "blank (data_type:string, range_candidate_guide:high/moderate/low)"
     }
 }

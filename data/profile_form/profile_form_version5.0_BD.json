@@ -56,8 +56,8 @@
     },
     "Impulsivity": {
         "suicidal ideation": "low",
-        "suicidal plan": "low",
-        "suicidal attempt": "low",
+        "suicidal plan": "absence",
+        "suicidal attempt": "absence",
         "self mutilating behavior risk": "low",
         "homicide risk": "high"
     }

@@ -48,12 +48,12 @@ def evaluation_page():
                 with col1:
                     st.subheader("SP Construct")
                     sp_construct = load_from_firebase(
-                        firebase_ref, client_number, f"profile_version{sp_construct_version}")
+                        firebase_ref, client_number, f"sp_construct_version{sp_construct_version}")
                     st.json(sp_construct)
                 with col2:
                     st.subheader("PACA Construct")
                     paca_construct = load_from_firebase(
-                        firebase_ref, client_number, f"construct_version{paca_construct_version}")
+                        firebase_ref, client_number, f"paca_construct_version{paca_construct_version}")
                     st.json(paca_construct)
 
             except ValueError as e:

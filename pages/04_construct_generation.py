@@ -5,6 +5,10 @@ from firebase_config import get_firebase_ref
 from SP_utils import save_to_firebase
 
 
+# PRESET
+given_form_version = 2.0
+
+
 def list_all_clients(firebase_ref):
     clients = firebase_ref.get()
     if clients:
@@ -58,8 +62,7 @@ def construct_generation_page():
         return
 
     # Input for construct version
-    construct_version = st.sidebar.text_input(
-        "Enter Construct Version (e.g., 1.0)", "1.0")
+    construct_version = given_form_version
 
     if st.sidebar.button("Load AI-AI Conversations") or st.session_state.ai_ai_conversations is not None:
         if st.session_state.ai_ai_conversations is None:
@@ -85,7 +88,7 @@ def construct_generation_page():
             ]
 
             # Load the form
-            form_path = "data/prompts/paca_system_prompt/given_form_version1.0.json"
+            form_path = f"data/prompts/paca_system_prompt/given_form_version{given_form_version}.json"
             form = load_form(form_path)
 
             # Create the construct generator
@@ -116,7 +119,7 @@ def construct_generation_page():
                     parsed_result = json.loads(result)
                     # Save the construct to Firebase
                     save_to_firebase(
-                        firebase_ref, client_number, f"construct_version{construct_version}", parsed_result)
+                        firebase_ref, client_number, f"paca_construct_version{construct_version}", parsed_result)
                     st.success(
                         f"Construct version {construct_version} saved to Firebase for client {client_number}")
                 except json.JSONDecodeError:
