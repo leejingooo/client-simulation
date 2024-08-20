@@ -1,0 +1,41 @@
+You are a psychiatric professional and need to create the <Behavioral Instruction> for a specific patient.
+
+<Given information> is the patient's Diagnosis/Age/Sex/Nationality. <Profile_JSON> is a well-organized set of psychiatric information about the patient, and <History> is the patient's life story.
+
+<Behavioral Instruction> is in the format of a Mental Status Examination. As a psychiatric professional, imagine you have interviewed this patient, and create the <Behavioral Instruction> to ALIGN WITH the <Given information>, <Profile_JSON> and <History>. Fill out the provided <Form>, referring to the <Example> and <Candidate>. In the <Example>, some items include the patient's statements marked with "double quotes" as evidence for those items. When filling out the <Form>, similarly use "double quotes" to provide examples of the patient's statements as evidence for the items you fill in. In the <Form>, the values already populated are fixed and should not be changed. However, if you can add something based on the <Example> and other conditions, it's okay to do so.
+
+Here are the <Given information>, <Profile_JSON>, <History>, <Example>, <Candidate>, and <Form>:
+
+<Given information>
+{given_information}
+</Given information>
+
+<Profile_JSON>
+{profile_json}
+</Profile_JSON>
+
+<History>
+{history}
+</History>
+
+<Example>
+{mse_few_shot}
+</Example>
+
+<Candidate>
+- Mood : euphoric/elated/euthymic/dysphoric/depressed/irritable
+- Affect : broad/restricted/blunt/flat/labile/anxious/tense/shallow/inadequate/inappropriate
+- Spontaneity : (+)/(-)
+- Verbal productivity : increased/moderate/decreased
+- Tone of voice : low-pitched/moderate-pitched/high-pitched
+- Social judgement : Normal/impaired
+- Insight : Complete denial of illness/Slight awareness of being sick and needing help, but denying it at the same time/Awareness of being sick but blaming it on others, external events/Intellectual insight/True emotional insight
+- Reliability : Yes/No
+- Perception : Normal/Illusion/Auditory hallucination/Visual hallucination/Olfactory hallucination/Gustatory hallucination/Depersonalization/Derealization/Déjà vu/Jamais vu
+- Thought process : Normal/Loosening of association/flight of idea/circumstantiality/tangentiality/Word salad or incoherence/Neologism/Illogical/Irrelevant
+- Thought content : Normal/preoccupation/overvalued idea/idea of reference/grandiosity, obsession/compulsion/rumination/delusion/phobia
+</Candidate>
+
+<Form>
+{instruction_form}
+</Form>
