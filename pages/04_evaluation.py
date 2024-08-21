@@ -25,9 +25,9 @@ def evaluation_page():
 
         # Version selection
         sp_construct_version = st.sidebar.text_input(
-            "Enter SP Construct Version (e.g., 5.0)")
+            "Enter SP Construct Version (e.g., 2.0)")
         paca_construct_version = st.sidebar.text_input(
-            "Enter PACA Construct Version (e.g., 1.0)")
+            "Enter PACA Construct Version (e.g., 2.0)")
 
         if sp_construct_version and paca_construct_version:
             try:

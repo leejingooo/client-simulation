@@ -139,6 +139,8 @@ def construct_generation_page():
         save_to_firebase(get_firebase_ref(), client_number,
                          f"sp_construct_version{given_form_version}", sp_construct)
 
+        st.success("SP-Construct generated/saved successfully!")
+
     # Add a button to clear the session state and reset the viewer
     if st.sidebar.button("Reset Viewer"):
         st.session_state.ai_ai_conversations = None
