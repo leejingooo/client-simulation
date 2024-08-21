@@ -93,8 +93,10 @@ def evaluate_constructs(sp_construct: Dict[str, Any], paca_construct: Dict[str, 
 
             if isinstance(form_value, dict):
                 if 'guide' in form_value or 'candidate' in form_value:
-                    sp_value = sp_dict.get(key, '')
-                    paca_value = paca_dict.get(key, '')
+                    sp_value = sp_dict.get(key, '') if isinstance(
+                        sp_dict, dict) else sp_dict
+                    paca_value = paca_dict.get(key, '') if isinstance(
+                        paca_dict, dict) else paca_dict
                     score, method = evaluate_field(
                         sp_value, paca_value, form_value)
                     scores[full_key] = score
@@ -106,8 +108,10 @@ def evaluate_constructs(sp_construct: Dict[str, Any], paca_construct: Dict[str, 
                         key, {}), form_value, full_key)
             else:
                 st.write(f"Form value for {full_key}: {form_value}")
-                sp_value = sp_dict.get(key, '')
-                paca_value = paca_dict.get(key, '')
+                sp_value = sp_dict.get(key, '') if isinstance(
+                    sp_dict, dict) else sp_dict
+                paca_value = paca_dict.get(key, '') if isinstance(
+                    paca_dict, dict) else paca_dict
                 score, method = evaluate_field(
                     sp_value, paca_value, {'guide': form_value})
                 scores[full_key] = score
@@ -128,9 +132,19 @@ def create_evaluation_table(sp_construct: Dict[str, Any], paca_construct: Dict[s
     for key in scores.keys():
         sp_value = sp_construct
         paca_value = paca_construct
-        for k in key.split('.'):
-            sp_value = sp_value.get(k, '')
-            paca_value = paca_value.get(k, '')
+        key_parts = key.split('.')
+        for i, k in enumerate(key_parts):
+            if isinstance(sp_value, dict):
+                sp_value = sp_value.get(k, '')
+            elif i < len(key_parts) - 1:
+                sp_value = ''
+                break
+
+            if isinstance(paca_value, dict):
+                paca_value = paca_value.get(k, '')
+            elif i < len(key_parts) - 1:
+                paca_value = ''
+                break
 
         data.append({
             'Field': key,
