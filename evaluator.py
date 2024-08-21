@@ -21,7 +21,7 @@ def compare_multiple_choice(sp_value: str, paca_value: str, candidates: str) -> 
     if not candidates:
         return 0.0
     valid_options = [option.strip() for option in candidates.split('/')]
-    if sp_value in valid_options and paca_value == sp_value:
+    if sp_value in valid_options and paca_value.lower() == sp_value.lower():
         return 1.0
     return 0.0
 
@@ -35,7 +35,7 @@ def g_eval(sp_text: str, paca_text: str) -> float:
     Generated text: {generated_text}
     
     Please rate the similarity on a scale from 0 to 1, where 0 means completely different and 1 means identical in meaning and sentiment.
-    Provide your rating and a brief explanation.
+    Provide your rating as a float between 0 and 1, and a brief explanation.
     
     Rating:
     Explanation:
@@ -50,18 +50,26 @@ def g_eval(sp_text: str, paca_text: str) -> float:
 
     result = chain.run(original_text=sp_text, generated_text=paca_text)
 
-    rating_line = [line for line in result.split(
-        '\n') if line.startswith('Rating:')][0]
-    rating = float(rating_line.split(':')[1].strip())
-
-    return rating
+    try:
+        rating_line = [line for line in result.split(
+            '\n') if line.startswith('Rating:')][0]
+        rating = float(rating_line.split(':')[1].strip())
+        return max(0, min(1, rating))  # Ensure the rating is between 0 and 1
+    except (IndexError, ValueError):
+        print(f"Error parsing G-eval result: {result}")
+        return 0.0
 
 
 def evaluate_field(sp_value: Any, paca_value: Any, field_info: Dict[str, Any]) -> float:
     if is_multiple_choice(field_info):
-        return compare_multiple_choice(sp_value, paca_value, field_info.get('candidate', ''))
+        return compare_multiple_choice(str(sp_value), str(paca_value), field_info.get('candidate', ''))
     else:
-        return g_eval(str(sp_value), str(paca_value))
+        if sp_value == "blank (data_type:string, guide:null)" and paca_value == "Not provided":
+            return 1.0
+        elif sp_value == "blank (data_type:string, guide:null)" or paca_value == "Not provided":
+            return 0.0
+        else:
+            return g_eval(str(sp_value), str(paca_value))
 
 
 def evaluate_constructs(sp_construct: Dict[str, Any], paca_construct: Dict[str, Any], given_form: Dict[str, Any]) -> Dict[str, float]:
@@ -75,8 +83,10 @@ def evaluate_constructs(sp_construct: Dict[str, Any], paca_construct: Dict[str, 
                 if 'guide' in form_value or 'candidate' in form_value:
                     sp_value = sp_dict.get(key, '')
                     paca_value = paca_dict.get(key, '')
-                    scores[full_key] = evaluate_field(
-                        sp_value, paca_value, form_value)
+                    score = evaluate_field(sp_value, paca_value, form_value)
+                    scores[full_key] = score
+                    print(
+                        f"Evaluating {full_key}: SP: {sp_value}, PACA: {paca_value}, Score: {score}")
                 else:
                     recursive_evaluate(sp_dict.get(key, {}), paca_dict.get(
                         key, {}), form_value, full_key)

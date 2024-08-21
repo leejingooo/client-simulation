@@ -3,7 +3,7 @@
 - Affect : Restricted
 - Spontaneity : (+)
 - Verbal productivity : moderate
-- Tone of voice : moderate
+- Tone of voice : moderate-pitched
 - Social judgement : Normal
 - Insight : Awareness of being sick but blaming it on others, on external factors, or on organic factors "After that incident, both I and my family have fallen apart. I feel so depressed and sad."
 - Reliability : Yes
