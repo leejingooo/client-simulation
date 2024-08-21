@@ -2,6 +2,8 @@ import json
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
+from typing import Dict, Any
+from SP_utils import *
 
 llm = ChatOpenAI(temperature=0, model="gpt-4")
 
@@ -59,3 +61,45 @@ def generate_construct(generator, transcript, form):
     result = generator.run(given_transcript=formatted_transcript,
                            given_form=json.dumps(form, indent=2))
     return result
+
+
+def create_sp_construct(client_number: str, profile_version: str, instruction_version: str, given_form_path: str) -> Dict[str, Any]:
+    firebase_ref = get_firebase_ref()
+
+    # Load profile and instruction from Firebase
+    profile = load_from_firebase(
+        firebase_ref, client_number, f"profile_version{profile_version}")
+    instruction = load_from_firebase(
+        firebase_ref, client_number, f"beh_dir_version{instruction_version}")
+
+    if not profile or not instruction:
+        raise ValueError("Failed to load profile or instruction from Firebase")
+
+    # Load the given form
+    with open(given_form_path, 'r') as f:
+        given_form = json.load(f)
+
+    # Create the SP construct
+    sp_construct = {}
+
+    for key, value in given_form.items():
+        if key in profile:
+            sp_construct[key] = profile[key]
+        elif key == "Mental Status Examination":
+            sp_construct[key] = extract_mse_from_instruction(instruction)
+        else:
+            sp_construct[key] = value
+
+    return sp_construct
+
+
+def extract_mse_from_instruction(instruction: str) -> Dict[str, str]:
+    mse = {}
+    mse_section = instruction.split("<Form>")[1].split("</Form>")[0].strip()
+
+    for line in mse_section.split("\n"):
+        if ":" in line:
+            key, value = line.split(":", 1)
+            mse[key.strip()] = value.strip()
+
+    return mse

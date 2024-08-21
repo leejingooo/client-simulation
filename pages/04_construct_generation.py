@@ -1,12 +1,14 @@
 import streamlit as st
 import json
-from construct_generator import load_form, create_construct_generator, generate_construct
+from construct_generator import *
 from firebase_config import get_firebase_ref
 from SP_utils import save_to_firebase
 
 
 # PRESET
 given_form_version = 2.0
+profile_version = "5.0"
+instruction_version = "5.0"
 
 
 def list_all_clients(firebase_ref):
@@ -88,8 +90,8 @@ def construct_generation_page():
             ]
 
             # Load the form
-            form_path = f"data/prompts/paca_system_prompt/given_form_version{given_form_version}.json"
-            form = load_form(form_path)
+            given_form_path = f"data/prompts/paca_system_prompt/given_form_version{given_form_version}.json"
+            form = load_form(given_form_path)
 
             # Create the construct generator
             generator = create_construct_generator()
@@ -129,10 +131,18 @@ def construct_generation_page():
             st.warning(
                 f"No AI-AI conversation data found for Client {client_number}")
 
+    if st.sidebar.button("Create SP-Construct"):
+        sp_construct = create_sp_construct(
+            client_number, profile_version, instruction_version, given_form_path)
+
+        # Save the SP construct to Firebase
+        save_to_firebase(get_firebase_ref(), client_number,
+                         f"sp_construct_version{given_form_version}", sp_construct)
+
     # Add a button to clear the session state and reset the viewer
     if st.sidebar.button("Reset Viewer"):
         st.session_state.ai_ai_conversations = None
-        st.experimental_rerun()
+        st.rerun()
 
 
 if __name__ == "__main__":
