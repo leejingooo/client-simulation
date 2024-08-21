@@ -8,22 +8,22 @@ from SP_utils import load_from_firebase, get_firebase_ref
 llm = ChatOpenAI(temperature=0, model="gpt-4")
 
 
-def compare_multiple_choice(sp_construct: Dict[str, Any], paca_construct: Dict[str, Any]) -> Tuple[int, int]:
-    correct = 0
-    total = 0
+def load_given_form(form_path: str) -> Dict[str, Any]:
+    with open(form_path, 'r') as f:
+        return json.load(f)
 
-    for key, sp_value in sp_construct.items():
-        if isinstance(sp_value, dict):
-            sub_correct, sub_total = compare_multiple_choice(
-                sp_value, paca_construct.get(key, {}))
-            correct += sub_correct
-            total += sub_total
-        elif isinstance(sp_value, str) and '/' in sp_value:
-            total += 1
-            if key in paca_construct and paca_construct[key] in sp_value.split('/'):
-                correct += 1
 
-    return correct, total
+def is_multiple_choice(field: Dict[str, Any]) -> bool:
+    return 'candidate' in field
+
+
+def compare_multiple_choice(sp_value: str, paca_value: str, candidates: str) -> float:
+    if not candidates:
+        return 0.0
+    valid_options = [option.strip() for option in candidates.split('/')]
+    if sp_value in valid_options and paca_value == sp_value:
+        return 1.0
+    return 0.0
 
 
 def g_eval(sp_text: str, paca_text: str) -> float:
@@ -57,24 +57,31 @@ def g_eval(sp_text: str, paca_text: str) -> float:
     return rating
 
 
-def evaluate_constructs(sp_construct: Dict[str, Any], paca_construct: Dict[str, Any]) -> Dict[str, float]:
+def evaluate_field(sp_value: Any, paca_value: Any, field_info: Dict[str, Any]) -> float:
+    if is_multiple_choice(field_info):
+        return compare_multiple_choice(sp_value, paca_value, field_info.get('candidate', ''))
+    else:
+        return g_eval(str(sp_value), str(paca_value))
+
+
+def evaluate_constructs(sp_construct: Dict[str, Any], paca_construct: Dict[str, Any], given_form: Dict[str, Any]) -> Dict[str, float]:
     scores = {}
 
-    for key, sp_value in sp_construct.items():
-        if isinstance(sp_value, dict):
-            sub_scores = evaluate_constructs(
-                sp_value, paca_construct.get(key, {}))
-            for sub_key, sub_score in sub_scores.items():
-                scores[f"{key}.{sub_key}"] = sub_score
-        elif isinstance(sp_value, str):
-            if '/' in sp_value:  # Multiple choice
-                correct, total = compare_multiple_choice(
-                    {key: sp_value}, {key: paca_construct.get(key, '')})
-                scores[key] = correct / total if total > 0 else 0
-            else:  # Narrative
-                paca_value = paca_construct.get(key, '')
-                scores[key] = g_eval(sp_value, paca_value)
+    def recursive_evaluate(sp_dict, paca_dict, form_dict, prefix=''):
+        for key, form_value in form_dict.items():
+            full_key = f"{prefix}.{key}" if prefix else key
 
+            if isinstance(form_value, dict):
+                if 'guide' in form_value or 'candidate' in form_value:
+                    sp_value = sp_dict.get(key, '')
+                    paca_value = paca_dict.get(key, '')
+                    scores[full_key] = evaluate_field(
+                        sp_value, paca_value, form_value)
+                else:
+                    recursive_evaluate(sp_dict.get(key, {}), paca_dict.get(
+                        key, {}), form_value, full_key)
+
+    recursive_evaluate(sp_construct, paca_construct, given_form)
     return scores
 
 
@@ -82,18 +89,19 @@ def calculate_overall_score(scores: Dict[str, float]) -> float:
     return sum(scores.values()) / len(scores) if scores else 0
 
 
-def evaluate_paca_performance(client_number: str, sp_construct_version: str, paca_construct_version: str) -> Tuple[Dict[str, float], float]:
+def evaluate_paca_performance(client_number: str, sp_construct_version: str, paca_construct_version: str, given_form_path: str) -> Tuple[Dict[str, float], float]:
     firebase_ref = get_firebase_ref()
 
     sp_construct = load_from_firebase(
         firebase_ref, client_number, f"sp_construct_version{sp_construct_version}")
     paca_construct = load_from_firebase(
         firebase_ref, client_number, f"paca_construct_version{paca_construct_version}")
+    given_form = load_given_form(given_form_path)
 
     if sp_construct is None or paca_construct is None:
         raise ValueError("Failed to load constructs from Firebase")
 
-    scores = evaluate_constructs(sp_construct, paca_construct)
+    scores = evaluate_constructs(sp_construct, paca_construct, given_form)
     overall_score = calculate_overall_score(scores)
 
     return scores, overall_score
