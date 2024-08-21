@@ -32,7 +32,7 @@ def evaluation_page():
             try:
                 st.write("Starting evaluation...")
                 # Evaluate PACA performance
-                scores, overall_score = evaluate_paca_performance(
+                scores, overall_score, evaluation_table = evaluate_paca_performance(
                     client_number, sp_construct_version, paca_construct_version, given_form_path)
 
                 # Display results
@@ -40,8 +40,7 @@ def evaluation_page():
                 st.subheader(f"Overall Score: {overall_score:.2f}")
 
                 st.subheader("Detailed Scores")
-                for key, score in scores.items():
-                    st.write(f"{key}: {score:.2f}")
+                st.dataframe(evaluation_table)
 
                 # Display constructs
                 col1, col2 = st.columns(2)

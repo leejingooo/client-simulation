@@ -1,3 +1,4 @@
+import pandas as pd
 import json
 from typing import Dict, Any, List, Tuple
 from langchain.chat_models import ChatOpenAI
@@ -74,41 +75,59 @@ def evaluate_field(sp_value: Any, paca_value: Any, field_info: Dict[str, Any]) -
             return g_eval(str(sp_value), str(paca_value))
 
 
-def evaluate_constructs(sp_construct: Dict[str, Any], paca_construct: Dict[str, Any], given_form: Dict[str, Any]) -> Dict[str, float]:
+def evaluate_constructs(sp_construct: Dict[str, Any], paca_construct: Dict[str, Any], given_form: Dict[str, Any]) -> Tuple[Dict[str, float], Dict[str, str]]:
     scores = {}
+    methods = {}
 
     def recursive_evaluate(sp_dict, paca_dict, form_dict, prefix=''):
         for key, form_value in form_dict.items():
             full_key = f"{prefix}.{key}" if prefix else key
-            st.write(f"Evaluating key: {full_key}")
 
             if isinstance(form_value, dict):
                 if 'guide' in form_value or 'candidate' in form_value:
                     sp_value = sp_dict.get(key, '')
                     paca_value = paca_dict.get(key, '')
-                    score = evaluate_field(sp_value, paca_value, form_value)
+                    score, method = evaluate_field(
+                        sp_value, paca_value, form_value)
                     scores[full_key] = score
-                    st.write(
-                        f"Evaluated {full_key}: SP: {sp_value}, PACA: {paca_value}, Score: {score}")
+                    methods[full_key] = method
                 else:
                     recursive_evaluate(sp_dict.get(key, {}), paca_dict.get(
                         key, {}), form_value, full_key)
             else:
-                st.write(f"Form value for {full_key}: {form_value}")
                 sp_value = sp_dict.get(key, '')
                 paca_value = paca_dict.get(key, '')
-                score = evaluate_field(sp_value, paca_value, {
-                                       'guide': form_value})
+                score, method = evaluate_field(
+                    sp_value, paca_value, {'guide': form_value})
                 scores[full_key] = score
-                st.write(
-                    f"Evaluated {full_key}: SP: {sp_value}, PACA: {paca_value}, Score: {score}")
+                methods[full_key] = method
 
     recursive_evaluate(sp_construct, paca_construct, given_form)
-    return scores
+    return scores, methods
 
 
 def calculate_overall_score(scores: Dict[str, float]) -> float:
     return sum(scores.values()) / len(scores) if scores else 0
+
+
+def create_evaluation_table(sp_construct: Dict[str, Any], paca_construct: Dict[str, Any], scores: Dict[str, float], methods: Dict[str, str]) -> pd.DataFrame:
+    data = []
+    for key in scores.keys():
+        sp_value = sp_construct
+        paca_value = paca_construct
+        for k in key.split('.'):
+            sp_value = sp_value.get(k, '')
+            paca_value = paca_value.get(k, '')
+
+        data.append({
+            'Field': key,
+            'SP-Construct': str(sp_value),
+            'PACA-Construct': str(paca_value),
+            'Method': methods.get(key, ''),
+            'Score': f"{scores[key]:.2f}"
+        })
+
+    return pd.DataFrame(data)
 
 
 def evaluate_paca_performance(client_number: str, sp_construct_version: str, paca_construct_version: str, given_form_path: str) -> Tuple[Dict[str, float], float]:
@@ -127,10 +146,14 @@ def evaluate_paca_performance(client_number: str, sp_construct_version: str, pac
     st.write("PACA Construct:", paca_construct)
     st.write("Given Form:", given_form)
 
-    scores = evaluate_constructs(sp_construct, paca_construct, given_form)
+    scores, methods = evaluate_constructs(
+        sp_construct, paca_construct, given_form)
     overall_score = calculate_overall_score(scores)
+
+    evaluation_table = create_evaluation_table(
+        sp_construct, paca_construct, scores, methods)
 
     st.write("Final Scores:", scores)
     st.write("Overall Score:", overall_score)
 
-    return scores, overall_score
+    return scores, overall_score, evaluation_table
