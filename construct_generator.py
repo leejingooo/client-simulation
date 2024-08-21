@@ -1,3 +1,4 @@
+import re
 import json
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
@@ -96,16 +97,11 @@ def extract_mse_from_instruction(instruction: str) -> Dict[str, str]:
     mse = {}
     mse_section = instruction.split("<Form>")[1].split("</Form>")[0].strip()
 
-    lines = mse_section.split("\n")
-    current_key = ""
-    for line in lines:
-        if ":" in line:
-            key, value = line.split(":", 1)
-            key = key.strip().lstrip("- ")
-            value = value.strip()
-            current_key = key
-            mse[current_key] = value
-        elif current_key:  # 이전 키의 값이 여러 줄에 걸쳐 있는 경우
-            mse[current_key] += " " + line.strip()
+    # 정규 표현식을 사용하여 각 항목을 분리
+    pattern = r'- *([\w /]+) *: *(.+?)(?=- *[\w /]+ *:|$)'
+    matches = re.findall(pattern, mse_section, re.DOTALL)
+
+    for key, value in matches:
+        mse[key.strip()] = value.strip()
 
     return mse
