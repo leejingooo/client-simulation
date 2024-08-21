@@ -61,18 +61,25 @@ def g_eval(sp_text: str, paca_text: str) -> float:
         return 0.0
 
 
-def evaluate_field(sp_value: Any, paca_value: Any, field_info: Dict[str, Any]) -> float:
+def evaluate_field(sp_value: Any, paca_value: Any, field_info: Dict[str, Any]) -> Tuple[float, str]:
     st.write(
         f"Evaluating field: SP: {sp_value}, PACA: {paca_value}, Field info: {field_info}")
-    if is_multiple_choice(field_info):
-        return compare_multiple_choice(str(sp_value), str(paca_value), field_info.get('candidate', ''))
+
+    if 'candidate' in field_info:
+        score = compare_multiple_choice(
+            str(sp_value), str(paca_value), field_info['candidate'])
+        method = "Simple Accuracy"
+    elif sp_value == "blank (data_type:string, guide:null)" and paca_value == "Not provided":
+        score = 1.0
+        method = "Simple Accuracy"
+    elif sp_value == "blank (data_type:string, guide:null)" or paca_value == "Not provided":
+        score = 0.0
+        method = "Simple Accuracy"
     else:
-        if sp_value == "blank (data_type:string, guide:null)" and paca_value == "Not provided":
-            return 1.0
-        elif sp_value == "blank (data_type:string, guide:null)" or paca_value == "Not provided":
-            return 0.0
-        else:
-            return g_eval(str(sp_value), str(paca_value))
+        score = g_eval(str(sp_value), str(paca_value))
+        method = "G-Eval"
+
+    return score, method
 
 
 def evaluate_constructs(sp_construct: Dict[str, Any], paca_construct: Dict[str, Any], given_form: Dict[str, Any]) -> Tuple[Dict[str, float], Dict[str, str]]:
@@ -82,6 +89,7 @@ def evaluate_constructs(sp_construct: Dict[str, Any], paca_construct: Dict[str, 
     def recursive_evaluate(sp_dict, paca_dict, form_dict, prefix=''):
         for key, form_value in form_dict.items():
             full_key = f"{prefix}.{key}" if prefix else key
+            st.write(f"Evaluating key: {full_key}")
 
             if isinstance(form_value, dict):
                 if 'guide' in form_value or 'candidate' in form_value:
@@ -91,16 +99,21 @@ def evaluate_constructs(sp_construct: Dict[str, Any], paca_construct: Dict[str, 
                         sp_value, paca_value, form_value)
                     scores[full_key] = score
                     methods[full_key] = method
+                    st.write(
+                        f"Evaluated {full_key}: SP: {sp_value}, PACA: {paca_value}, Score: {score}, Method: {method}")
                 else:
                     recursive_evaluate(sp_dict.get(key, {}), paca_dict.get(
                         key, {}), form_value, full_key)
             else:
+                st.write(f"Form value for {full_key}: {form_value}")
                 sp_value = sp_dict.get(key, '')
                 paca_value = paca_dict.get(key, '')
                 score, method = evaluate_field(
                     sp_value, paca_value, {'guide': form_value})
                 scores[full_key] = score
                 methods[full_key] = method
+                st.write(
+                    f"Evaluated {full_key}: SP: {sp_value}, PACA: {paca_value}, Score: {score}, Method: {method}")
 
     recursive_evaluate(sp_construct, paca_construct, given_form)
     return scores, methods
@@ -123,14 +136,14 @@ def create_evaluation_table(sp_construct: Dict[str, Any], paca_construct: Dict[s
             'Field': key,
             'SP-Construct': str(sp_value),
             'PACA-Construct': str(paca_value),
-            'Method': methods.get(key, ''),
+            'Method': methods[key],
             'Score': f"{scores[key]:.2f}"
         })
 
     return pd.DataFrame(data)
 
 
-def evaluate_paca_performance(client_number: str, sp_construct_version: str, paca_construct_version: str, given_form_path: str) -> Tuple[Dict[str, float], float]:
+def evaluate_paca_performance(client_number: str, sp_construct_version: str, paca_construct_version: str, given_form_path: str) -> Tuple[Dict[str, float], float, pd.DataFrame]:
     firebase_ref = get_firebase_ref()
 
     sp_construct = load_from_firebase(
@@ -150,10 +163,11 @@ def evaluate_paca_performance(client_number: str, sp_construct_version: str, pac
         sp_construct, paca_construct, given_form)
     overall_score = calculate_overall_score(scores)
 
+    st.write("Final Scores:", scores)
+    st.write("Evaluation Methods:", methods)
+    st.write("Overall Score:", overall_score)
+
     evaluation_table = create_evaluation_table(
         sp_construct, paca_construct, scores, methods)
-
-    st.write("Final Scores:", scores)
-    st.write("Overall Score:", overall_score)
 
     return scores, overall_score, evaluation_table
