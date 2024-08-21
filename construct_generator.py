@@ -89,7 +89,7 @@ def create_sp_construct(client_number: str, profile_version: str, instruction_ve
         else:
             sp_construct[key] = value
 
-    return sp_construct
+    return json.dumps(sp_construct, indent=2)
 
 
 def extract_mse_from_instruction(instruction: str) -> Dict[str, str]:
