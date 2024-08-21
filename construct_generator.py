@@ -100,6 +100,8 @@ def extract_mse_from_instruction(instruction: str) -> Dict[str, str]:
     for line in mse_section.split("\n"):
         if ":" in line:
             key, value = line.split(":", 1)
-            mse[key.strip()] = value.strip()
+            # Remove the "- " prefix if it exists
+            key = key.strip().lstrip("- ")
+            mse[key] = value.strip()
 
     return mse

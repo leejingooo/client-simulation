@@ -24,12 +24,9 @@ def evaluation_page():
             st.stop()
 
         # Version selection
-        sp_construct_version = st.sidebar.text_input(
-            "Enter SP Construct Version (e.g., 2.0)")
-        paca_construct_version = st.sidebar.text_input(
-            "Enter PACA Construct Version (e.g., 2.0)")
-        given_form_path = st.sidebar.text_input(
-            "Enter path to given form JSON", "data/prompts/paca_system_prompt/given_form_version2.0.json")
+        sp_construct_version = paca_construct_version = st.sidebar.text_input(
+            "Enter Construct Version (e.g., 2.0)")
+        given_form_path = f"data/prompts/paca_system_prompt/given_form_version{sp_construct_version}.json"
 
         if st.sidebar.button("Start Evaluation") and sp_construct_version and paca_construct_version and given_form_path:
             try:
