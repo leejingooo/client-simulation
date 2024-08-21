@@ -92,24 +92,20 @@ def create_sp_construct(client_number: str, profile_version: str, instruction_ve
     return sp_construct
 
 
-def extract_mse_from_instruction(instruction: str) -> Dict[str, Any]:
+def extract_mse_from_instruction(instruction: str) -> Dict[str, str]:
     mse = {}
     mse_section = instruction.split("<Form>")[1].split("</Form>")[0].strip()
 
+    lines = mse_section.split("\n")
     current_key = ""
-    for line in mse_section.split("\n"):
+    for line in lines:
         if ":" in line:
             key, value = line.split(":", 1)
             key = key.strip().lstrip("- ")
-            if key == "General appearance/Attitude/Behavior":
-                current_key = key
-                mse[current_key] = value.strip()
-            elif key in ["Mood", "Affect", "Spontaneity", "Verbal productivity", "Tone of voice", "Social judgement", "Insight", "Reliability", "Perception", "Thought process", "Thought content"]:
-                mse[key] = value.strip()
-            else:
-                if current_key:
-                    mse[current_key] += " " + line.strip()
-        elif current_key:
+            value = value.strip()
+            current_key = key
+            mse[current_key] = value
+        elif current_key:  # 이전 키의 값이 여러 줄에 걸쳐 있는 경우
             mse[current_key] += " " + line.strip()
 
     return mse
