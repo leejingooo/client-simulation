@@ -30,6 +30,7 @@ def evaluation_page():
 
         if st.sidebar.button("Start Evaluation") and sp_construct_version and paca_construct_version and given_form_path:
             try:
+                st.write("Starting evaluation...")
                 # Evaluate PACA performance
                 scores, overall_score = evaluate_paca_performance(
                     client_number, sp_construct_version, paca_construct_version, given_form_path)

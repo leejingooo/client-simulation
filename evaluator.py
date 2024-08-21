@@ -4,6 +4,7 @@ from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from SP_utils import load_from_firebase, get_firebase_ref
+import streamlit as st
 
 llm = ChatOpenAI(temperature=0, model="gpt-4")
 
@@ -18,14 +19,14 @@ def is_multiple_choice(field: Dict[str, Any]) -> bool:
 
 
 def compare_multiple_choice(sp_value: str, paca_value: str, candidates: str) -> float:
-    print(f"Comparing multiple choice: SP: {sp_value}, PACA: {paca_value}")
+    st.write(f"Comparing multiple choice: SP: {sp_value}, PACA: {paca_value}")
     if paca_value.lower() == sp_value.lower():
         return 1.0
     return 0.0
 
 
 def g_eval(sp_text: str, paca_text: str) -> float:
-    print(f"G-eval: SP: {sp_text}, PACA: {paca_text}")
+    st.write(f"G-eval: SP: {sp_text}, PACA: {paca_text}")
     prompt_template = """
     You are an expert evaluator. Your task is to compare two pieces of text: the original text and the generated text.
     Evaluate how well the generated text captures the key information and sentiment of the original text.
@@ -55,12 +56,12 @@ def g_eval(sp_text: str, paca_text: str) -> float:
         rating = float(rating_line.split(':')[1].strip())
         return max(0, min(1, rating))  # Ensure the rating is between 0 and 1
     except (IndexError, ValueError):
-        print(f"Error parsing G-eval result: {result}")
+        st.error(f"Error parsing G-eval result: {result}")
         return 0.0
 
 
 def evaluate_field(sp_value: Any, paca_value: Any, field_info: Dict[str, Any]) -> float:
-    print(
+    st.write(
         f"Evaluating field: SP: {sp_value}, PACA: {paca_value}, Field info: {field_info}")
     if is_multiple_choice(field_info):
         return compare_multiple_choice(str(sp_value), str(paca_value), field_info.get('candidate', ''))
@@ -79,7 +80,7 @@ def evaluate_constructs(sp_construct: Dict[str, Any], paca_construct: Dict[str, 
     def recursive_evaluate(sp_dict, paca_dict, form_dict, prefix=''):
         for key, form_value in form_dict.items():
             full_key = f"{prefix}.{key}" if prefix else key
-            print(f"Evaluating key: {full_key}")
+            st.write(f"Evaluating key: {full_key}")
 
             if isinstance(form_value, dict):
                 if 'guide' in form_value or 'candidate' in form_value:
@@ -87,13 +88,13 @@ def evaluate_constructs(sp_construct: Dict[str, Any], paca_construct: Dict[str, 
                     paca_value = paca_dict.get(key, '')
                     score = evaluate_field(sp_value, paca_value, form_value)
                     scores[full_key] = score
-                    print(
+                    st.write(
                         f"Evaluated {full_key}: SP: {sp_value}, PACA: {paca_value}, Score: {score}")
                 else:
                     recursive_evaluate(sp_dict.get(key, {}), paca_dict.get(
                         key, {}), form_value, full_key)
             else:
-                print(
+                st.write(
                     f"Skipping key {full_key} as it's not a dict: {form_value}")
 
     recursive_evaluate(sp_construct, paca_construct, given_form)
@@ -116,14 +117,14 @@ def evaluate_paca_performance(client_number: str, sp_construct_version: str, pac
     if sp_construct is None or paca_construct is None:
         raise ValueError("Failed to load constructs from Firebase")
 
-    print("SP Construct:", json.dumps(sp_construct, indent=2))
-    print("PACA Construct:", json.dumps(paca_construct, indent=2))
-    print("Given Form:", json.dumps(given_form, indent=2))
+    st.write("SP Construct:", sp_construct)
+    st.write("PACA Construct:", paca_construct)
+    st.write("Given Form:", given_form)
 
     scores = evaluate_constructs(sp_construct, paca_construct, given_form)
     overall_score = calculate_overall_score(scores)
 
-    print("Final Scores:", json.dumps(scores, indent=2))
-    print("Overall Score:", overall_score)
+    st.write("Final Scores:", scores)
+    st.write("Overall Score:", overall_score)
 
     return scores, overall_score
