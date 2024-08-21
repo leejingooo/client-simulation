@@ -89,10 +89,10 @@ def create_sp_construct(client_number: str, profile_version: str, instruction_ve
         else:
             sp_construct[key] = value
 
-    return json.dumps(sp_construct, indent=2)
+    return sp_construct
 
 
-def extract_mse_from_instruction(instruction: str) -> Dict[str, str]:
+def extract_mse_from_instruction(instruction: str) -> Dict[str, Any]:
     mse = {}
     mse_section = instruction.split("<Form>")[1].split("</Form>")[0].strip()
 
@@ -101,8 +101,14 @@ def extract_mse_from_instruction(instruction: str) -> Dict[str, str]:
         if ":" in line:
             key, value = line.split(":", 1)
             key = key.strip().lstrip("- ")
-            current_key = key
-            mse[current_key] = value.strip()
+            if key == "General appearance/Attitude/Behavior":
+                current_key = key
+                mse[current_key] = value.strip()
+            elif key in ["Mood", "Affect", "Spontaneity", "Verbal productivity", "Tone of voice", "Social judgement", "Insight", "Reliability", "Perception", "Thought process", "Thought content"]:
+                mse[key] = value.strip()
+            else:
+                if current_key:
+                    mse[current_key] += " " + line.strip()
         elif current_key:
             mse[current_key] += " " + line.strip()
 
