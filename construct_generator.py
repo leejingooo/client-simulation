@@ -96,11 +96,14 @@ def extract_mse_from_instruction(instruction: str) -> Dict[str, str]:
     mse = {}
     mse_section = instruction.split("<Form>")[1].split("</Form>")[0].strip()
 
+    current_key = ""
     for line in mse_section.split("\n"):
         if ":" in line:
             key, value = line.split(":", 1)
-            # Remove the "- " prefix if it exists
             key = key.strip().lstrip("- ")
-            mse[key] = value.strip()
+            current_key = key
+            mse[current_key] = value.strip()
+        elif current_key:
+            mse[current_key] += " " + line.strip()
 
     return mse
