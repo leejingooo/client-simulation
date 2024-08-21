@@ -18,14 +18,16 @@ def is_multiple_choice(field: Dict[str, Any]) -> bool:
 
 
 def compare_multiple_choice(sp_value: str, paca_value: str, candidates: str) -> float:
-    print(f"Comparing multiple choice: SP: {sp_value}, PACA: {paca_value}")
+    # if not candidates:
+    #     return 0.0
+    # valid_options = [option.strip() for option in candidates.split('/')]
+    # if sp_value in valid_options and paca_value.lower() == sp_value.lower():
     if paca_value.lower() == sp_value.lower():
         return 1.0
     return 0.0
 
 
 def g_eval(sp_text: str, paca_text: str) -> float:
-    print(f"G-eval: SP: {sp_text}, PACA: {paca_text}")
     prompt_template = """
     You are an expert evaluator. Your task is to compare two pieces of text: the original text and the generated text.
     Evaluate how well the generated text captures the key information and sentiment of the original text.
@@ -60,8 +62,6 @@ def g_eval(sp_text: str, paca_text: str) -> float:
 
 
 def evaluate_field(sp_value: Any, paca_value: Any, field_info: Dict[str, Any]) -> float:
-    print(
-        f"Evaluating field: SP: {sp_value}, PACA: {paca_value}, Field info: {field_info}")
     if is_multiple_choice(field_info):
         return compare_multiple_choice(str(sp_value), str(paca_value), field_info.get('candidate', ''))
     else:
@@ -79,7 +79,6 @@ def evaluate_constructs(sp_construct: Dict[str, Any], paca_construct: Dict[str, 
     def recursive_evaluate(sp_dict, paca_dict, form_dict, prefix=''):
         for key, form_value in form_dict.items():
             full_key = f"{prefix}.{key}" if prefix else key
-            print(f"Evaluating key: {full_key}")
 
             if isinstance(form_value, dict):
                 if 'guide' in form_value or 'candidate' in form_value:
@@ -88,13 +87,10 @@ def evaluate_constructs(sp_construct: Dict[str, Any], paca_construct: Dict[str, 
                     score = evaluate_field(sp_value, paca_value, form_value)
                     scores[full_key] = score
                     print(
-                        f"Evaluated {full_key}: SP: {sp_value}, PACA: {paca_value}, Score: {score}")
+                        f"Evaluating {full_key}: SP: {sp_value}, PACA: {paca_value}, Score: {score}")
                 else:
                     recursive_evaluate(sp_dict.get(key, {}), paca_dict.get(
                         key, {}), form_value, full_key)
-            else:
-                print(
-                    f"Skipping key {full_key} as it's not a dict: {form_value}")
 
     recursive_evaluate(sp_construct, paca_construct, given_form)
     return scores
@@ -116,14 +112,7 @@ def evaluate_paca_performance(client_number: str, sp_construct_version: str, pac
     if sp_construct is None or paca_construct is None:
         raise ValueError("Failed to load constructs from Firebase")
 
-    print("SP Construct:", json.dumps(sp_construct, indent=2))
-    print("PACA Construct:", json.dumps(paca_construct, indent=2))
-    print("Given Form:", json.dumps(given_form, indent=2))
-
     scores = evaluate_constructs(sp_construct, paca_construct, given_form)
     overall_score = calculate_overall_score(scores)
-
-    print("Final Scores:", json.dumps(scores, indent=2))
-    print("Overall Score:", overall_score)
 
     return scores, overall_score
