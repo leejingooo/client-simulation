@@ -94,8 +94,14 @@ def evaluate_constructs(sp_construct: Dict[str, Any], paca_construct: Dict[str, 
                     recursive_evaluate(sp_dict.get(key, {}), paca_dict.get(
                         key, {}), form_value, full_key)
             else:
+                st.write(f"Form value for {full_key}: {form_value}")
+                sp_value = sp_dict.get(key, '')
+                paca_value = paca_dict.get(key, '')
+                score = evaluate_field(sp_value, paca_value, {
+                                       'guide': form_value})
+                scores[full_key] = score
                 st.write(
-                    f"Skipping key {full_key} as it's not a dict: {form_value}")
+                    f"Evaluated {full_key}: SP: {sp_value}, PACA: {paca_value}, Score: {score}")
 
     recursive_evaluate(sp_construct, paca_construct, given_form)
     return scores
