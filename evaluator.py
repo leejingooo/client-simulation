@@ -69,13 +69,14 @@ def g_eval(field_name: str, sp_text: str, paca_text: str) -> float:
     """
 
     prompt = PromptTemplate(
-        input_variables=["original_text", "generated_text"],
+        input_variables=["field_name", "original_text", "generated_text"],
         template=prompt_template
     )
 
     chain = LLMChain(llm=llm, prompt=prompt)
 
-    result = chain.run(original_text=sp_text, generated_text=paca_text)
+    result = chain.run(field_name=field_name, original_text=sp_text,
+                       generated_text=paca_text)
 
     try:
         rating_line = [line for line in result.split(
