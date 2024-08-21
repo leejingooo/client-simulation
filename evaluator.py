@@ -18,10 +18,11 @@ def is_multiple_choice(field: Dict[str, Any]) -> bool:
 
 
 def compare_multiple_choice(sp_value: str, paca_value: str, candidates: str) -> float:
-    if not candidates:
-        return 0.0
-    valid_options = [option.strip() for option in candidates.split('/')]
-    if sp_value in valid_options and paca_value.lower() == sp_value.lower():
+    # if not candidates:
+    #     return 0.0
+    # valid_options = [option.strip() for option in candidates.split('/')]
+    # if sp_value in valid_options and paca_value.lower() == sp_value.lower():
+    if paca_value.lower() == sp_value.lower():
         return 1.0
     return 0.0
 
