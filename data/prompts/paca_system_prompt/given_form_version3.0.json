@@ -17,18 +17,6 @@
         "diagnosis_n": "blank (data_type:string, guide: Describe a psychiatric family history)",
         "substance_use_n": "blank (data_type:string, guide: Describe a family history of substance use (alcohol, opioid, cannabinoid, hallucinogen, stimulant, narcotic, etc.))"
     },
-    "Developmental/Social history": {
-        "abnormality in prenatal/birthing history": "blank (data_type:string, guide:null)",
-        "delay in developmental milestone": "blank (data_type:string, guide:null)",
-        "childhood history": {
-            "home environment": "blank (data_type:string, guide:null)",
-            "members of family": "blank (data_type:string, guide:null)",
-            "social environment": "blank (data_type:string, guide:Describe things like number and quality of friends)"
-        },
-        "school history": "blank (data_type:string, guide:special education/learning disorder/behavioral problem/low academic performance/problem in extracurricular activity)",
-        "work history": "blank (data_type:string, guide:Describe things like job, performance, reason for switching jobs, relationship with supervisor, coworker, etc.)",
-        "other history": "blank (data_type:string, guide:null)"
-    },
     "Marriage/relationship history": {
         "current family structure": "blank (data_type:string, guide:null)"
     },
