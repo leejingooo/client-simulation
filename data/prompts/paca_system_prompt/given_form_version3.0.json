@@ -28,7 +28,7 @@
         "homicide risk": "blank (data_type:string, candidate:high/moderate/low)"
     },
     "Mental Status Examination": {
-        "General appearance_Attitude_Behavior": "blank (guide:null)",
+        "General appearance_Attitude_Behavior": "blank (guide:Generate text that is between 500-600 characters in length, excluding spaces)",
         "Mood": "blank (candidate:euphoric/elated/euthymic/dysphoric/depressed/irritable)",
         "Affect": "blank (candidate:broad/restricted/blunt/flat/labile/anxious/tense/shallow/inadequate/inappropriate)",
         "Spontaneity": "blank (candidate:(+)/(-))",
