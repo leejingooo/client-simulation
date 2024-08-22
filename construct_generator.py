@@ -82,13 +82,27 @@ def create_sp_construct(client_number: str, profile_version: str, instruction_ve
     # Create the SP construct
     sp_construct = {}
 
+    def clean_value(value):
+        if isinstance(value, str):
+            # 쌍따옴표로 둘러싸인 부분 제거
+            cleaned = re.sub(r'"[^"]*"', '', value).strip()
+            # 연속된 공백을 하나의 공백으로 대체
+            cleaned = re.sub(r'\s+', ' ', cleaned)
+            return cleaned
+        elif isinstance(value, dict):
+            return {k: clean_value(v) for k, v in value.items()}
+        elif isinstance(value, list):
+            return [clean_value(item) for item in value]
+        else:
+            return value
+
     for key, value in given_form.items():
         if key in profile:
-            sp_construct[key] = profile[key]
+            sp_construct[key] = clean_value(profile[key])
         elif key == "Mental Status Examination":
             sp_construct[key] = extract_mse_from_instruction(instruction)
         else:
-            sp_construct[key] = value
+            sp_construct[key] = clean_value(value)
 
     return sp_construct
 
