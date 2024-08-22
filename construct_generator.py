@@ -72,8 +72,8 @@ def extract_mse_from_instruction(instruction: str) -> Dict[str, str]:
     matches = re.findall(pattern, mse_section, re.DOTALL)
 
     for key, value in matches:
-        # 콜론 이후의 첫 번째 단어만 유지하고 나머지는 제거
-        cleaned_value = re.sub(r':.*?(\w+).*', r'\1', value, flags=re.DOTALL)
+        # 따옴표로 둘러싸인 부분을 제거
+        cleaned_value = re.sub(r'"[^"]*"', '', value)
         # 여러 공백을 하나로 줄이고 앞뒤 공백 제거
         cleaned_value = ' '.join(cleaned_value.split()).strip()
         if cleaned_value:  # 빈 문자열이 아닌 경우에만 추가
@@ -105,7 +105,9 @@ def create_sp_construct(client_number: str, profile_version: str, instruction_ve
         if key in profile:
             sp_construct[key] = profile[key]
         elif key == "Mental Status Examination":
-            sp_construct[key] = extract_mse_from_instruction(instruction)
+            mse_data = extract_mse_from_instruction(instruction)
+            for mse_key, mse_value in mse_data.items():
+                sp_construct[f"MSE_{mse_key}"] = mse_value
         else:
             sp_construct[key] = value
 
