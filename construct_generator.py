@@ -31,7 +31,7 @@ def create_construct_generator():
     2. Examine the structured <Given form> which contains fields for patient information.
     3. Fill in the <Given form> using information extracted from the transcript, following the specific data type, guide or candidate for each field.
     
-    - You're a psychiatric expert. Even when information is not directly stated, try to take clues from the <Given transcript> and fill in all the blanks with appropriate medical and psychiatric inferences. If the interview is insufficient to make any inferences, enter “Not provided”.
+    - You're a psychiatric expert. Even when information is not directly stated, try to take clues from the <Given transcript> and fill in all the blanks with appropriate medical and psychiatric inferences.
     - In <Given form>, there are items labeled “_n”. Fill in the “n” of these items with the appropriate number.
     - Ensure all entered information is accurate and directly supported by the transcript.
     - Adhere to the data type, guide or candidate specified for each field.
