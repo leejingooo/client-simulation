@@ -63,6 +63,14 @@ def generate_construct(generator, transcript, form):
     return result
 
 
+def clean_mse_value(value: str) -> str:
+    # 따옴표로 둘러싸인 부분 제거
+    cleaned_value = re.sub(r'"[^"]*"', '', value)
+    # 여러 공백을 하나로 줄이고 앞뒤 공백 제거
+    cleaned_value = ' '.join(cleaned_value.split()).strip()
+    return cleaned_value
+
+
 def create_sp_construct(client_number: str, profile_version: str, instruction_version: str, given_form_path: str) -> Dict[str, Any]:
     firebase_ref = get_firebase_ref()
 
@@ -86,7 +94,9 @@ def create_sp_construct(client_number: str, profile_version: str, instruction_ve
         if key in profile:
             sp_construct[key] = profile[key]
         elif key == "Mental Status Examination":
-            sp_construct[key] = extract_mse_from_instruction(instruction)
+            mse = extract_mse_from_instruction(instruction)
+            cleaned_mse = {k: clean_mse_value(v) for k, v in mse.items()}
+            sp_construct[key] = cleaned_mse
         else:
             sp_construct[key] = value
 
@@ -102,10 +112,6 @@ def extract_mse_from_instruction(instruction: str) -> Dict[str, str]:
     matches = re.findall(pattern, mse_section, re.DOTALL)
 
     for key, value in matches:
-        # 따옴표로 둘러싸인 부분 제거
-        cleaned_value = re.sub(r'"[^"]*"', '', value)
-        # 여러 공백을 하나로 줄이고 앞뒤 공백 제거
-        cleaned_value = ' '.join(cleaned_value.split()).strip()
-        mse[key.strip()] = cleaned_value
+        mse[key.strip()] = value.strip()
 
     return mse
