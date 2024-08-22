@@ -64,17 +64,36 @@ def generate_construct(generator, transcript, form):
 
 
 def clean_mse_value(value: str) -> str:
-    # 따옴표로 둘러싸인 부분 제거
+    # 따옴표로 둘러싸인 부분을 제거
     cleaned_value = re.sub(r'"[^"]*"', '', value)
+    # 대괄호로 둘러싸인 부분도 제거 (추가적인 주석이나 메모일 수 있음)
+    cleaned_value = re.sub(r'\[[^\]]*\]', '', cleaned_value)
     # 여러 공백을 하나로 줄이고 앞뒤 공백 제거
     cleaned_value = ' '.join(cleaned_value.split()).strip()
     return cleaned_value
 
 
+def extract_and_clean_mse(instruction: str) -> Dict[str, str]:
+    mse = {}
+    # Form 태그 내의 내용을 추출
+    match = re.search(r'<Form>(.*?)</Form>', instruction, re.DOTALL)
+    if match:
+        mse_section = match.group(1).strip()
+        # 각 MSE 항목을 추출
+        items = re.findall(
+            r'- *([^:]+):(.*?)(?=(?:\n- |\Z))', mse_section, re.DOTALL)
+        for key, value in items:
+            cleaned_key = key.strip()
+            cleaned_value = clean_mse_value(value)
+            if cleaned_value:  # 빈 문자열이 아닌 경우에만 추가
+                mse[cleaned_key] = cleaned_value
+    return mse
+
+
 def create_sp_construct(client_number: str, profile_version: str, instruction_version: str, given_form_path: str) -> Dict[str, Any]:
     firebase_ref = get_firebase_ref()
 
-    # Load profile and instruction from Firebase
+    # Firebase에서 프로필과 instruction 로드
     profile = load_from_firebase(
         firebase_ref, client_number, f"profile_version{profile_version}")
     instruction = load_from_firebase(
@@ -83,35 +102,19 @@ def create_sp_construct(client_number: str, profile_version: str, instruction_ve
     if not profile or not instruction:
         raise ValueError("Failed to load profile or instruction from Firebase")
 
-    # Load the given form
+    # 주어진 폼 로드
     with open(given_form_path, 'r') as f:
         given_form = json.load(f)
 
-    # Create the SP construct
+    # SP construct 생성
     sp_construct = {}
 
     for key, value in given_form.items():
         if key in profile:
             sp_construct[key] = profile[key]
         elif key == "Mental Status Examination":
-            mse = extract_mse_from_instruction(instruction)
-            cleaned_mse = {k: clean_mse_value(v) for k, v in mse.items()}
-            sp_construct[key] = cleaned_mse
+            sp_construct[key] = extract_and_clean_mse(instruction)
         else:
             sp_construct[key] = value
 
     return sp_construct
-
-
-def extract_mse_from_instruction(instruction: str) -> Dict[str, str]:
-    mse = {}
-    mse_section = instruction.split("<Form>")[1].split("</Form>")[0].strip()
-
-    # 정규 표현식을 사용하여 각 항목을 분리
-    pattern = r'- *([\w /]+) *: *(.+?)(?=- *[\w /]+ *:|$)'
-    matches = re.findall(pattern, mse_section, re.DOTALL)
-
-    for key, value in matches:
-        mse[key.strip()] = value.strip()
-
-    return mse
