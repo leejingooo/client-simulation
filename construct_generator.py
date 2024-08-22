@@ -63,6 +63,25 @@ def generate_construct(generator, transcript, form):
     return result
 
 
+def extract_mse_from_instruction(instruction: str) -> Dict[str, str]:
+    mse = {}
+    mse_section = instruction.split("<Form>")[1].split("</Form>")[0].strip()
+
+    # 정규 표현식을 사용하여 각 항목을 분리
+    pattern = r'- *([\w /]+) *: *(.+?)(?=(?:\n- |\Z))'
+    matches = re.findall(pattern, mse_section, re.DOTALL)
+
+    for key, value in matches:
+        # 콜론 이후의 첫 번째 단어만 유지하고 나머지는 제거
+        cleaned_value = re.sub(r':.*?(\w+).*', r'\1', value, flags=re.DOTALL)
+        # 여러 공백을 하나로 줄이고 앞뒤 공백 제거
+        cleaned_value = ' '.join(cleaned_value.split()).strip()
+        if cleaned_value:  # 빈 문자열이 아닌 경우에만 추가
+            mse[key.strip()] = cleaned_value
+
+    return mse
+
+
 def create_sp_construct(client_number: str, profile_version: str, instruction_version: str, given_form_path: str) -> Dict[str, Any]:
     firebase_ref = get_firebase_ref()
 
@@ -91,21 +110,3 @@ def create_sp_construct(client_number: str, profile_version: str, instruction_ve
             sp_construct[key] = value
 
     return sp_construct
-
-
-def extract_mse_from_instruction(instruction: str) -> Dict[str, str]:
-    mse = {}
-    mse_section = instruction.split("<Form>")[1].split("</Form>")[0].strip()
-
-    # 정규 표현식을 사용하여 각 항목을 분리
-    pattern = r'- *([\w /]+) *: *(.+?)(?=- *[\w /]+ *:|$)'
-    matches = re.findall(pattern, mse_section, re.DOTALL)
-
-    for key, value in matches:
-        # 따옴표로 둘러싸인 부분을 완전히 제거
-        cleaned_value = re.sub(r'"[^"]*"', '', value)
-        # 여러 공백을 하나로 줄이고 앞뒤 공백 제거
-        cleaned_value = ' '.join(cleaned_value.split()).strip()
-        mse[key.strip()] = cleaned_value
-
-    return mse
