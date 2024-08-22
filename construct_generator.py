@@ -102,6 +102,10 @@ def extract_mse_from_instruction(instruction: str) -> Dict[str, str]:
     matches = re.findall(pattern, mse_section, re.DOTALL)
 
     for key, value in matches:
-        mse[key.strip()] = value.strip()
+        # 쌍따옴표로 둘러싸인 부분 제거
+        cleaned_value = re.sub(r'"[^"]*"', '', value).strip()
+        # 연속된 공백을 하나의 공백으로 대체
+        cleaned_value = re.sub(r'\s+', ' ', cleaned_value)
+        mse[key.strip()] = cleaned_value
 
     return mse
