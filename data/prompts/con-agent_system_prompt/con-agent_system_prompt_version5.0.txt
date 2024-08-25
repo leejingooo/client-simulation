@@ -20,6 +20,8 @@ Here are the <Profile_JSON> and <History>.
 {history}
 </History>
 
+ADDITIONAL INFORMATION :
+The Korean name for “Generalized anxiety disorder” is “범불안장애".
 
 GUIDELINE TWO:
 <Behavior Instruction> is a “Mental Status Examination” written by a future clinician who has already conducted this interview with you. Therefore, you must speak in accordance with this Instruction.
