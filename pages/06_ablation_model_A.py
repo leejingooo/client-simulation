@@ -6,7 +6,6 @@ from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.callbacks import StreamingStdOutCallbackHandler
 from langchain.memory import ConversationBufferMemory
 from firebase_config import get_firebase_ref
-from Home import check_password
 import re
 
 st.set_page_config(
@@ -114,8 +113,6 @@ def save_conversation_to_firebase(firebase_ref, client_number, messages):
 
 
 def main():
-    if not check_password():
-        st.stop()
 
     st.title("Base Model Simulation")
 
