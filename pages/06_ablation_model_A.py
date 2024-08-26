@@ -139,10 +139,11 @@ def main():
     {given_information}
     """
 
-    with st.spinner("Generating simulated patient..."):
-        st.session_state.agent_and_memory = create_base_model_agent(
-            st.session_state.client_number, system_prompt)
-        st.success("Simulated patient generated successfully!")
+    if st.sidebar.button("Generate Simulated Patient", key="generate_patient_button"):
+        with st.spinner("Generating simulated patient..."):
+            st.session_state.agent_and_memory = create_base_model_agent(
+                st.session_state.client_number, system_prompt)
+            st.success("Simulated patient generated successfully!")
 
     st.header("Conversation with Simulated Patient")
 
