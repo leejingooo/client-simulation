@@ -1,6 +1,5 @@
 import streamlit as st
 from firebase_config import get_firebase_ref
-from Home import check_participant
 from SP_utils import *
 
 st.set_page_config(
@@ -8,7 +7,7 @@ st.set_page_config(
     page_icon="🔥",
 )
 
-CLIENT_NUMBER = client_number = 8882
+CLIENT_NUMBER = 8882
 profile_version = 5.8
 beh_dir_version = 5.8
 con_agent_version = 5.8
@@ -56,9 +55,6 @@ def main():
 
     st.write(instructions, unsafe_allow_html=True)
 
-    if not check_participant():
-        st.stop()
-
     st.sidebar.header("Settings")
     new_client_number = CLIENT_NUMBER
 
@@ -66,9 +62,18 @@ def main():
         st.session_state.client_number = new_client_number
         st.session_state.agent_and_memory = None
 
+    action = st.sidebar.radio(
+        "Choose action", ["Create new data", "Load existing data"])
+
     # Load prompts based on versions
+    profile_system_prompt, actual_profile_version = load_prompt_and_get_version(
+        "profile-maker", profile_version)
+    history_system_prompt, actual_history_version = load_prompt_and_get_version(
+        "history-maker", profile_version)
     con_agent_system_prompt, actual_con_agent_version = load_prompt_and_get_version(
         "con-agent", con_agent_version)
+    beh_dir_system_prompt, actual_beh_dir_version = load_prompt_and_get_version(
+        "beh-dir-maker", beh_dir_version)
 
     given_information = f"""
         <Given information>
@@ -79,45 +84,48 @@ def main():
         </Given information>
         """
 
-    profile = load_from_firebase(
-        firebase_ref, client_number, f"profile_version{profile_version:.1f}".replace(".", "_"))
-    history = load_from_firebase(
-        firebase_ref, client_number, f"history_version{profile_version:.1f}".replace(".", "_"))
-    beh_dir = load_from_firebase(
-        firebase_ref, client_number, f"beh_dir_version{beh_dir_version:.1f}".replace(".", "_"))
+    if st.sidebar.button("Generate Profile, History, and Behavioral Direction", key="generate_all_button"):
+        if check_client_exists(firebase_ref, st.session_state.client_number):
+            st.error(
+                f"Client {st.session_state.client_number} already exists. Please choose a different client number.")
+        elif all([profile_system_prompt, history_system_prompt, con_agent_system_prompt, beh_dir_system_prompt]):
+            with st.spinner(""):
+                save_to_firebase(
+                    firebase_ref, st.session_state.client_number, "given_information", given_information)
 
-    if all([profile, history, beh_dir]):
-        st.session_state.profile = profile
-        st.session_state.history = history
-        st.session_state.beh_dir = beh_dir
+                profile = profile_maker(format_version(
+                    profile_version), given_information, st.session_state.client_number, profile_system_prompt)
+                if profile is not None:
+                    st.session_state.profile = profile
 
-        given_information = load_from_firebase(
-            firebase_ref, client_number, "given_information")
-       # Get the diagnosis from the profile
-        diag = get_diag_from_given_information(
-            given_information)
+                    with st.spinner(""):
+                        history = history_maker(format_version(
+                            profile_version), st.session_state.client_number, history_system_prompt)
+                        if history is not None:
+                            st.session_state.history = history
 
-        if diag == "BD":
-            con_agent_system_prompt, actual_con_agent_version = load_prompt_and_get_version(
-                "con-agent", con_agent_version, diag)
-            st.success("BD success")
+                            with st.spinner(""):
+                                beh_dir = beh_dir_maker(format_version(profile_version), format_version(
+                                    beh_dir_version), st.session_state.client_number, beh_dir_system_prompt, given_information)
+                                if beh_dir is not None:
+                                    st.session_state.beh_dir = beh_dir
+
+                                    st.session_state.agent_and_memory = create_conversational_agent(
+                                        format_version(profile_version), format_version(
+                                            beh_dir_version),
+                                        st.session_state.client_number, con_agent_system_prompt
+                                    )
+                                else:
+                                    st.error(
+                                        "Failed to generate behavioral direction.")
+                        else:
+                            st.error("Failed to generate history.")
+                else:
+                    st.error(
+                        "Failed to generate profile. Please check the error messages above.")
         else:
-            con_agent_system_prompt, actual_con_agent_version = load_prompt_and_get_version(
-                "con-agent", con_agent_version)
-
-        if con_agent_system_prompt:
-            st.session_state.agent_and_memory = create_conversational_agent(
-                f"{profile_version:.1f}".replace(".", "_"),
-                f"{beh_dir_version:.1f}".replace(".", "_"),
-                client_number,
-                con_agent_system_prompt
-            )
-            st.success(f"Start a conversation.")
-        else:
-            st.error("Failed to load conversational agent system prompt.")
-    else:
-        st.error(
-            "Failed to load client data. Please check if the data exists for the specified versions.")
+            st.error(
+                "Failed to load one or more prompts. Please check the version settings.")
 
     # Main area for conversation
     st.header("Conversation with Simulated Client")
