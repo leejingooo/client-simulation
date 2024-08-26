@@ -125,8 +125,8 @@ def main():
 
     given_information = f"""
         <Given information>
-        Diagnosis : Panic disorder
-        Age : 25
+        Diagnosis : Major depressive disorder
+        Age : 40
         Sex : Female
         Nationality: South Korea
         </Given information>
