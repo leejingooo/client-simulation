@@ -116,7 +116,6 @@ def main():
 
     st.title("Ablation - Model A - Base")
 
-    st.sidebar.header("Settings")
     new_client_number = CLIENT_NUMBER
 
     if st.session_state.client_number != new_client_number:
@@ -140,11 +139,10 @@ def main():
     {given_information}
     """
 
-    if st.sidebar.button("Generate Simulated Patient", key="generate_patient_button"):
-        with st.spinner("Generating simulated patient..."):
-            st.session_state.agent_and_memory = create_base_model_agent(
-                st.session_state.client_number, system_prompt)
-            st.success("Simulated patient generated successfully!")
+    with st.spinner("Generating simulated patient..."):
+        st.session_state.agent_and_memory = create_base_model_agent(
+            st.session_state.client_number, system_prompt)
+        st.success("Simulated patient generated successfully!")
 
     st.header("Conversation with Simulated Patient")
 

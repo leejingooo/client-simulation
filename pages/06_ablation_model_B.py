@@ -59,7 +59,6 @@ def main():
     if not check_participant():
         st.stop()
 
-    st.sidebar.header("Settings")
     new_client_number = CLIENT_NUMBER
 
     if 'client_number' not in st.session_state or st.session_state.client_number != new_client_number:
