@@ -9,7 +9,7 @@ from firebase_config import get_firebase_ref
 import re
 
 st.set_page_config(
-    page_title="Ablation (Base)",
+    page_title="Ablation - Model A - Base",
     page_icon="🧪",
 )
 
@@ -114,7 +114,7 @@ def save_conversation_to_firebase(firebase_ref, client_number, messages):
 
 def main():
 
-    st.title("Base Model Simulation")
+    st.title("Ablation - Model A - Base")
 
     st.sidebar.header("Settings")
     new_client_number = CLIENT_NUMBER
@@ -125,8 +125,8 @@ def main():
 
     given_information = f"""
         <Given information>
-        Diagnosis : Post-traumatic stress disorder
-        Age : 30
+        Diagnosis : Panic disorder
+        Age : 25
         Sex : Female
         Nationality: South Korea
         </Given information>

@@ -3,7 +3,7 @@ from firebase_config import get_firebase_ref
 from SP_utils import *
 
 st.set_page_config(
-    page_title="Simulation",
+    page_title="Ablation - Model B - Disorder-based Approach Deletion",
     page_icon="🔥",
 )
 
@@ -82,7 +82,7 @@ def main():
     if not check_password():
         st.stop()
 
-    st.title("Client-Simulation")
+    st.title("Ablation - Model B - Disorder-based Approach Deletion")
 
     st.write(instructions, unsafe_allow_html=True)
 
@@ -108,8 +108,8 @@ def main():
 
     given_information = f"""
         <Given information>
-        Diagnosis : Post-traumatic stress disorder
-        Age : 30
+        Diagnosis : Panic disorder
+        Age : 25
         Sex : Female
         Nationality: South Korea
         </Given information>
