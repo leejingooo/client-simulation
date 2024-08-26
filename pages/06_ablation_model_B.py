@@ -194,11 +194,13 @@ def main():
         if st.session_state.client_number is not None and 'agent_and_memory' in st.session_state and st.session_state.agent_and_memory is not None:
             _, memory = st.session_state.agent_and_memory
 
+            participant_name = st.session_state['name']
             filename = save_conversation_to_firebase(
                 firebase_ref,
                 st.session_state.client_number,
                 memory.chat_memory.messages,
-                con_agent_version  # Pass the version number directly
+                con_agent_version,
+                participant_name  # Pass the version number directly
             )
             if filename:
                 st.success(
