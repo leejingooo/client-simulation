@@ -5,13 +5,14 @@ from SP_utils import *
 
 
 instructions = """
-    지시사항...
+    연구에 참여해주셔서 감사드립니다.
+    구글폼 페이지와 함께 진행해주세요.
     """
 
 
 def validation_page(client_number, profile_version=5.0, beh_dir_version=5.0, con_agent_version=5.0):
     st.set_page_config(
-        page_title=f"Validation - Client {client_number}",
+        page_title=f"정신과 환자의 다면적 시뮬레이션",
         page_icon="🔬",
     )
 
