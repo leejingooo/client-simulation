@@ -26,7 +26,7 @@ def validation_page(client_number, profile_version=5.0, beh_dir_version=5.0, con
     if not check_participant():
         st.stop()
 
-    st.title(f"Validation - Client {client_number}")
+    st.title("정신과 환자의 다면적 시뮬레이션")
 
     st.write(instructions, unsafe_allow_html=True)
 
