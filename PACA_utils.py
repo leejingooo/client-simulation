@@ -109,11 +109,11 @@ def save_conversation_to_csv(conversation):
         "SP": sp_messages.reset_index(drop=True)
     })
 
-    csv_buffer = io.StringIO()
-    result_df.to_csv(csv_buffer, index=False)
+    csv_buffer = io.BytesIO()
+    result_df.to_csv(csv_buffer, index=False, encoding='utf-8-sig')
     csv_buffer.seek(0)
 
-    return csv_buffer
+    return csv_buffer.getvalue()
 
 
 def save_ai_conversation_to_firebase(firebase_ref, client_number, conversation, paca_version, sp_version):

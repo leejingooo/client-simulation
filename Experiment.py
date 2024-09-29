@@ -110,13 +110,11 @@ def experiment_page(client_number):
             )
             st.success(f"Conversation saved with ID: {conversation_id}")
 
-        # Download CSV button
         if st.session_state.conversation:
-            csv_buffer = save_conversation_to_csv(
-                st.session_state.conversation)
+            csv_data = save_conversation_to_csv(st.session_state.conversation)
             st.download_button(
                 label="Download Conversation as CSV",
-                data=csv_buffer,
+                data=csv_data,
                 file_name="conversation.csv",
                 mime="text/csv"
             )
