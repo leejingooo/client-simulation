@@ -19,11 +19,15 @@ paca_llm_gpt = ChatOpenAI(
     callbacks=[StreamingStdOutCallbackHandler()]
 )
 
+anthropic_api_key = st.secrets["ANTHROPIC_API_KEY"]
+
+
 paca_llm_claude = ChatAnthropic(
     model="claude-3-5-sonnet-20240620",
     temperature=0.7,
     streaming=True,
-    callbacks=[StreamingStdOutCallbackHandler()]
+    callbacks=[StreamingStdOutCallbackHandler()],
+    anthropic_api_key=anthropic_api_key
 )
 
 firebase_ref = get_firebase_ref()

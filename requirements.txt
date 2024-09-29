@@ -240,3 +240,4 @@ langchain==0.0.332
 langsmith==0.0.52
 openai==0.28.0
 firebase-admin
+anthropic
