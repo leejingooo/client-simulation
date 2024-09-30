@@ -22,7 +22,7 @@ instructions = """
     """
 
 
-def construct_generator_conversation(paca_agent):
+def construct_generator_conversation(paca_agent, paca_memory):
     constructs = [
         ("Chief complaint", "Describe in the patient's words"),
         ("Symptom name", ""),
@@ -160,7 +160,7 @@ def experiment_page(client_number):
             if st.session_state.constructs is None:
                 with st.spinner("Generating constructs..."):
                     st.session_state.constructs = construct_generator_conversation(
-                        paca_agent)
+                        paca_agent, paca_memory)
                 st.success("Constructs generated!")
             st.rerun()
 
