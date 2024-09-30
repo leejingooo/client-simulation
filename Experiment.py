@@ -2,6 +2,8 @@ import streamlit as st
 from PACA_utils import create_paca_agent, simulate_conversation, save_ai_conversation_to_firebase, save_conversation_to_csv
 from SP_utils import create_conversational_agent, load_from_firebase, get_diag_from_given_information, load_prompt_and_get_version
 from firebase_config import get_firebase_ref
+from langchain.schema import HumanMessage, AIMessage
+import time
 from langchain.chat_models import ChatOpenAI, ChatAnthropic
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.schema import HumanMessage, AIMessage
@@ -22,7 +24,7 @@ instructions = """
 
 def create_construct_generator():
     construct_generator_prompt = """
-    You are the Construct Generator. Your task is to fill in information about the patient based on the conversation between PACA and SP. Ask PACA about each item one by one and fill in the information. If PACA doesn't have the information, mark it as N/A.
+    You are the Construct Generator. Your task is to ask PACA about each item and fill in the information. Ask questions as provided, including any guidelines or options in parentheses. Expect PACA to give concise answers based on these guidelines. Do not add any additional commentary or explanations to PACA's responses.
     """
 
     construct_generator = ChatOpenAI(
@@ -37,25 +39,44 @@ def create_construct_generator():
 
 def construct_generator_conversation(paca_agent, construct_generator, paca_memory):
     constructs = [
-        "Chief complaint", "Symptom name", "Alleviating factors", "Exacerbating factors",
-        "Symptom duration", "Triggering factors", "Stressors", "Family history",
-        "Current family structure", "Suicidal ideation", "Suicide risk",
-        "Self-harming behavior risk", "Homicide risk", "Suicidal plans",
-        "Suicide attempts", "Mood", "Affect", "Verbal productivity", "Insight",
-        "Perception", "Thought process", "Thought content", "Spontaneity",
-        "Social judgment", "Reliability"
+        "Chief complaint (Describe in the patient's words)", "Symptom name", "Alleviating factors", "Exacerbating factors",
+        "Symptom duration (Unit: week)", "Triggering factors (The reason patient came to the hospital at this time)",
+        "Stressors((multiple answers available) home/work/school/legal issue/medical comorbidity/interpersonal difficulty/null)",
+        "Family history-diagnosis (Describe a psychiatric family history)",
+        "Family history-substance use (Describe a family history of substance use (alcohol, opioid, cannabinoid, hallucinogen, stimulant, narcotic, etc.))",
+        "Current family structure", "Suicidal ideation (candidate:high/moderate/low)",
+        "Suicidal plan (candidate:presence/absence)", "Suicidal attempt (candidate:presence/absence)",
+        "Self-harming behavior risk (candidate:high/moderate/low)", "Homicide risk (candidate:high/moderate/low)",
+        "Mood (candidate:euphoric/elated/euthymic/dysphoric/depressed/irritable)",
+        "Affect (candidate:broad/restricted/blunt/flat/labile/anxious/tense/shallow/inadequate/inappropriate)",
+        "Verbal productivity (candidate:increased/moderate/decreased)",
+        "Insight ((candidate:Complete denial of illness/Slight awareness of being sick and needing help, but denying it at the same time/Awareness of being sick but blaming it on others, external events/Intellectual insight/True emotional insight))",
+        "Perception (candidate:Normal/Illusion/Auditory hallucination/Visual hallucination/Olfactory hallucination/Gustatory hallucination/Depersonalization/Derealization/Déjà vu/Jamais vu)",
+        "Thought process (candidate:Normal/Loosening of association/flight of idea/circumstantiality/tangentiality/Word salad or incoherence/Neologism/Illogical/Irrelevant)",
+        "Thought content (candidate:Normal/preoccupation/overvalued idea/idea of reference/grandiosity, obsession/compulsion/rumination/delusion/phobia)",
+        "Spontaneity (candidate:(+)/(-))", "Social judgment (candidate:Normal/Impaired)", "Reliability (candidate:Yes/No)"
     ]
 
     filled_constructs = {}
 
     for construct in constructs:
-        question = f"What was the patient's {construct} based on your interview?"
-        paca_response = paca_agent(question)
+        # Construct Generator asks the question
+        cg_question = construct_generator.invoke(
+            [HumanMessage(
+                content=f"Ask PACA: Based on your interview, what was the patient's {construct}?")]
+        )
 
-        if "I don't know" in paca_response.lower() or "I'm not sure" in paca_response.lower():
-            filled_constructs[construct] = "N/A"
-        else:
-            filled_constructs[construct] = paca_response
+        # PACA answers the question
+        paca_response = paca_agent(cg_question.content)
+
+        # Construct Generator processes PACA's response
+        cg_processed = construct_generator.invoke(
+            [HumanMessage(
+                content=f"PACA's response: {paca_response}\n\nExtract and summarize the key information from PACA's response, focusing only on the relevant details for the construct: {construct}. Provide a concise answer without any additional commentary.")]
+        )
+
+        filled_constructs[construct.split(
+            '(')[0].strip()] = cg_processed.content.strip()
 
     return filled_constructs
 
@@ -121,69 +142,54 @@ def experiment_page(client_number):
         st.success(
             "SP, PACA, and Construct Generator agents loaded successfully.")
 
-        # Initialize session state for conversation and generator
+        # Initialize session state
         if 'conversation' not in st.session_state:
             st.session_state.conversation = []
         if 'conversation_generator' not in st.session_state:
             st.session_state.conversation_generator = simulate_conversation(
                 paca_agent, sp_agent)
-        if 'conversation_ended' not in st.session_state:
-            st.session_state.conversation_ended = False
         if 'constructs' not in st.session_state:
             st.session_state.constructs = None
 
-        # Button to generate next turn
-        if st.button("Generate Next Turn"):
-            if not st.session_state.conversation_ended:
+        # Conversation area
+        conversation_area = st.empty()
+
+        # Button to generate conversation
+        if st.button("Generate Conversation"):
+            while True:
                 try:
                     next_turn = next(st.session_state.conversation_generator)
                     st.session_state.conversation.append(next_turn)
 
-                    # Check if the conversation has ended
-                    if "다음에 뵙겠습니다" in next_turn[1] or "see you next time" in next_turn[1].lower():
-                        st.session_state.conversation_ended = True
+                    # Update conversation display
+                    with conversation_area.container():
+                        for speaker, message in st.session_state.conversation:
+                            with st.chat_message(speaker):
+                                st.write(message)
+
                 except StopIteration:
-                    st.warning(
-                        "The conversation has reached its maximum length.")
-                    st.session_state.conversation_ended = True
+                    break
 
-            elif st.session_state.constructs is None:
-                st.session_state.constructs = construct_generator_conversation(
-                    paca_agent, construct_generator, paca_memory)
+                # Add a small delay to allow for visual updates
+                time.sleep(0.1)
 
-            st.rerun()
-
-        # Button to generate full conversation
-        if st.button("Generate Full Conversation"):
-            with st.spinner("Generating full conversation..."):
-                while not st.session_state.conversation_ended:
-                    try:
-                        next_turn = next(
-                            st.session_state.conversation_generator)
-                        st.session_state.conversation.append(next_turn)
-
-                        # Check if the conversation has ended
-                        if "다음에 뵙겠습니다" in next_turn[1] or "see you next time" in next_turn[1].lower():
-                            st.session_state.conversation_ended = True
-                    except StopIteration:
-                        st.warning(
-                            "The conversation has reached its maximum length.")
-                        st.session_state.conversation_ended = True
-
-                if st.session_state.constructs is None:
+        # Button to stop conversation and generate constructs
+        if st.button("Stop and Generate Constructs"):
+            if st.session_state.constructs is None:
+                with st.spinner("Generating constructs..."):
                     st.session_state.constructs = construct_generator_conversation(
                         paca_agent, construct_generator, paca_memory)
-
-            st.success("Full conversation generated!")
+                st.success("Constructs generated!")
             st.rerun()
 
         # Display the conversation
-        for speaker, message in st.session_state.conversation:
-            with st.chat_message(speaker):
-                st.write(message)
+        with conversation_area.container():
+            for speaker, message in st.session_state.conversation:
+                with st.chat_message(speaker):
+                    st.write(message)
 
-        # Display constructs if the conversation has ended
-        if st.session_state.conversation_ended and st.session_state.constructs:
+        # Display constructs if they have been generated
+        if st.session_state.constructs:
             st.subheader("Construct Generator Output")
             for construct, value in st.session_state.constructs.items():
                 st.write(f"{construct}: {value}")
@@ -217,6 +223,7 @@ def experiment_page(client_number):
     else:
         st.error(
             "Failed to load client data. Please check if the data exists for the specified versions.")
+
 
 # import streamlit as st
 # from PACA_utils import create_paca_agent, simulate_conversation, save_ai_conversation_to_firebase, save_conversation_to_csv
