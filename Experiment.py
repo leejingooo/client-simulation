@@ -6,7 +6,7 @@ from langchain.schema import HumanMessage, AIMessage
 import time
 from langchain.chat_models import ChatOpenAI, ChatAnthropic
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain.schema import HumanMessage, AIMessage
+from langchain.schema import HumanMessage, AIMessage, SystemMessage
 from langchain.callbacks import StreamingStdOutCallbackHandler
 from langchain.memory import ConversationBufferMemory
 from SP_utils import create_conversational_agent, save_to_firebase
@@ -22,61 +22,47 @@ instructions = """
     """
 
 
-def create_construct_generator():
-    construct_generator_prompt = """
-    You are the Construct Generator. Your task is to ask PACA about each item and fill in the information. Ask questions as provided, including any guidelines or options in parentheses. Expect PACA to give concise answers based on these guidelines. Do not add any additional commentary or explanations to PACA's responses.
-    """
-
-    construct_generator = ChatOpenAI(
-        temperature=0.7,
-        model="gpt-4o",
-        streaming=True,
-        callbacks=[StreamingStdOutCallbackHandler()]
-    )
-
-    return construct_generator
-
-
-def construct_generator_conversation(paca_agent, construct_generator, paca_memory):
+def construct_generator_conversation(paca_agent, paca_memory):
     constructs = [
-        "Chief complaint (Describe in the patient's words)", "Symptom name", "Alleviating factors", "Exacerbating factors",
-        "Symptom duration (Unit: week)", "Triggering factors (The reason patient came to the hospital at this time)",
-        "Stressors((multiple answers available) home/work/school/legal issue/medical comorbidity/interpersonal difficulty/null)",
-        "Family history-diagnosis (Describe a psychiatric family history)",
-        "Family history-substance use (Describe a family history of substance use (alcohol, opioid, cannabinoid, hallucinogen, stimulant, narcotic, etc.))",
-        "Current family structure", "Suicidal ideation (candidate:high/moderate/low)",
-        "Suicidal plan (candidate:presence/absence)", "Suicidal attempt (candidate:presence/absence)",
-        "Self-harming behavior risk (candidate:high/moderate/low)", "Homicide risk (candidate:high/moderate/low)",
-        "Mood (candidate:euphoric/elated/euthymic/dysphoric/depressed/irritable)",
-        "Affect (candidate:broad/restricted/blunt/flat/labile/anxious/tense/shallow/inadequate/inappropriate)",
-        "Verbal productivity (candidate:increased/moderate/decreased)",
-        "Insight ((candidate:Complete denial of illness/Slight awareness of being sick and needing help, but denying it at the same time/Awareness of being sick but blaming it on others, external events/Intellectual insight/True emotional insight))",
-        "Perception (candidate:Normal/Illusion/Auditory hallucination/Visual hallucination/Olfactory hallucination/Gustatory hallucination/Depersonalization/Derealization/Déjà vu/Jamais vu)",
-        "Thought process (candidate:Normal/Loosening of association/flight of idea/circumstantiality/tangentiality/Word salad or incoherence/Neologism/Illogical/Irrelevant)",
-        "Thought content (candidate:Normal/preoccupation/overvalued idea/idea of reference/grandiosity, obsession/compulsion/rumination/delusion/phobia)",
-        "Spontaneity (candidate:(+)/(-))", "Social judgment (candidate:Normal/Impaired)", "Reliability (candidate:Yes/No)"
+        ("Chief complaint", "Describe in the patient's words"),
+        ("Symptom name", ""),
+        ("Alleviating factors", ""),
+        ("Exacerbating factors", ""),
+        ("Symptom duration", "Unit: week"),
+        ("Triggering factors", "The reason patient came to the hospital at this time"),
+        ("Stressors", "multiple answers available: home/work/school/legal issue/medical comorbidity/interpersonal difficulty/null"),
+        ("Family history-diagnosis", "Describe a psychiatric family history"),
+        ("Family history-substance use",
+         "Describe a family history of substance use (alcohol, opioid, cannabinoid, hallucinogen, stimulant, narcotic, etc.)"),
+        ("Current family structure", ""),
+        ("Suicidal ideation", "candidate: high/moderate/low"),
+        ("Suicidal plan", "candidate: presence/absence"),
+        ("Suicidal attempt", "candidate: presence/absence"),
+        ("Self-harming behavior risk", "candidate: high/moderate/low"),
+        ("Homicide risk", "candidate: high/moderate/low"),
+        ("Mood", "candidate: euphoric/elated/euthymic/dysphoric/depressed/irritable"),
+        ("Affect", "candidate: broad/restricted/blunt/flat/labile/anxious/tense/shallow/inadequate/inappropriate"),
+        ("Verbal productivity", "candidate: increased/moderate/decreased"),
+        ("Insight", "candidate: Complete denial of illness/Slight awareness of being sick and needing help, but denying it at the same time/Awareness of being sick but blaming it on others, external events/Intellectual insight/True emotional insight"),
+        ("Perception", "candidate: Normal/Illusion/Auditory hallucination/Visual hallucination/Olfactory hallucination/Gustatory hallucination/Depersonalization/Derealization/Déjà vu/Jamais vu"),
+        ("Thought process", "candidate: Normal/Loosening of association/flight of idea/circumstantiality/tangentiality/Word salad or incoherence/Neologism/Illogical/Irrelevant"),
+        ("Thought content", "candidate: Normal/preoccupation/overvalued idea/idea of reference/grandiosity, obsession/compulsion/rumination/delusion/phobia"),
+        ("Spontaneity", "candidate: (+)/(-)"),
+        ("Social judgment", "candidate: Normal/Impaired"),
+        ("Reliability", "candidate: Yes/No")
     ]
 
     filled_constructs = {}
 
-    for construct in constructs:
-        # Construct Generator asks the question
-        cg_question = construct_generator.invoke(
-            [HumanMessage(
-                content=f"Ask PACA: Based on your interview, what was the patient's {construct}?")]
-        )
+    for construct, guide in constructs:
+        question = f"Based on your psychiatric interview, what is the patient's {construct}? Please provide a concise answer, referencing the following guideline if applicable: {guide}. If you're uncertain, simply state 'I don't know'."
 
-        # PACA answers the question
-        paca_response = paca_agent(cg_question.content)
+        paca_response = paca_agent(question)
 
-        # Construct Generator processes PACA's response
-        cg_processed = construct_generator.invoke(
-            [HumanMessage(
-                content=f"PACA's response: {paca_response}\n\nExtract and summarize the key information from PACA's response, focusing only on the relevant details for the construct: {construct}. Provide a concise answer without any additional commentary.")]
-        )
-
-        filled_constructs[construct.split(
-            '(')[0].strip()] = cg_processed.content.strip()
+        if "I don't know" in paca_response.lower() or "uncertain" in paca_response.lower():
+            filled_constructs[construct] = "N/A"
+        else:
+            filled_constructs[construct] = paca_response.strip()
 
     return filled_constructs
 
@@ -136,11 +122,7 @@ def experiment_page(client_number):
         if not paca_agent:
             st.stop()
 
-        # Create Construct Generator
-        construct_generator = create_construct_generator()
-
-        st.success(
-            "SP, PACA, and Construct Generator agents loaded successfully.")
+        st.success("SP and PACA agents loaded successfully.")
 
         # Initialize session state
         if 'conversation' not in st.session_state:
@@ -178,7 +160,7 @@ def experiment_page(client_number):
             if st.session_state.constructs is None:
                 with st.spinner("Generating constructs..."):
                     st.session_state.constructs = construct_generator_conversation(
-                        paca_agent, construct_generator, paca_memory)
+                        paca_agent, paca_memory)
                 st.success("Constructs generated!")
             st.rerun()
 
@@ -223,8 +205,6 @@ def experiment_page(client_number):
     else:
         st.error(
             "Failed to load client data. Please check if the data exists for the specified versions.")
-
-
 # import streamlit as st
 # from PACA_utils import create_paca_agent, simulate_conversation, save_ai_conversation_to_firebase, save_conversation_to_csv
 # from SP_utils import create_conversational_agent, load_from_firebase, get_diag_from_given_information, load_prompt_and_get_version
