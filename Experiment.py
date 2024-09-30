@@ -55,12 +55,9 @@ def construct_generator_conversation(paca_agent, paca_memory):
     filled_constructs = {}
 
     for construct, guide in constructs:
-        question = f"Based on your psychiatric interview and the entire conversation history, what is the patient's {construct}? Please provide a concise answer, referencing the following guideline if applicable: {guide}. If you're uncertain, simply state 'I don't know'."
+        question = f"Based on your psychiatric interview, what is the patient's {construct}? Please provide a concise answer, referencing the following guideline if applicable: {guide}. If you're uncertain, simply state 'I don't know'."
 
         paca_response = paca_agent(question)
-        # 메모리에 질문과 응답 추가
-        paca_memory.chat_memory.add_user_message(question)
-        paca_memory.chat_memory.add_ai_message(paca_response)
 
         if "I don't know" in paca_response.lower() or "uncertain" in paca_response.lower():
             filled_constructs[construct] = "N/A"
@@ -208,6 +205,7 @@ def experiment_page(client_number):
     else:
         st.error(
             "Failed to load client data. Please check if the data exists for the specified versions.")
+
 # import streamlit as st
 # from PACA_utils import create_paca_agent, simulate_conversation, save_ai_conversation_to_firebase, save_conversation_to_csv
 # from SP_utils import create_conversational_agent, load_from_firebase, get_diag_from_given_information, load_prompt_and_get_version
