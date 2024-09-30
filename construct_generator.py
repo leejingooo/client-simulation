@@ -6,7 +6,7 @@ from langchain.chains import LLMChain
 from typing import Dict, Any
 from SP_utils import *
 
-llm = ChatOpenAI(temperature=0, model="gpt-4")
+llm = ChatOpenAI(temperature=0, model="gpt-4o")
 
 
 def load_form(form_path):
