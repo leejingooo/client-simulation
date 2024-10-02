@@ -27,7 +27,7 @@ paca_llm_claude = ChatAnthropic(
     temperature=0.7,
     streaming=True,
     callbacks=[StreamingStdOutCallbackHandler()],
-    anthropic_api_key=anthropic_api_key
+    api_key=anthropic_api_key
 )
 
 firebase_ref = get_firebase_ref()
