@@ -150,7 +150,7 @@ def experiment_page(client_number):
         conversation_area = st.empty()
 
         # Button to generate conversation
-        if st.button("Generate Conversation"):
+        if st.sidebar.button("Generate Conversation"):
             while True:
                 try:
                     next_turn = next(st.session_state.conversation_generator)
@@ -169,7 +169,7 @@ def experiment_page(client_number):
                 time.sleep(0.1)
 
         # Button to stop conversation and generate constructs
-        if st.button("Stop and Generate Constructs"):
+        if st.sidebar.button("Stop and Generate Constructs"):
             if st.session_state.constructs is None:
                 with st.spinner("Generating constructs..."):
                     st.session_state.constructs = construct_generator_conversation(
