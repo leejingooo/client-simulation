@@ -26,7 +26,6 @@ paca_llm_claude = ChatAnthropic(
     model="claude-3-5-sonnet-20240620",
     temperature=0.7,
     streaming=True,
-    callbacks=[StreamingStdOutCallbackHandler()],
     anthropic_api_key=anthropic_api_key
 )
 
