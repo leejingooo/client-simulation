@@ -87,7 +87,7 @@ def create_paca_agent(paca_version):
 
     if selected_model == "GPT-4o":
         chain = chat_prompt | paca_llm_gpt
-    else:
+    elif selected_model == "Claude-3.5-sonnet":
         chain = chat_prompt | paca_llm_claude
 
     def paca_agent(human_input, is_initial_prompt=False):
