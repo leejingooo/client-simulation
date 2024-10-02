@@ -68,15 +68,9 @@ After the interview with the patient is complete, someone will come to ask you a
 
 
 def create_paca_agent(paca_version):
-    if 'selected_paca_model' not in st.session_state:
-        st.session_state.selected_paca_model = st.selectbox(
-            "Select PACA model", ["GPT-4o", "Claude-3.5-sonnet"])
-    else:
-        st.session_state.selected_paca_model = st.selectbox(
-            "Select PACA model", ["GPT-4o", "Claude-3.5-sonnet"],
-            index=[
-                "GPT-4o", "Claude-3.5-sonnet"].index(st.session_state.selected_paca_model)
-        )
+
+    st.session_state.selected_paca_model = st.selectbox(
+        "Select PACA model", ["GPT-4o", "Claude-3.5-sonnet"])
 
     system_prompt = st.selectbox("Select PACA system prompt", [
                                  basic_prompt, guided_prompt])
