@@ -116,19 +116,19 @@ def experiment_page(client_number):
             st.error("Failed to load SP system prompt.")
             st.stop()
 
-            # Create PACA agent
-            if 'paca_agent' not in st.session_state:
-                st.session_state.paca_agent, st.session_state.paca_memory, actual_paca_version, st.session_state.selected_paca_model = create_paca_agent(
-                    paca_version)
-            paca_agent = st.session_state.paca_agent
-            paca_memory = st.session_state.paca_memory
+        # Create PACA agent
+        if 'paca_agent' not in st.session_state:
+            st.session_state.paca_agent, st.session_state.paca_memory, actual_paca_version, st.session_state.selected_paca_model = create_paca_agent(
+                paca_version)
+        paca_agent = st.session_state.paca_agent
+        paca_memory = st.session_state.paca_memory
 
-            # 선택된 모델 정보 표시
-            if 'selected_paca_model' in st.session_state:
-                st.success(
-                    f"PACA agent created successfully using {st.session_state.selected_paca_model} model.")
-            else:
-                st.warning("PACA model not selected yet.")
+        # 선택된 모델 정보 표시
+        if 'selected_paca_model' in st.session_state:
+            st.success(
+                f"PACA agent created successfully using {st.session_state.selected_paca_model} model.")
+        else:
+            st.warning("PACA model not selected yet.")
 
         if not paca_agent:
             st.stop()
