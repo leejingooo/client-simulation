@@ -22,7 +22,7 @@ instructions = """
     """
 
 
-def construct_generator_conversation(paca_agent):
+def construct_generator_conversation(paca_agent, paca_memory):
     constructs = [
         ("Chief complaint", "Describe in the patient's words"),
         ("Symptom name", ""),
@@ -57,7 +57,16 @@ def construct_generator_conversation(paca_agent):
     for construct, guide in constructs:
         question = f"Based on your psychiatric interview and the entire conversation history, what is the patient's {construct}? Please provide a concise answer, referencing the following guideline if applicable: {guide}. If you're uncertain, simply state 'I don't know'."
 
-        paca_response = paca_agent(question)
+        # Use the conversation history from memory
+        conversation_history = paca_memory.chat_memory.messages
+
+        # Prepare the input for the PACA agent
+        paca_input = {
+            "chat_history": conversation_history,
+            "human_input": question
+        }
+
+        paca_response = paca_agent(paca_input)
 
         if "I don't know" in paca_response.lower() or "uncertain" in paca_response.lower():
             filled_constructs[construct] = "N/A"
@@ -160,7 +169,7 @@ def experiment_page(client_number):
             if st.session_state.constructs is None:
                 with st.spinner("Generating constructs..."):
                     st.session_state.constructs = construct_generator_conversation(
-                        paca_agent)
+                        paca_agent, paca_memory)
                 st.success("Constructs generated!")
             st.rerun()
 
