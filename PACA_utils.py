@@ -91,12 +91,16 @@ def create_paca_agent(paca_version):
     memory = ConversationBufferMemory(
         return_messages=True, memory_key="chat_history")
 
-    if selected_model == "GPT-4o":
-        chain = chat_prompt | paca_llm_gpt
-    elif selected_model == "Claude-3.5-sonnet":
-        chain = chat_prompt | paca_llm_claude
-
     def paca_agent(human_input, is_initial_prompt=False):
+        # 매번 호출될 때마다 현재 선택된 모델을 확인
+        current_model = st.session_state.selected_paca_model
+        if current_model == "GPT-4o":
+            chain = chat_prompt | paca_llm_gpt
+        elif current_model == "Claude-3.5-sonnet":
+            chain = chat_prompt | paca_llm_claude
+        else:
+            raise ValueError(f"Unknown model: {current_model}")
+
         response = chain.invoke({
             "chat_history": memory.chat_memory.messages,
             "human_input": human_input,
