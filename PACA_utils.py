@@ -68,15 +68,19 @@ After the interview with the patient is complete, someone will come to ask you a
 
 
 def create_paca_agent(paca_version):
+    selected_model = st.selectbox(
+        "Select PACA model",
+        ["GPT-4o", "Claude-3.5-sonnet"],
+        key="paca_model_selector"
+    )
 
-    st.session_state.selected_paca_model = st.selectbox(
-        "Select PACA model", ["GPT-4o", "Claude-3.5-sonnet"])
+    st.session_state.selected_paca_model = selected_model
 
     system_prompt = st.selectbox("Select PACA system prompt", [
                                  basic_prompt, guided_prompt])
 
     # 모델 선택 결과 표시
-    st.info(f"Selected PACA model: {st.session_state.selected_paca_model}")
+    st.info(f"Selected PACA model: {selected_model}")
 
     chat_prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
@@ -87,9 +91,9 @@ def create_paca_agent(paca_version):
     memory = ConversationBufferMemory(
         return_messages=True, memory_key="chat_history")
 
-    if st.session_state.selected_paca_model == "GPT-4o":
+    if selected_model == "GPT-4o":
         chain = chat_prompt | paca_llm_gpt
-    elif st.session_state.selected_paca_model == "Claude-3.5-sonnet":
+    elif selected_model == "Claude-3.5-sonnet":
         chain = chat_prompt | paca_llm_claude
 
     def paca_agent(human_input, is_initial_prompt=False):
@@ -104,7 +108,7 @@ def create_paca_agent(paca_version):
         memory.chat_memory.add_ai_message(response.content)
         return response.content
 
-    return paca_agent, memory, paca_version, st.session_state.selected_paca_model
+    return paca_agent, memory, paca_version, selected_model
 
 
 def simulate_conversation(paca_agent, sp_agent, max_turns=100):
