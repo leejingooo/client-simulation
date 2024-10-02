@@ -57,16 +57,7 @@ def construct_generator_conversation(paca_agent, paca_memory):
     for construct, guide in constructs:
         question = f"Based on your psychiatric interview and the entire conversation history, what is the patient's {construct}? Please provide a concise answer, referencing the following guideline if applicable: {guide}. If you're uncertain, simply state 'I don't know'."
 
-        # Use the conversation history from memory
-        conversation_history = paca_memory.chat_memory.messages
-
-        # Prepare the input for the PACA agent
-        paca_input = {
-            "chat_history": conversation_history,
-            "human_input": question
-        }
-
-        paca_response = paca_agent(paca_input)
+        paca_response = paca_agent(question)
 
         if "i don't know" in paca_response.lower() or "uncertain" in paca_response.lower():
             filled_constructs[construct] = "N/A"
