@@ -68,7 +68,7 @@ def construct_generator_conversation(paca_agent, paca_memory):
 
         paca_response = paca_agent(paca_input)
 
-        if "I don't know" in paca_response.lower() or "uncertain" in paca_response.lower():
+        if "i don't know" in paca_response.lower() or "uncertain" in paca_response.lower():
             filled_constructs[construct] = "N/A"
         else:
             filled_constructs[construct] = paca_response.strip()
@@ -126,8 +126,12 @@ def experiment_page(client_number):
             st.stop()
 
         # Create PACA agent
-        paca_agent, paca_memory, actual_paca_version = create_paca_agent(
-            paca_version)
+        if 'paca_agent' not in st.session_state:
+            st.session_state.paca_agent, st.session_state.paca_memory, actual_paca_version = create_paca_agent(
+                paca_version)
+        paca_agent = st.session_state.paca_agent
+        paca_memory = st.session_state.paca_memory
+
         if not paca_agent:
             st.stop()
 
