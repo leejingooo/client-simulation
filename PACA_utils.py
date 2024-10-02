@@ -74,7 +74,10 @@ def create_paca_agent(paca_version):
         key="paca_model_selector"
     )
 
-    st.session_state.selected_paca_model = selected_model
+    # 모델이 변경되었을 때 세션 상태를 강제로 업데이트
+    if 'selected_paca_model' not in st.session_state or st.session_state.selected_paca_model != selected_model:
+        st.session_state.selected_paca_model = selected_model
+        st.session_state.force_paca_update = True
 
     system_prompt = st.selectbox("Select PACA system prompt", [
                                  basic_prompt, guided_prompt])
