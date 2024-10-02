@@ -70,7 +70,7 @@ After the interview with the patient is complete, someone will come to ask you a
 def create_paca_agent(paca_version):
     selected_model = st.selectbox(
         "Select PACA model",
-        ["GPT-4o", "Claude-3.5-sonnet", "Llama-3.2"],
+        ["Claude-3.5-sonnet", "GPT-4o", "Llama-3.2"],
         key="paca_model_selector"
     )
 
