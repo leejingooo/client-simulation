@@ -73,6 +73,9 @@ def create_paca_agent(paca_version):
     system_prompt = st.selectbox("Select PACA system prompt", [
                                  basic_prompt, advanced_prompt, guided_prompt])
 
+    # 모델 선택 결과 표시
+    st.info(f"Selected PACA model: {selected_model}")
+
     chat_prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
         MessagesPlaceholder(variable_name="chat_history"),
@@ -99,7 +102,7 @@ def create_paca_agent(paca_version):
         memory.chat_memory.add_ai_message(response.content)
         return response.content
 
-    return paca_agent, memory, paca_version
+    return paca_agent, memory, paca_version, selected_model  # selected_model 추가
 
 
 def simulate_conversation(paca_agent, sp_agent, max_turns=100):

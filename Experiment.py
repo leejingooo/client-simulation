@@ -118,10 +118,14 @@ def experiment_page(client_number):
 
         # Create PACA agent
         if 'paca_agent' not in st.session_state:
-            st.session_state.paca_agent, st.session_state.paca_memory, actual_paca_version = create_paca_agent(
+            st.session_state.paca_agent, st.session_state.paca_memory, actual_paca_version, selected_paca_model = create_paca_agent(
                 paca_version)
         paca_agent = st.session_state.paca_agent
         paca_memory = st.session_state.paca_memory
+
+        # 선택된 모델 정보 표시
+        st.success(
+            f"PACA agent created successfully using {selected_paca_model} model.")
 
         if not paca_agent:
             st.stop()
