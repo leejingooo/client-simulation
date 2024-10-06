@@ -126,11 +126,6 @@ def experiment_page(client_number):
         paca_agent = st.session_state.paca_agent
         paca_memory = st.session_state.paca_memory
 
-        # 모델 재선택 버튼 (옵션)
-        if st.button("Refresh PACA Model"):
-            st.session_state.force_paca_update = True
-            st.rerun()
-
         st.success("SP and PACA agents loaded successfully.")
 
         # Initialize session state
