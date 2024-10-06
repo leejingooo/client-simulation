@@ -5,3 +5,6 @@ anthropic
 firebase-admin
 pandas
 playwright
+python-dotenv
+requests
+pydantic
