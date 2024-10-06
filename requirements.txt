@@ -1,5 +1,7 @@
 streamlit
 langchain
+langchain_anthropic
+langchain_openai
 openai
 anthropic
 firebase-admin
