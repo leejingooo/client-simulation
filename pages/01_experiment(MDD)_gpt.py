@@ -1,4 +1,4 @@
-from Experiment import experiment_page
+from Experiment_gpt import experiment_page
 
 client_number = 5551
 

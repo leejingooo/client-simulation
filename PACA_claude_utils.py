@@ -13,14 +13,6 @@ import time
 import pandas as pd
 import io
 
-# Initialize the language models
-paca_llm_gpt = ChatOpenAI(
-    temperature=0.7,
-    model="gpt-4o",
-    streaming=True,
-    callbacks=[StreamingStdOutCallbackHandler()]
-)
-
 
 paca_llm_claude = ChatAnthropic(
     # model="claude-3-5-sonnet-20240620",
@@ -67,22 +59,9 @@ After the interview with the patient is complete, someone will come to ask you a
 
 
 def create_paca_agent(paca_version):
-    selected_model = st.selectbox(
-        "Select PACA model",
-        ["Claude-3.5-sonnet", "GPT-4o", "Llama-3.2"],
-        key="paca_model_selector"
-    )
-
-    # 모델이 변경되었을 때 세션 상태를 강제로 업데이트
-    if 'selected_paca_model' not in st.session_state or st.session_state.selected_paca_model != selected_model:
-        st.session_state.selected_paca_model = selected_model
-        st.session_state.force_paca_update = True
 
     system_prompt = st.selectbox("Select PACA system prompt", [
                                  basic_prompt, guided_prompt])
-
-    # 모델 선택 결과 표시
-    st.info(f"Selected PACA model: {selected_model}")
 
     chat_prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
@@ -94,14 +73,8 @@ def create_paca_agent(paca_version):
         return_messages=True, memory_key="chat_history")
 
     def paca_agent(human_input, is_initial_prompt=False):
-        # 매번 호출될 때마다 현재 선택된 모델을 확인
-        current_model = st.session_state.selected_paca_model
-        if current_model == "GPT-4o":
-            chain = chat_prompt | paca_llm_gpt
-        elif current_model == "Claude-3.5-sonnet":
-            chain = chat_prompt | paca_llm_claude
-        else:
-            raise ValueError(f"Unknown model: {current_model}")
+
+        chain = chat_prompt | paca_llm_claude
 
         response = chain.invoke({
             "chat_history": memory.chat_memory.messages,
@@ -114,7 +87,7 @@ def create_paca_agent(paca_version):
         memory.chat_memory.add_ai_message(response.content)
         return response.content
 
-    return paca_agent, memory, paca_version, selected_model
+    return paca_agent, memory, paca_version
 
 
 def simulate_conversation(paca_agent, sp_agent, max_turns=100):
