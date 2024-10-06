@@ -120,17 +120,11 @@ def experiment_page(client_number):
         # Create PACA agent
         # Create PACA agent
         if 'paca_agent' not in st.session_state or st.session_state.get('force_paca_update', False):
-            st.session_state.paca_agent, st.session_state.paca_memory, actual_paca_version, selected_paca_model = create_paca_agent(
+            st.session_state.paca_agent, st.session_state.paca_memory, actual_paca_version = create_paca_agent(
                 paca_version)
-            st.session_state.selected_paca_model = selected_paca_model
-            st.session_state.force_paca_update = False
 
         paca_agent = st.session_state.paca_agent
         paca_memory = st.session_state.paca_memory
-
-        # 선택된 모델 정보 표시
-        st.success(
-            f"PACA agent is using {st.session_state.selected_paca_model} model.")
 
         # 모델 재선택 버튼 (옵션)
         if st.button("Refresh PACA Model"):

@@ -87,7 +87,7 @@ def create_paca_agent(paca_version):
         memory.chat_memory.add_ai_message(response.content)
         return response.content
 
-    return paca_agent, memory, paca_version, selected_model
+    return paca_agent, memory, paca_version
 
 
 def simulate_conversation(paca_agent, sp_agent, max_turns=100):
