@@ -56,7 +56,7 @@ def construct_generator_conversation(paca_agent, paca_memory):
     filled_constructs = {}
 
     for construct, guide in constructs:
-        question = f"""Based on your psychiatric interview and the entire conversation history, what is the patient's {construct}? Please provide a concise answer, referencing the following guideline if applicable: {guide}. For example, if the mood is depressed, don't say "The patient's mood is depressed", but just answer "depressed" 영어를 사용하여 as if it were a given candidate. If you're uncertain, simply state "I don't know". Use English."""
+        question = f"""Based on your psychiatric interview and the entire conversation history, what is the patient's {construct}? Please provide a concise answer, referencing the following guideline if applicable: {guide}. For example, if the mood is depressed, don't say "The patient's mood is depressed", but just answer "depressed" as if it were a given candidate. If you're uncertain, simply state "I don't know". Use English."""
 
         paca_response = paca_agent(question)
 

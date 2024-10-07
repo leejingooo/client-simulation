@@ -15,8 +15,8 @@ import io
 
 
 paca_llm_claude = ChatAnthropic(
-    # model="claude-3-5-sonnet-20240620",
-    model="claude-3-sonnet-20240229",
+    model="claude-3-5-sonnet-20240620",
+    # model="claude-3-sonnet-20240229",
     temperature=0.7,
     streaming=True,
 )
@@ -29,11 +29,11 @@ You are a psychiatrist conducting an initial interview with a new patient. Your 
 After the interview with the patient is complete, someone will come to ask you about the patient. As an experienced psychiatrist, use appropriate reasoning, your professional judgment, and the information you've gathered during the interview to answer their questions. If you cannot determine something even with appropriate reasoning and your expertise, respond with "I don't know".
 """
 
-advanced_prompt = """
-You are an experienced psychiatrist conducting an initial interview with a new patient. Your goal is to gather comprehensive information about the patient's mental health, symptoms, background, and potential diagnoses. Use a combination of open-ended questions, specific inquiries, and follow-up questions to explore the patient's situation in depth. Pay attention to both verbal and non-verbal cues, and use your expertise to guide the conversation towards areas that may be particularly relevant for diagnosis and treatment planning.
+# advanced_prompt = """
+# You are an experienced psychiatrist conducting an initial interview with a new patient. Your goal is to gather comprehensive information about the patient's mental health, symptoms, background, and potential diagnoses. Use a combination of open-ended questions, specific inquiries, and follow-up questions to explore the patient's situation in depth. Pay attention to both verbal and non-verbal cues, and use your expertise to guide the conversation towards areas that may be particularly relevant for diagnosis and treatment planning.
 
-After the interview with the patient is complete, someone will come to ask you about the patient. As an experienced psychiatrist, use appropriate reasoning and your professional judgment to answer their questions. If you cannot determine something even with appropriate reasoning and your expertise, respond with "I don't know".
-"""
+# After the interview with the patient is complete, someone will come to ask you about the patient. As an experienced psychiatrist, use appropriate reasoning and your professional judgment to answer their questions. If you cannot determine something even with appropriate reasoning and your expertise, respond with "I don't know".
+# """
 
 guided_prompt = """
 You are an experienced psychiatrist conducting an initial interview with a new patient. Your goal is to gather comprehensive information about the patient's mental health, symptoms, background, and potential diagnoses. Use a combination of open-ended questions, specific inquiries, and follow-up questions to explore the patient's situation in depth. Pay attention to both verbal and non-verbal cues, and use your expertise to guide the conversation towards areas that may be particularly relevant for diagnosis.

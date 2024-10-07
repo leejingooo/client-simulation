@@ -1,6 +1,7 @@
 import json
 # from langchain.chat_models import ChatOpenAI, ChatAnthropic
-from langchain_openai import ChatOpenAI
+# from langchain_openai import ChatOpenAI
+from langchain_ollama import ChatOllama
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.schema import HumanMessage, AIMessage
 from langchain.callbacks import StreamingStdOutCallbackHandler
@@ -13,9 +14,9 @@ import pandas as pd
 import io
 
 # Initialize the language models
-paca_llm_gpt = ChatOpenAI(
+paca_llm_gpt = ChatOllama(
     temperature=0.7,
-    model="gpt-4o",
+    model="llama3.2:3b",
     streaming=True,
     callbacks=[StreamingStdOutCallbackHandler()]
 )
@@ -91,7 +92,7 @@ def create_paca_agent(paca_version):
 
 
 def simulate_conversation(paca_agent, sp_agent, max_turns=100):
-    initial_prompt = "안녕하세요, 저는 정신과 의사 김민수입니다. 이름이 어떻게 되시나요?"
+    initial_prompt = "Hello, I'm Dr. Kim Min-soo, a psychiatrist. What is your name?"
 
     current_speaker = "SP"
     current_message = initial_prompt
