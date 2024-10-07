@@ -1,7 +1,7 @@
 import json
 # from langchain.chat_models import ChatOpenAI, ChatAnthropic
-from langchain_anthropic import ChatAnthropic
 # from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.schema import HumanMessage, AIMessage
 from langchain.callbacks import StreamingStdOutCallbackHandler
@@ -13,33 +13,33 @@ import time
 import pandas as pd
 import io
 
-
 paca_llm_claude = ChatAnthropic(
     model="claude-3-5-sonnet-20240620",
     temperature=0.7,
     streaming=True,
 )
 
+
 firebase_ref = get_firebase_ref()
 
 basic_prompt = """
-You are a psychiatrist conducting an initial interview with a new patient. Your goal is to gather relevant information about the patient's mental health, symptoms, and background. Ask open-ended questions and follow up on the patient's responses to gain a comprehensive understanding of their situation. When starting the conversation, begin with exactly these words: "안녕하세요, 저는 정신과 의사 김민수입니다. 이름이 어떻게 되시나요?". Proceed in Korean.
+You are a psychiatrist conducting an initial interview with a new patient. Your goal is to gather relevant information about the patient's mental health, symptoms, and background. Ask open-ended questions and follow up on the patient's responses to gain a comprehensive understanding of their situation.
 
 After the interview with the patient is complete, someone will come to ask you about the patient. As an experienced psychiatrist, use appropriate reasoning, your professional judgment, and the information you've gathered during the interview to answer their questions. If you cannot determine something even with appropriate reasoning and your expertise, respond with "I don't know".
 """
+
 
 guided_prompt = """
 You are an experienced psychiatrist conducting an initial interview with a new patient. Your goal is to gather comprehensive information about the patient's mental health, symptoms, background, and potential diagnoses. Use a combination of open-ended questions, specific inquiries, and follow-up questions to explore the patient's situation in depth. Pay attention to both verbal and non-verbal cues, and use your expertise to guide the conversation towards areas that may be particularly relevant for diagnosis.
 
 The following aspects need to be assessed in the patient: Chief complaint, Present illness, Symptoms, Alleviating factors, Exacerbating factors, Symptom duration, Triggering factors (why the patient decided to visit the hospital today), Stressors, Family history (including diagnoses and substance use), Current family structure, Suicidal ideation, Suicide risk, Self-harming behavior risk, Homicide risk, Suicidal plans, Suicide attempts, Mood, Affect, Verbal productivity, Insight, Perception, Thought process, Thought content, Spontaneity, Social judgment, and Reliability.
 
-When starting the conversation, begin with exactly these words: "안녕하세요, 저는 정신과 의사 김민수입니다. 이름이 어떻게 되시나요?". Proceed in Korean.
-
 After the interview with the patient is complete, someone will come to ask you about the patient. As an experienced psychiatrist, use appropriate reasoning, your professional judgment, and the information you've gathered during the interview to answer their questions. If you cannot determine something even with appropriate reasoning and your expertise, respond with "I don't know".
 """
 
 
 def create_paca_agent(paca_version):
+
     system_prompt = st.selectbox("Select PACA system prompt", [
                                  basic_prompt, guided_prompt])
 
@@ -52,13 +52,18 @@ def create_paca_agent(paca_version):
     memory = ConversationBufferMemory(
         return_messages=True, memory_key="chat_history")
 
-    def paca_agent(human_input):
+    def paca_agent(human_input, is_initial_prompt=False):
+
         chain = chat_prompt | paca_llm_claude
+
         response = chain.invoke({
             "chat_history": memory.chat_memory.messages,
             "human_input": human_input,
         })
-        memory.chat_memory.add_user_message(human_input)
+        if is_initial_prompt:
+            memory.chat_memory.add_ai_message(human_input)
+        else:
+            memory.chat_memory.add_user_message(human_input)
         memory.chat_memory.add_ai_message(response.content)
         return response.content
 
@@ -66,15 +71,16 @@ def create_paca_agent(paca_version):
 
 
 def simulate_conversation(paca_agent, sp_agent, max_turns=100):
-    # 대화 시작
-    initial_user_input = "대화 시작"
-    paca_response = paca_agent(initial_user_input)
-    yield ("PACA", paca_response)
+    initial_prompt = "안녕하세요, 저는 정신과 의사 김민수입니다. 이름이 어떻게 되시나요?"
 
     current_speaker = "SP"
-    current_message = paca_response
+    current_message = initial_prompt
 
-    for _ in range(max_turns - 1):
+    # Add initial prompt to PACA's memory
+    paca_agent(initial_prompt, is_initial_prompt=True)
+    yield ("PACA", initial_prompt)
+
+    for _ in range(max_turns):
         if current_speaker == "SP":
             response = sp_agent(current_message)
             yield ("SP", response)
