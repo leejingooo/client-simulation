@@ -22,12 +22,6 @@ paca_llm_claude = ChatAnthropic(
 
 firebase_ref = get_firebase_ref()
 
-basic_prompt = """
-You are a psychiatrist conducting an initial interview with a new patient. Your goal is to gather relevant information about the patient's mental health, symptoms, and background. Ask open-ended questions and follow up on the patient's responses to gain a comprehensive understanding of their situation. When starting the conversation, begin with exactly these words: "안녕하세요, 저는 정신과 의사 김민수입니다. 이름이 어떻게 되시나요?". Proceed in Korean.
-
-After the interview with the patient is complete, someone will come to ask you about the patient. As an experienced psychiatrist, use appropriate reasoning, your professional judgment, and the information you've gathered during the interview to answer their questions. If you cannot determine something even with appropriate reasoning and your expertise, respond with "I don't know".
-"""
-
 guided_prompt = """
 You are an experienced psychiatrist conducting an initial interview with a new patient. Your goal is to gather comprehensive information about the patient's mental health, symptoms, background, and potential diagnoses. Use a combination of open-ended questions, specific inquiries, and follow-up questions to explore the patient's situation in depth. Pay attention to both verbal and non-verbal cues, and use your expertise to guide the conversation towards areas that may be particularly relevant for diagnosis.
 
@@ -40,8 +34,7 @@ After the interview with the patient is complete, someone will come to ask you a
 
 
 def create_paca_agent(paca_version):
-    system_prompt = st.selectbox("Select PACA system prompt", [
-                                 basic_prompt, guided_prompt])
+    system_prompt = guided_prompt
 
     chat_prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),

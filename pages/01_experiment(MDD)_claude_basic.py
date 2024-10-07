@@ -1,4 +1,4 @@
-from Experiment_gpt import experiment_page
+from Experiment_claude_basic import experiment_page
 
 client_number = 5551
 
