@@ -80,37 +80,76 @@ def create_paca_agent(paca_version):
             "chat_history": memory.chat_memory.messages,
             "human_input": human_input,
         })
-        if is_initial_prompt:
-            memory.chat_memory.add_ai_message(human_input)
-        else:
-            memory.chat_memory.add_user_message(human_input)
+        memory.chat_memory.add_user_message(human_input)
         memory.chat_memory.add_ai_message(response.content)
         return response.content
+
+        # response = chain.invoke({
+        #     "chat_history": memory.chat_memory.messages,
+        #     "human_input": human_input,
+        # })
+        # if is_initial_prompt:
+        #     memory.chat_memory.add_ai_message(human_input)
+        # else:
+        #     memory.chat_memory.add_user_message(human_input)
+        # memory.chat_memory.add_ai_message(response.content)
+        # return response.content
+
+    paca_agent.memory = memory  # 메모리에 직접 접근할 수 있도록 추가
 
     return paca_agent, memory, paca_version
 
 
 def simulate_conversation(paca_agent, sp_agent, max_turns=100):
-    initial_prompt = "안녕하세요, 저는 정신과 의사 김민수입니다. 이름이 어떻게 되시나요?"
+    initial_paca_message = "안녕하세요, 저는 정신과 의사 김민수입니다. 이름이 어떻게 되시나요?"
 
-    current_speaker = "SP"
-    current_message = initial_prompt
+    # PACA의 첫 메시지를 메모리에 직접 추가
+    paca_agent.memory.chat_memory.add_ai_message(initial_paca_message)
 
-    # Add initial prompt to PACA's memory
-    paca_agent(initial_prompt, is_initial_prompt=True)
-    yield ("PACA", initial_prompt)
+    # PACA의 고정된 첫 메시지 yield
+    yield ("PACA", initial_paca_message)
 
-    for _ in range(max_turns):
-        if current_speaker == "SP":
-            response = sp_agent(current_message)
-            yield ("SP", response)
-            current_speaker = "PACA"
-        else:
+    # SP의 첫 응답 생성
+    sp_response = sp_agent(initial_paca_message)
+    yield ("SP", sp_response)
+
+    current_speaker = "PACA"
+    current_message = sp_response
+
+    for _ in range(max_turns - 1):  # 이미 한 턴을 사용했으므로 max_turns에서 1을 뺍니다
+        if current_speaker == "PACA":
             response = paca_agent(current_message)
             yield ("PACA", response)
             current_speaker = "SP"
+        else:
+            response = sp_agent(current_message)
+            yield ("SP", response)
+            current_speaker = "PACA"
 
         current_message = response
+
+
+# def simulate_conversation(paca_agent, sp_agent, max_turns=100):
+#     initial_prompt = "안녕하세요, 저는 정신과 의사 김민수입니다. 이름이 어떻게 되시나요?"
+
+#     current_speaker = "SP"
+#     current_message = initial_prompt
+
+#     # Add initial prompt to PACA's memory
+#     paca_agent(initial_prompt, is_initial_prompt=True)
+#     yield ("PACA", initial_prompt)
+
+#     for _ in range(max_turns):
+#         if current_speaker == "SP":
+#             response = sp_agent(current_message)
+#             yield ("SP", response)
+#             current_speaker = "PACA"
+#         else:
+#             response = paca_agent(current_message)
+#             yield ("PACA", response)
+#             current_speaker = "SP"
+
+#         current_message = response
 
 
 def save_conversation_to_csv(conversation):
