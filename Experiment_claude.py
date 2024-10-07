@@ -18,10 +18,6 @@ beh_dir_version = 5.0
 con_agent_version = 5.0
 paca_version = 3.0
 
-instructions = """
-    Instructions...
-    """
-
 
 def construct_generator_conversation(paca_agent, paca_memory):
     constructs = [
@@ -56,7 +52,7 @@ def construct_generator_conversation(paca_agent, paca_memory):
     filled_constructs = {}
 
     for construct, guide in constructs:
-        question = f"""Based on your psychiatric interview and the entire conversation history, what is the patient's {construct}? Please provide a concise answer, referencing the following guideline if applicable: {guide}. For example, if the mood is depressed, don't say "The patient's mood is depressed", but just answer "depressed" as if it were a given candidate. If you're uncertain, simply state "I don't know". Use English."""
+        question = f"""Based on your psychiatric interview and the entire conversation history, what is the patient's {construct}? Please provide a concise answer, referencing the following guideline if applicable: {guide}. For example, if the mood is depressed, DO NOT say "The patient's mood is depressed", but just answer "depressed" as if it were a given candidate. In other words, except for unavoidable cases like "Chief complaint", DO NOT answer in sentence form, but in SHORT-ANSWER form. If you're uncertain, simply state "I don't know". Use English."""
 
         paca_response = paca_agent(question)
 
@@ -81,8 +77,6 @@ def experiment_page(client_number):
         st.stop()
 
     st.title(f"AI-to-AI Conversation Experiment - Client {client_number}")
-
-    st.write(instructions, unsafe_allow_html=True)
 
     # Load SP data
     profile = load_from_firebase(
@@ -117,7 +111,6 @@ def experiment_page(client_number):
             st.error("Failed to load SP system prompt.")
             st.stop()
 
-        # Create PACA agent
         # Create PACA agent
         if 'paca_agent' not in st.session_state or st.session_state.get('force_paca_update', False):
             st.session_state.paca_agent, st.session_state.paca_memory, actual_paca_version = create_paca_agent(
