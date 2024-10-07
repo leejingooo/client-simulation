@@ -24,7 +24,7 @@ paca_llm_claude = ChatAnthropic(
 firebase_ref = get_firebase_ref()
 
 basic_prompt = """
-You are a psychiatrist conducting an initial interview with a new patient. Your goal is to gather relevant information about the patient's mental health, symptoms, and background. Ask open-ended questions and follow up on the patient's responses to gain a comprehensive understanding of their situation.
+You are a psychiatrist conducting an initial interview with a new patient. Your goal is to gather relevant information about the patient's mental health, symptoms, and background. Ask open-ended questions and follow up on the patient's responses to gain a comprehensive understanding of their situation. When starting the conversation, begin with exactly these words: "안녕하세요, 저는 정신과 의사 김민수입니다. 이름이 어떻게 되시나요?". Proceed in Korean.
 
 After the interview with the patient is complete, someone will come to ask you about the patient. As an experienced psychiatrist, use appropriate reasoning, your professional judgment, and the information you've gathered during the interview to answer their questions. If you cannot determine something even with appropriate reasoning and your expertise, respond with "I don't know".
 """
@@ -39,6 +39,8 @@ guided_prompt = """
 You are an experienced psychiatrist conducting an initial interview with a new patient. Your goal is to gather comprehensive information about the patient's mental health, symptoms, background, and potential diagnoses. Use a combination of open-ended questions, specific inquiries, and follow-up questions to explore the patient's situation in depth. Pay attention to both verbal and non-verbal cues, and use your expertise to guide the conversation towards areas that may be particularly relevant for diagnosis.
 
 The following aspects need to be assessed in the patient: Chief complaint, Present illness, Symptoms, Alleviating factors, Exacerbating factors, Symptom duration, Triggering factors (why the patient decided to visit the hospital today), Stressors, Family history (including diagnoses and substance use), Current family structure, Suicidal ideation, Suicide risk, Self-harming behavior risk, Homicide risk, Suicidal plans, Suicide attempts, Mood, Affect, Verbal productivity, Insight, Perception, Thought process, Thought content, Spontaneity, Social judgment, and Reliability.
+
+When starting the conversation, begin with exactly these words: "안녕하세요, 저는 정신과 의사 김민수입니다. 이름이 어떻게 되시나요?". Proceed in Korean.
 
 After the interview with the patient is complete, someone will come to ask you about the patient. As an experienced psychiatrist, use appropriate reasoning, your professional judgment, and the information you've gathered during the interview to answer their questions. If you cannot determine something even with appropriate reasoning and your expertise, respond with "I don't know".
 """
@@ -71,21 +73,18 @@ def create_paca_agent(paca_version):
     memory = ConversationBufferMemory(
         return_messages=True, memory_key="chat_history")
 
-    def paca_agent(human_input, is_initial_prompt=False):
-        if is_initial_prompt:
-            memory.chat_memory.add_ai_message(human_input)
-            return human_input
-        else:
-            chain = chat_prompt | paca_llm_claude
-            response = chain.invoke({
-                "chat_history": memory.chat_memory.messages,
-                "human_input": human_input,
-            })
-            memory.chat_memory.add_user_message(human_input)
-            memory.chat_memory.add_ai_message(response.content)
-            return response.content
+    def paca_agent(human_input):
+        chain = chat_prompt | paca_llm_claude
+        response = chain.invoke({
+            "chat_history": memory.chat_memory.messages,
+            "human_input": human_input,
+        })
+        memory.chat_memory.add_user_message(human_input)
+        memory.chat_memory.add_ai_message(response.content)
+        return response.content
 
     return paca_agent, memory, paca_version
+
 
 # def create_paca_agent(paca_version):
 
@@ -109,79 +108,36 @@ def create_paca_agent(paca_version):
 #             "chat_history": memory.chat_memory.messages,
 #             "human_input": human_input,
 #         })
-#         memory.chat_memory.add_user_message(human_input)
+#         if is_initial_prompt:
+#             memory.chat_memory.add_ai_message(human_input)
+#         else:
+#             memory.chat_memory.add_user_message(human_input)
 #         memory.chat_memory.add_ai_message(response.content)
 #         return response.content
-
-#         # response = chain.invoke({
-#         #     "chat_history": memory.chat_memory.messages,
-#         #     "human_input": human_input,
-#         # })
-#         # if is_initial_prompt:
-#         #     memory.chat_memory.add_ai_message(human_input)
-#         # else:
-#         #     memory.chat_memory.add_user_message(human_input)
-#         # memory.chat_memory.add_ai_message(response.content)
-#         # return response.content
-
-#     paca_agent.memory = memory  # 메모리에 직접 접근할 수 있도록 추가
 
 #     return paca_agent, memory, paca_version
 
 
 def simulate_conversation(paca_agent, sp_agent, max_turns=100):
-    initial_paca_message = "안녕하세요, 저는 정신과 의사 김민수입니다. 이름이 어떻게 되시나요?"
+    # 대화 시작
+    initial_user_input = "대화 시작"
+    paca_response = paca_agent(initial_user_input)
+    yield ("PACA", paca_response)
 
-    # PACA의 첫 메시지를 메모리에 추가하고 yield
-    paca_agent(initial_paca_message, is_initial_prompt=True)
-    yield ("PACA", initial_paca_message)
-
-    # SP의 첫 응답 생성
-    sp_response = sp_agent(initial_paca_message)
-    yield ("SP", sp_response)
-
-    current_speaker = "PACA"
-    current_message = sp_response
+    current_speaker = "SP"
+    current_message = paca_response
 
     for _ in range(max_turns - 1):
-        if current_speaker == "PACA":
-            response = paca_agent(current_message)
-            yield ("PACA", response)
-            current_speaker = "SP"
-        else:
+        if current_speaker == "SP":
             response = sp_agent(current_message)
             yield ("SP", response)
             current_speaker = "PACA"
+        else:
+            response = paca_agent(current_message)
+            yield ("PACA", response)
+            current_speaker = "SP"
 
         current_message = response
-
-# def simulate_conversation(paca_agent, sp_agent, max_turns=100):
-#     initial_paca_message = "안녕하세요, 저는 정신과 의사 김민수입니다. 이름이 어떻게 되시나요?"
-
-#     # PACA의 첫 메시지를 메모리에 직접 추가
-#     paca_agent.memory.chat_memory.add_ai_message(initial_paca_message)
-
-#     # PACA의 고정된 첫 메시지 yield
-#     yield ("PACA", initial_paca_message)
-
-#     # SP의 첫 응답 생성
-#     sp_response = sp_agent(initial_paca_message)
-#     yield ("SP", sp_response)
-
-#     current_speaker = "PACA"
-#     current_message = sp_response
-
-#     for _ in range(max_turns - 1):  # 이미 한 턴을 사용했으므로 max_turns에서 1을 뺍니다
-#         if current_speaker == "PACA":
-#             response = paca_agent(current_message)
-#             yield ("PACA", response)
-#             current_speaker = "SP"
-#         else:
-#             response = sp_agent(current_message)
-#             yield ("SP", response)
-#             current_speaker = "PACA"
-
-#         current_message = response
 
 
 # def simulate_conversation(paca_agent, sp_agent, max_turns=100):
@@ -191,7 +147,7 @@ def simulate_conversation(paca_agent, sp_agent, max_turns=100):
 #     current_message = initial_prompt
 
 #     # Add initial prompt to PACA's memory
-#     paca_agent(initial_prompt, is_initial_prompt=True)
+#     paca_agent(initial_prompt)
 #     yield ("PACA", initial_prompt)
 
 #     for _ in range(max_turns):
