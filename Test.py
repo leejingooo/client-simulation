@@ -6,11 +6,16 @@ import uuid
 
 instructions = """
     환자 시뮬레이션 페이지에 오신 것을 환영합니다.
+    
     당신은 정신과 환자와 면담하는 의사입니다.
+    
     "안녕하세요, 저는 정신과 의사 OOO 입니다." 으로 대화를 시작하세요.
     
+    
     Welcome to the Patient Simulation Page.
+    
     You are a doctor interviewing a psychiatric patient.
+    
     Begin the conversation with "Hello, I am Dr. OOO, a psychiatrist."
     """
 
