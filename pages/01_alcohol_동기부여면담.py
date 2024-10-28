@@ -1,68 +1,62 @@
 import streamlit as st
+from alcohol_motivational import MITherapist
 import os
-from alcohol_motivational import MIBot
-
-# Page config
-st.set_page_config(
-    page_title="Motivational Interviewing Chatbot", page_icon="🤝")
 
 # Initialize session state for chat history if it doesn't exist
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-
-def initialize_bot():
-    """Initialize the MI bot with OpenAI API key"""
-    if "bot" not in st.session_state:
-        openai_api_key = os.getenv("OPENAI_API_KEY")
-        if not openai_api_key:
-            st.error(
-                "OpenAI API key not found. Please set the OPENAI_API_KEY environment variable.")
-            st.stop()
-        st.session_state.bot = MIBot(openai_api_key)
+# Initialize session state for therapist if it doesn't exist
+if "therapist" not in st.session_state:
+    st.session_state.therapist = None
 
 
-# Main UI
-st.title("🤝 Motivational Interviewing Chatbot")
-st.write("A safe space to discuss your relationship with alcohol. Your conversations are private and confidential.")
+def initialize_therapist():
+    """Initialize the MI therapist with OpenAI API key"""
+    openai_api_key = st.secrets["OPENAI_API_KEY"]
+    st.session_state.therapist = MITherapist(openai_api_key)
+    # Add initial message from therapist
+    if not st.session_state.messages:
+        initial_message = "안녕하세요, 저는 당신의 동기부여 상담사입니다. 오늘 어떤 이야기를 나누고 싶으신가요?"
+        st.session_state.messages.append(
+            {"role": "assistant", "content": initial_message})
 
-# Initialize bot
-initialize_bot()
 
-# Display chat history
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+def main():
+    st.title("🤝 알코올 중독 동기부여 상담 챗봇")
+    st.write("이 챗봇은 동기부여면담(Motivational Interviewing) 기법을 사용하여 당신의 변화를 돕습니다.")
 
-# Chat input
-if prompt := st.chat_input("Share your thoughts..."):
-    # Add user message to chat history
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
+    # Initialize therapist if not already initialized
+    if st.session_state.therapist is None:
+        initialize_therapist()
 
-    # Get bot response
-    with st.chat_message("assistant"):
-        with st.spinner("Thinking..."):
-            response = st.session_state.bot.get_response(prompt)
+    # Display chat messages
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    # Chat input
+    if prompt := st.chat_input("메시지를 입력하세요..."):
+        # Add user message to chat history
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        # Get bot response
+        with st.chat_message("assistant"):
+            response = st.session_state.therapist.get_response(prompt)
             st.markdown(response)
             st.session_state.messages.append(
                 {"role": "assistant", "content": response})
 
-# Sidebar
-with st.sidebar:
-    st.header("About this Chatbot")
-    st.write("""
-    This chatbot uses Motivational Interviewing techniques to help you explore your relationship with alcohol. 
-    It provides a non-judgmental space to discuss your thoughts and feelings about drinking.
-    """)
-
-    if st.button("Clear Chat History"):
+    # Add a reset button
+    if st.button("대화 초기화"):
         st.session_state.messages = []
-        st.session_state.bot.clear_history()
+        if st.session_state.therapist:
+            st.session_state.therapist.clear_memory()
+        initialize_therapist()
         st.rerun()
 
-    st.markdown("---")
-    st.markdown("### Privacy Note")
-    st.write(
-        "Your conversations are not stored permanently and are cleared when you end the session.")
+
+if __name__ == "__main__":
+    main()
