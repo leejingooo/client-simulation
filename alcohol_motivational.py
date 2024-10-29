@@ -121,7 +121,7 @@ Start the conversation with a brief introduction and a specific, focused questio
 
 
 class MITherapist:
-    def __init__(self, openai_api_key, version=2):
+    def __init__(self, openai_api_key, version):
         # Initialize the ChatOpenAI model
         self.llm = ChatOpenAI(
             model="gpt-4o",
