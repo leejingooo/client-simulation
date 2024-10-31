@@ -27,15 +27,12 @@ def initialize_therapist(version):
 
 
 def parse_stage(response: str) -> str:
-    """JSON 형식의 단계 평가 결과를 파싱"""
+    """변화단계 평가 결과를 파싱"""
     try:
-        # 응답에서 JSON 부분 찾기
-        start_idx = response.find("{")
-        end_idx = response.find("}") + 1
-        if start_idx != -1 and end_idx != -1:
-            json_str = response[start_idx:end_idx]
-            result = json.loads(json_str)
-            return result.get("stage", "평가 불가")
+        if "STAGE_RESULT:" in response:
+            # STAGE_RESULT: 다음에 나오는 단계명 추출
+            stage = response.split("STAGE_RESULT:")[1].strip()
+            return stage
     except:
         return "평가 불가"
     return "평가 불가"
