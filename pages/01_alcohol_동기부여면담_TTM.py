@@ -12,6 +12,13 @@ if "therapist" not in st.session_state:
 if "current_version" not in st.session_state:
     st.session_state.current_version = 2  # Default to version 2
 
+    # Add to session state initialization section:
+if "stage" not in st.session_state:
+    st.session_state.stage = 1  # Default to stage 1
+
+if "session_started" not in st.session_state:
+    st.session_state.session_started = False
+
 
 def initialize_therapist(version):
     """Initialize the MI therapist with OpenAI API key and version"""
@@ -26,32 +33,41 @@ def initialize_therapist(version):
 
 
 def main():
-    # Add version selector in sidebar
-    st.sidebar.title("버전 선택")
-    version_descriptions = {
-        1: "V1",
-        2: "V2"
-    }
-    selected_version = st.sidebar.radio(
-        "테스트할 버전을 선택하세요:",
-        options=list(version_descriptions.keys()),
-        format_func=lambda x: version_descriptions[x]
-    )
 
-    st.sidebar.title("변화단계 선택")
-    stage_descriptions = {
-        1: "고려전",
-        2: "고려",
-        3: "준비",
-        4: "실천",
-        5: "유지",
-        6: "종결",
-    }
-    stage = st.sidebar.radio(
-        "환자(본인)의 변화단계를 선택하세요:",
-        options=list(stage_descriptions.keys()),
-        format_func=lambda x: stage_descriptions[x]
-    )
+    # Replace the version and stage selection section with:
+    if not st.session_state.session_started:
+        st.sidebar.title("버전 선택")
+        version_descriptions = {
+            1: "V1",
+            2: "V2"
+        }
+        selected_version = st.sidebar.radio(
+            "테스트할 버전을 선택하세요:",
+            options=list(version_descriptions.keys()),
+            format_func=lambda x: version_descriptions[x],
+            key="version_select"
+        )
+
+        st.sidebar.title("변화단계 선택")
+        stage_descriptions = {
+            1: "고려전",
+            2: "고려",
+            3: "준비",
+            4: "실천",
+            5: "유지",
+            6: "종결",
+        }
+        selected_stage = st.sidebar.radio(
+            "환자(본인)의 변화단계를 선택하세요:",
+            options=list(stage_descriptions.keys()),
+            format_func=lambda x: stage_descriptions[x],
+            key="stage_select"
+        )
+
+        if st.sidebar.button("대화 시작"):
+            st.session_state.session_started = True
+            st.session_state.stage = selected_stage
+            st.rerun()
 
     # Reset conversation if version changes
     if selected_version != st.session_state.current_version:
@@ -64,6 +80,7 @@ def main():
 
     # Version info
     st.info(f"현재 버전: {version_descriptions[selected_version]}")
+    st.info(f"현재 변화단계: {stage_descriptions[selected_stage]}")
 
     # Initialize therapist if not already initialized
     if st.session_state.therapist is None:
@@ -74,26 +91,25 @@ def main():
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    # Chat input
+    # Replace the prompt handling section with:
     if prompt := st.chat_input("메시지를 입력하세요..."):
-        # Add user message to chat history
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
-        # Get bot response
         with st.chat_message("assistant"):
-            response = st.session_state.therapist.get_response(prompt, stage)
+            response = st.session_state.therapist.get_response(
+                prompt, st.session_state.stage)
             st.markdown(response)
             st.session_state.messages.append(
                 {"role": "assistant", "content": response})
 
-    # Add a reset button
+    # Modify the reset button section:
     if st.button("대화 초기화"):
         st.session_state.messages = []
+        st.session_state.session_started = False
         if st.session_state.therapist:
             st.session_state.therapist.clear_memory()
-        initialize_therapist(selected_version)
         st.rerun()
 
 
