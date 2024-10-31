@@ -39,7 +39,7 @@ def main():
     )
 
     st.sidebar.title("변화단계 선택")
-    version_descriptions = {
+    stage_descriptions = {
         1: "고려전",
         2: "고려",
         3: "준비",
@@ -49,8 +49,8 @@ def main():
     }
     stage = st.sidebar.radio(
         "환자(본인)의 변화단계를 선택하세요:",
-        options=list(version_descriptions.keys()),
-        format_func=lambda x: version_descriptions[x]
+        options=list(stage_descriptions.keys()),
+        format_func=lambda x: stage_descriptions[x]
     )
 
     # Reset conversation if version changes
