@@ -180,7 +180,7 @@ Start the conversation with a brief introduction and a stage-appropriate questio
 
 
 class MITherapist:
-    def __init__(self, openai_api_key, version, stage):
+    def __init__(self, openai_api_key, version):
         # Initialize the ChatOpenAI model
         self.llm = ChatOpenAI(
             model="gpt-4o",
@@ -209,14 +209,13 @@ class MITherapist:
             ("human", "{input}")
         ])
 
-        self.prompt.format_prompt(stage=stage)
-
-    def get_response(self, user_input: str) -> str:
+    def get_response(self, user_input: str, stage) -> str:
         # Create the chain
         chain = self.prompt | self.llm
 
         # Get response
         response = chain.invoke({
+            "stage": stage,
             "input": user_input,
             "chat_history": self.memory.chat_memory.messages
         })
