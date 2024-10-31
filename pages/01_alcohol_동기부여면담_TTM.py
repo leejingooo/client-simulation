@@ -13,11 +13,11 @@ if "current_version" not in st.session_state:
     st.session_state.current_version = 2  # Default to version 2
 
 
-def initialize_therapist(version, stage):
+def initialize_therapist(version):
     """Initialize the MI therapist with OpenAI API key and version"""
     openai_api_key = st.secrets["OPENAI_API_KEY"]
     st.session_state.therapist = MITherapist(
-        openai_api_key=openai_api_key, version=version, stage=stage)
+        openai_api_key=openai_api_key, version=version)
     # Add initial message from therapist
     if not st.session_state.messages:
         initial_message = "안녕하세요, 저는 당신의 동기부여 상담사입니다. 오늘 어떤 이야기를 나누고 싶으신가요?"
@@ -83,7 +83,7 @@ def main():
 
         # Get bot response
         with st.chat_message("assistant"):
-            response = st.session_state.therapist.get_response(prompt)
+            response = st.session_state.therapist.get_response(prompt, stage)
             st.markdown(response)
             st.session_state.messages.append(
                 {"role": "assistant", "content": response})

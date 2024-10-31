@@ -213,6 +213,20 @@ class MITherapist:
         # Create the chain
         chain = self.prompt | self.llm
 
+        # Select system prompt based on version
+        if stage == 1:
+            self.stage = "Precontemplation"
+        elif stage == 2:
+            self.stage = "Contemplation"
+        elif stage == 3:
+            self.stage = "Preparation"
+        elif stage == 4:
+            self.stage = "Action"
+        elif stage == 5:
+            self.stage = "Maintenance"
+        else:
+            self.stage = "종결"
+
         # Get response
         response = chain.invoke({
             "stage": stage,
