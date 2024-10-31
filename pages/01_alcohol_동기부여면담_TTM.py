@@ -12,7 +12,7 @@ if "therapist" not in st.session_state:
 if "current_version" not in st.session_state:
     st.session_state.current_version = 2  # Default to version 2
 
-    # Add to session state initialization section:
+# Add to session state initialization section:
 if "stage" not in st.session_state:
     st.session_state.stage = 1  # Default to stage 1
 
@@ -32,9 +32,9 @@ def initialize_therapist(version):
             {"role": "assistant", "content": initial_message})
 
 
+# Replace the main version and stage selection section with:
 def main():
-
-    # Replace the version and stage selection section with:
+    # Always get current version, but only allow changes before session starts
     if not st.session_state.session_started:
         st.sidebar.title("버전 선택")
         version_descriptions = {
@@ -47,6 +47,12 @@ def main():
             format_func=lambda x: version_descriptions[x],
             key="version_select"
         )
+
+        # Update current_version if changed
+        if selected_version != st.session_state.current_version:
+            st.session_state.current_version = selected_version
+            st.session_state.messages = []
+            st.session_state.therapist = None
 
         st.sidebar.title("변화단계 선택")
         stage_descriptions = {
@@ -67,31 +73,28 @@ def main():
         if st.sidebar.button("대화 시작"):
             st.session_state.session_started = True
             st.session_state.stage = selected_stage
+            initialize_therapist(st.session_state.current_version)
             st.rerun()
-
-    # Reset conversation if version changes
-    if selected_version != st.session_state.current_version:
-        st.session_state.messages = []
-        st.session_state.therapist = None
-        st.session_state.current_version = selected_version
+    else:
+        # Just display the current version and stage when session is started
+        st.sidebar.title("현재 설정")
+        st.sidebar.text(
+            f"버전: {'V1' if st.session_state.current_version == 1 else 'V2'}")
+        stage_names = {1: "고려전", 2: "고려", 3: "준비", 4: "실천", 5: "유지", 6: "종결"}
+        st.sidebar.text(f"변화단계: {stage_names[st.session_state.stage]}")
 
     st.title("🤝 알코올 중독 동기부여 상담 챗봇")
     st.write("이 챗봇은 동기부여면담(Motivational Interviewing) 기법을 사용하여 당신의 변화를 돕습니다.")
 
-    # Version info
-    st.info(f"현재 버전: {version_descriptions[selected_version]}")
-    st.info(f"현재 변화단계: {stage_descriptions[selected_stage]}")
+    # Initialize therapist if needed
+    if st.session_state.therapist is None and st.session_state.session_started:
+        initialize_therapist(st.session_state.current_version)
 
-    # Initialize therapist if not already initialized
-    if st.session_state.therapist is None:
-        initialize_therapist(selected_version)
-
-    # Display chat messages
+    # Display chat messages and handle input as before...
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    # Replace the prompt handling section with:
     if prompt := st.chat_input("메시지를 입력하세요..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
@@ -104,7 +107,7 @@ def main():
             st.session_state.messages.append(
                 {"role": "assistant", "content": response})
 
-    # Modify the reset button section:
+    # Reset button
     if st.button("대화 초기화"):
         st.session_state.messages = []
         st.session_state.session_started = False
