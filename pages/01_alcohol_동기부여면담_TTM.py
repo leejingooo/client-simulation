@@ -67,7 +67,7 @@ def main():
 
     # Initialize therapist if not already initialized
     if st.session_state.therapist is None:
-        initialize_therapist(selected_version, stage)
+        initialize_therapist(selected_version)
 
     # Display chat messages
     for message in st.session_state.messages:
