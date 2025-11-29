@@ -15,7 +15,7 @@ import io
 # Initialize the language models
 paca_llm_gpt = ChatOpenAI(
     temperature=0.7,
-    model="gpt-4o",
+    model="gpt-5-nano",
     streaming=True,
     callbacks=[StreamingStdOutCallbackHandler()]
 )
