@@ -1,8 +1,8 @@
 from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.schema import HumanMessage, AIMessage
-from langchain.callbacks import StreamingStdOutCallbackHandler
-from langchain.memory import ConversationBufferMemory
+from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain_core.chat_history import InMemoryChatMessageHistory
 
 
 class MITherapist:
@@ -17,10 +17,7 @@ class MITherapist:
         )
 
         # Initialize conversation memory
-        self.memory = ConversationBufferMemory(
-            return_messages=True,
-            memory_key="chat_history"
-        )
+        self.memory = InMemoryChatMessageHistory()
 
         # Define the system prompt for MI therapy
         self.system_prompt = """You are an expert therapist specialized in Motivational Interviewing (MI) for alcohol addiction. Your role is to provide concrete, practical support while maintaining empathy and understanding.
@@ -92,14 +89,13 @@ Start the conversation with a brief introduction and a specific, focused questio
 
         # Get response
         response = chain.invoke({
-            "input": user_input,
-            "chat_history": self.memory.chat_memory.messages
+          "input": user_input,
+          "chat_history": self.memory.messages
         })
 
         # Update memory
-        self.memory.chat_memory.add_message(HumanMessage(content=user_input))
-        self.memory.chat_memory.add_message(
-            AIMessage(content=response.content))
+        self.memory.add_message(HumanMessage(content=user_input))
+        self.memory.add_message(AIMessage(content=response.content))
 
         return response.content
 

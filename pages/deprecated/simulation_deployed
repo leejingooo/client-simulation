@@ -4,8 +4,8 @@ import re
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.schema import HumanMessage, SystemMessage
-from langchain.callbacks import StreamingStdOutCallbackHandler
-from langchain.memory import ConversationBufferMemory
+from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain_core.chat_history import InMemoryChatMessageHistory
 import streamlit as st
 import pandas as pd
 from typing import Tuple
@@ -441,8 +441,7 @@ def create_conversational_agent(profile_version, beh_dir_version, client_number,
         ]
     )
 
-    memory = ConversationBufferMemory(
-        return_messages=True, memory_key="chat_history")
+    memory = InMemoryChatMessageHistory()
 
     chain = chat_prompt | chat_llm
 
@@ -452,12 +451,12 @@ def create_conversational_agent(profile_version, beh_dir_version, client_number,
             "profile_json": json.dumps(profile_json, indent=2),
             "history": history,
             "behavioral_direction": behavioral_direction,
-            "chat_history": memory.chat_memory.messages,
+            "chat_history": memory.messages,
             "human_input": human_input
         })
 
-        memory.chat_memory.add_user_message(human_input)
-        memory.chat_memory.add_ai_message(response.content)
+        memory.add_user_message(human_input)
+        memory.add_ai_message(response.content)
 
         return response.content
 
@@ -627,7 +626,7 @@ def main():
 
     if st.session_state.agent_and_memory:
         agent, memory = st.session_state.agent_and_memory
-        for message in memory.chat_memory.messages:
+        for message in memory.messages:
             with st.chat_message("user" if isinstance(message, HumanMessage) else "assistant"):
                 st.markdown(message.content)
 
@@ -647,7 +646,7 @@ def main():
         if st.session_state.agent_and_memory:
             # Reset the memory of the existing agent
             agent, memory = st.session_state.agent_and_memory
-            memory.chat_memory.clear()
+            memory.clear()
             st.success("New conversation started with the same client data.")
             st.rerun()
         else:
@@ -661,7 +660,7 @@ def main():
             filename = save_conversation_to_firebase(
                 firebase_ref,
                 st.session_state.client_number,
-                memory.chat_memory.messages,
+                memory.messages,
                 con_agent_version  # Pass the version number directly
             )
             if filename:

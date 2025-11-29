@@ -51,10 +51,9 @@ def validation_page(client_number, profile_version=5.0, beh_dir_version=5.0, con
 
     # Store chat memory in session state with unique key for this user
     if f'chat_memory_{session_id}' not in st.session_state:
-        st.session_state[f'chat_memory_{session_id}'] = ConversationBufferMemory(
-            return_messages=True,
-            memory_key="chat_history"
-        )
+        # store InMemoryChatMessageHistory in session state (langchain_core)
+        from langchain_core.chat_history import InMemoryChatMessageHistory
+        st.session_state[f'chat_memory_{session_id}'] = InMemoryChatMessageHistory()
 
     # Load data only if not already in session state for this user
     if f'profile_{session_id}' not in st.session_state:
@@ -119,12 +118,12 @@ def validation_page(client_number, profile_version=5.0, beh_dir_version=5.0, con
                                 st.session_state[f'profile_{session_id}'], indent=2),
                             history=st.session_state[f'history_{session_id}'],
                             behavioral_instruction=st.session_state[f'beh_dir_{session_id}'],
-                            chat_history=st.session_state[f'chat_memory_{session_id}'].chat_memory.messages,
+                            chat_history=st.session_state[f'chat_memory_{session_id}'].messages,
                             human_input=human_input
                         ))
-                        st.session_state[f'chat_memory_{session_id}'].chat_memory.add_user_message(
+                        st.session_state[f'chat_memory_{session_id}'].add_user_message(
                             human_input)
-                        st.session_state[f'chat_memory_{session_id}'].chat_memory.add_ai_message(
+                        st.session_state[f'chat_memory_{session_id}'].add_ai_message(
                             response.content)
                         return response.content
 
@@ -138,7 +137,7 @@ def validation_page(client_number, profile_version=5.0, beh_dir_version=5.0, con
 
     if f'agent_{session_id}' in st.session_state:
         # Display chat history for this session
-        for message in st.session_state[f'chat_memory_{session_id}'].chat_memory.messages:
+        for message in st.session_state[f'chat_memory_{session_id}'].messages:
             with st.chat_message("user" if isinstance(message, HumanMessage) else "assistant"):
                 st.markdown(message.content)
 
@@ -155,7 +154,7 @@ def validation_page(client_number, profile_version=5.0, beh_dir_version=5.0, con
     # Buttons for conversation management
     if st.button("Start New Conversation"):
         if f'chat_memory_{session_id}' in st.session_state:
-            st.session_state[f'chat_memory_{session_id}'].chat_memory.clear()
+            st.session_state[f'chat_memory_{session_id}'].clear()
             st.success("New conversation started with the same client data.")
             st.rerun()
 
@@ -166,7 +165,7 @@ def validation_page(client_number, profile_version=5.0, beh_dir_version=5.0, con
                 filename = save_conversation_to_firebase(
                     firebase_ref,
                     client_number,
-                    st.session_state[f'chat_memory_{session_id}'].chat_memory.messages,
+                    st.session_state[f'chat_memory_{session_id}'].messages,
                     con_agent_version,
                     participant_name
                 )

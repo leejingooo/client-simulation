@@ -1,8 +1,8 @@
 from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.schema import HumanMessage, AIMessage
-from langchain.callbacks import StreamingStdOutCallbackHandler
-from langchain.memory import ConversationBufferMemory
+from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain_core.chat_history import InMemoryChatMessageHistory
 
 # System prompts for different versions
 V1_PROMPT = """You are an expert therapist specialized in Motivational Interviewing (MI) for alcohol addiction. This client is in the {stage} stage of change. Your role is to provide stage-appropriate interventions while using OARS (Open questions, Affirmations, Reflective listening, and Summaries) techniques.
@@ -191,10 +191,7 @@ class MITherapist:
         )
 
         # Initialize conversation memory
-        self.memory = ConversationBufferMemory(
-            return_messages=True,
-            memory_key="chat_history"
-        )
+        self.memory = InMemoryChatMessageHistory()
 
         # Select system prompt based on version
         if version == 1:
@@ -229,15 +226,14 @@ class MITherapist:
 
         # Get response
         response = chain.invoke({
-            "stage": stage,
-            "input": user_input,
-            "chat_history": self.memory.chat_memory.messages
+          "stage": stage,
+          "input": user_input,
+          "chat_history": self.memory.messages
         })
 
         # Update memory
-        self.memory.chat_memory.add_message(HumanMessage(content=user_input))
-        self.memory.chat_memory.add_message(
-            AIMessage(content=response.content))
+        self.memory.add_message(HumanMessage(content=user_input))
+        self.memory.add_message(AIMessage(content=response.content))
 
         return response.content
 

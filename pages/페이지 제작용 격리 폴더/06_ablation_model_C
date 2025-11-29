@@ -69,7 +69,7 @@ def validation_page(client_number, profile_version=5.0, beh_dir_version=5.0, con
 
     if 'agent_and_memory' in st.session_state and st.session_state.agent_and_memory:
         agent, memory = st.session_state.agent_and_memory
-        for message in memory.chat_memory.messages:
+        for message in memory.messages:
             with st.chat_message("user" if isinstance(message, HumanMessage) else "assistant"):
                 st.markdown(message.content)
 
@@ -87,7 +87,7 @@ def validation_page(client_number, profile_version=5.0, beh_dir_version=5.0, con
     if st.button("Start New Conversation"):
         if 'agent_and_memory' in st.session_state and st.session_state.agent_and_memory:
             agent, memory = st.session_state.agent_and_memory
-            memory.chat_memory.clear()
+            memory.clear()
             st.success("New conversation started with the same client data.")
             st.rerun()
         else:
@@ -102,7 +102,7 @@ def validation_page(client_number, profile_version=5.0, beh_dir_version=5.0, con
                 filename = save_conversation_to_firebase(
                     firebase_ref,
                     client_number,
-                    memory.chat_memory.messages,
+                    memory.messages,
                     con_agent_version,
                     participant_name + "ablation"
                 )

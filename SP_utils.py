@@ -4,10 +4,12 @@ import re
 # from langchain.chat_models import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 from langchain_openai import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate, PromptTemplate, MessagesPlaceholder
-from langchain.schema import HumanMessage, SystemMessage
-from langchain.callbacks import StreamingStdOutCallbackHandler
-from langchain.memory import ConversationBufferMemory
+# from langchain.prompts import ChatPromptTemplate, PromptTemplate, MessagesPlaceholder
+# from langchain.schema import HumanMessage, SystemMessage
+from langchain_core.prompts import ChatPromptTemplate, PromptTemplate, MessagesPlaceholder
+from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain_core.chat_history import InMemoryChatMessageHistory
 import streamlit as st
 import pandas as pd
 from typing import Tuple
@@ -352,8 +354,8 @@ def create_conversational_agent(profile_version, beh_dir_version, client_number,
         ("human", "{human_input}")
     ])
 
-    memory = ConversationBufferMemory(
-        return_messages=True, memory_key="chat_history")
+    # Switch to langchain_core InMemoryChatMessageHistory
+    memory = InMemoryChatMessageHistory()
 
     chain = chat_prompt | chat_llm
 
@@ -364,11 +366,11 @@ def create_conversational_agent(profile_version, beh_dir_version, client_number,
             "profile_json": json.dumps(profile_json, indent=2),
             "history": history,
             "behavioral_instruction": behavioral_instruction,
-            "chat_history": memory.chat_memory.messages,
+            "chat_history": memory.messages,
             "human_input": human_input
         })
-        memory.chat_memory.add_user_message(human_input)
-        memory.chat_memory.add_ai_message(response.content)
+        memory.add_user_message(human_input)
+        memory.add_ai_message(response.content)
         return response.content
 
     return agent, memory

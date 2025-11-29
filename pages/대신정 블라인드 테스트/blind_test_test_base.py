@@ -3,8 +3,8 @@ import streamlit as st
 import time
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain.callbacks import StreamingStdOutCallbackHandler
-from langchain.memory import ConversationBufferMemory
+from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain_core.chat_history import InMemoryChatMessageHistory
 from firebase_config import get_firebase_ref
 from Home import check_password
 
@@ -60,8 +60,7 @@ def create_base_model_agent():
         ("human", "{human_input}")
     ])
 
-    memory = ConversationBufferMemory(
-        return_messages=True, memory_key="chat_history")
+    memory = InMemoryChatMessageHistory()
 
     llm = ChatOpenAI(
         temperature=0.7,
@@ -74,12 +73,12 @@ def create_base_model_agent():
 
     def agent(human_input):
         response = chain.invoke({
-            "chat_history": memory.chat_memory.messages,
+            "chat_history": memory.messages,
             "human_input": human_input
         })
 
-        memory.chat_memory.add_user_message(human_input)
-        memory.chat_memory.add_ai_message(response.content)
+        memory.add_user_message(human_input)
+        memory.add_ai_message(response.content)
 
         return response.content
 
@@ -161,7 +160,7 @@ def main():
 
 def display_conversation():
     agent, memory = st.session_state.agent_and_memory
-    for message in memory.chat_memory.messages:
+    for message in memory.messages:
         with st.chat_message("user" if message.type == "human" else "assistant"):
             st.markdown(message.content)
 
@@ -185,7 +184,7 @@ def end_test():
         save_conversation_to_firebase(
             firebase_ref,
             PRESET_CLIENT_NUMBER,
-            memory.chat_memory.messages
+            memory.messages
         )
         st.success(
             "Test completed and conversation saved. Thank you for participating.")

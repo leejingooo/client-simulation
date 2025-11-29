@@ -123,7 +123,7 @@ def main():
 
     if 'agent_and_memory' in st.session_state and st.session_state.agent_and_memory:
         agent, memory = st.session_state.agent_and_memory
-        for message in memory.chat_memory.messages:
+        for message in memory.messages:
             with st.chat_message("user" if isinstance(message, HumanMessage) else "assistant"):
                 st.markdown(message.content)
 
@@ -143,7 +143,7 @@ def main():
         if 'agent_and_memory' in st.session_state and st.session_state.agent_and_memory:
             # Reset the memory of the existing agent
             agent, memory = st.session_state.agent_and_memory
-            memory.chat_memory.clear()
+            memory.clear()
             st.success("New conversation started with the same client data.")
             st.rerun()
         else:
@@ -158,7 +158,7 @@ def main():
             filename = save_conversation_to_firebase(
                 firebase_ref,
                 st.session_state.client_number,
-                memory.chat_memory.messages,
+                memory.messages,
                 con_agent_version,
                 participant_name  # Pass the version number directly
             )

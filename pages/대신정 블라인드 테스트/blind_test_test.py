@@ -3,8 +3,8 @@ import json
 import time
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain.callbacks import StreamingStdOutCallbackHandler
-from langchain.memory import ConversationBufferMemory
+from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain_core.chat_history import InMemoryChatMessageHistory
 from firebase_config import get_firebase_ref
 from Home import check_password
 from pages.simulation_deployed import (
@@ -115,7 +115,7 @@ def setup_blind_test():
 
 def display_conversation():
     agent, memory = st.session_state.agent_and_memory
-    for message in memory.chat_memory.messages:
+    for message in memory.messages:
         with st.chat_message("user" if message.type == "human" else "assistant"):
             st.markdown(message.content)
 
@@ -140,7 +140,7 @@ def end_test():
         save_conversation_to_firebase(
             firebase_ref,
             PRESET_CLIENT_NUMBER,
-            memory.chat_memory.messages,
+            memory.messages,
             PRESET_CON_AGENT_VERSION
         )
         st.success(

@@ -2,10 +2,12 @@ import json
 # from langchain.chat_models import ChatOpenAI, ChatAnthropic
 from langchain_anthropic import ChatAnthropic
 # from langchain_openai import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain.schema import HumanMessage, AIMessage
-from langchain.callbacks import StreamingStdOutCallbackHandler
-from langchain.memory import ConversationBufferMemory
+# from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
+# from langchain.schema import HumanMessage, AIMessage
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain_core.chat_history import InMemoryChatMessageHistory
 import streamlit as st
 from SP_utils import create_conversational_agent, save_to_firebase
 from firebase_config import get_firebase_ref
@@ -38,17 +40,17 @@ def create_paca_agent(paca_version):
         ("human", "{human_input}")
     ])
 
-    memory = ConversationBufferMemory(
-        return_messages=True, memory_key="chat_history")
+    # Replace ConversationBufferMemory with InMemoryChatMessageHistory
+    memory = InMemoryChatMessageHistory()
 
     def paca_agent(human_input):
         chain = chat_prompt | paca_llm_claude
         response = chain.invoke({
-            "chat_history": memory.chat_memory.messages,
+            "chat_history": memory.messages,
             "human_input": human_input,
         })
-        memory.chat_memory.add_user_message(human_input)
-        memory.chat_memory.add_ai_message(response.content)
+        memory.add_user_message(human_input)
+        memory.add_ai_message(response.content)
         return response.content
 
     return paca_agent, memory, paca_version

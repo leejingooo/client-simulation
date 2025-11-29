@@ -1,8 +1,8 @@
 from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.schema import HumanMessage, AIMessage
-from langchain.callbacks import StreamingStdOutCallbackHandler
-from langchain.memory import ConversationBufferMemory
+from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain_core.chat_history import InMemoryChatMessageHistory
 
 # System prompts for different versions
 V1_PROMPT = """당신은 범이론적 모형(TTM)에 기반한 변화단계를 평가하는 상담자입니다. 
@@ -68,10 +68,7 @@ class TTMChatbot:
         )
 
         # Initialize conversation memory
-        self.memory = ConversationBufferMemory(
-            return_messages=True,
-            memory_key="chat_history"
-        )
+        self.memory = InMemoryChatMessageHistory()
 
         # Select system prompt based on version
         if version == 1:
@@ -93,13 +90,12 @@ class TTMChatbot:
         # Get response
         response = chain.invoke({
             "input": user_input,
-            "chat_history": self.memory.chat_memory.messages
+            "chat_history": self.memory.messages
         })
 
         # Update memory
-        self.memory.chat_memory.add_message(HumanMessage(content=user_input))
-        self.memory.chat_memory.add_message(
-            AIMessage(content=response.content))
+        self.memory.add_message(HumanMessage(content=user_input))
+        self.memory.add_message(AIMessage(content=response.content))
 
         return response.content
 

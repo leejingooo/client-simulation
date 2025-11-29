@@ -2,6 +2,8 @@ import streamlit as st
 from firebase_config import get_firebase_ref
 from SP_utils import *
 
+from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain_core.chat_history import InMemoryChatMessageHistory
 st.set_page_config(
     page_title="Simulation",
     page_icon="🔥",
@@ -205,7 +207,7 @@ def main():
 
     if 'agent_and_memory' in st.session_state and st.session_state.agent_and_memory:
         agent, memory = st.session_state.agent_and_memory
-        for message in memory.chat_memory.messages:
+        for message in memory.messages:
             with st.chat_message("user" if isinstance(message, HumanMessage) else "assistant"):
                 st.markdown(message.content)
 
@@ -225,7 +227,7 @@ def main():
         if 'agent_and_memory' in st.session_state and st.session_state.agent_and_memory:
             # Reset the memory of the existing agent
             agent, memory = st.session_state.agent_and_memory
-            memory.chat_memory.clear()
+            memory.clear()
             st.success("New conversation started with the same client data.")
             st.rerun()
         else:
@@ -239,7 +241,7 @@ def main():
             filename = save_conversation_to_firebase(
                 firebase_ref,
                 st.session_state.client_number,
-                memory.chat_memory.messages,
+                    memory.messages,
                 con_agent_version  # Pass the version number directly
             )
             if filename:
