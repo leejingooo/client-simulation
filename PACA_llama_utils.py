@@ -3,7 +3,7 @@ import json
 # from langchain_openai import ChatOpenAI
 from langchain_ollama import ChatOllama
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain.schema import HumanMessage, AIMessage
+from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain_core.chat_history import InMemoryChatMessageHistory
 import streamlit as st

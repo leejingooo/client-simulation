@@ -3,7 +3,7 @@ import os
 import re
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
-from langchain.schema import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 import streamlit as st
 
 # Make sure to set your OpenAI API key

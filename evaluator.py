@@ -2,8 +2,7 @@ import pandas as pd
 import json
 from typing import Dict, Any, List, Tuple
 from langchain.chat_models import ChatOpenAI
-from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
+from langchain_core.prompts import PromptTemplate
 from SP_utils import load_from_firebase, get_firebase_ref
 import streamlit as st
 
@@ -72,11 +71,16 @@ def g_eval(field_name: str, sp_text: str, paca_text: str) -> float:
         input_variables=["field_name", "original_text", "generated_text"],
         template=prompt_template
     )
+    # New LangChain v1.x style: compose prompt + llm using the runnable (prompt | llm)
+    chain = prompt | llm
 
-    chain = LLMChain(llm=llm, prompt=prompt)
-
-    result = chain.run(field_name=field_name, original_text=sp_text,
-                       generated_text=paca_text)
+    # invoke() returns a response object for chat LLMs; adjust to accept either string or response
+    response = chain.invoke(field_name=field_name, original_text=sp_text,
+                            generated_text=paca_text)
+    if hasattr(response, 'content'):
+        result = response.content
+    else:
+        result = response
 
     try:
         rating_line = [line for line in result.split(
