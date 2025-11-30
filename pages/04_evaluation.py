@@ -24,8 +24,10 @@ def evaluation_page():
             st.stop()
 
         # Version selection
-        sp_construct_version = paca_construct_version = st.sidebar.text_input(
-            "Enter Construct Version (e.g., 2.0)")
+        paca_construct_version = st.sidebar.text_input(
+            "Enter PACA Version (e.g., 3.0)")
+        sp_construct_version = st.sidebar.text_input(
+            "Enter MFC Version (e.g., 6.0)")
         given_form_path = f"data/prompts/paca_system_prompt/given_form_version{sp_construct_version}.json"
 
         if st.sidebar.button("Start Evaluation") and sp_construct_version and paca_construct_version and given_form_path:
