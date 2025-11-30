@@ -1,0 +1,64 @@
+{
+    "Identifying data": {
+        "patient name": "blank (data_type:string, range_candidate_guide:null)",
+        "age": "blank (data_type:number, range_candidate_guide:19-64)",
+        "sex": "blank (data_type:string, range_candidate_guide:male/female)",
+        "marital status": "blank (data_type:string, range_candidate_guide:single/married/divorced/widowed)",
+        "occupation": "blank (data_type:string, range_candidate_guide:null)"
+    },
+    "Chief complaint": {
+        "description": "blank (data_type:string, range_candidate_guide:Describe in the patient's words)"
+    },
+    "Present illness": {
+        "symptom_n": {
+            "name": "blank (data_type:string, range_candidate_guide:null)",
+            "length": "blank (data_type:number, range_candidate_guide:0-24 (Unit: week, over 24 is represented as 24))",
+            "alleviating factor": "blank (data_type:string, range_candidate_guide:null)",
+            "exacerbating factor": "blank (data_type:string, range_candidate_guide:null)"
+        },
+        "triggering factor": "blank (data_type:string, range_candidate_guide:The reason patient came to the hospital at this time)",
+        "stressor": "blank (data_type:string, range_candidate_guide:(multiple answers available) home/work/school/legal issue/medical comorbidity/interpersonal difficulty/null)"
+    },
+    "Past psychiatric history": {
+        "presence": "None=This is the patient's first visit to the hospital for this reason and the first onset of symptoms. (Exception: In case of Bipolar disorder, change this from None to True and fill in the description below.)",
+        "description": "blank (data_type: string, range_candidate_guide: Fill this field only in case of Bipolar disorder. For all other cases, return None.  In case of Bipolar disorder, describe: 1) at what age these episodes occurred, 2) the duration of past depressive episodes, 3) how frequently they occurred, and 4) the circumstances surrounding these episodes. However, even in this case, the patient is visiting the hospital for the first time for this reason, so there should be no medical records about this reason.)"
+    },
+    "Past medical history": {
+        "presence": "blank (data_type:boolean, range_candidate_guide:Randomize(50%) the presence or absence of past medical history. If 'false', then remove all children of 'Past medical history' except this 'presence' which has 'false' as a child.)",
+        "history_n": "blank (data_type:string, range_candidate_guide:Describe a past medical history)",
+        "current medication_n": {
+            "medication name": "blank (data_type:string, range_candidate_guide:Name of the medication the patient is currently taking)",
+            "duration": "blank (data_type:number, range_candidate_guide:(Unit: week))",
+            "compliance": "blank (data_type:string, range_candidate_guide:good/bad)",
+            "effect": "blank (data_type:string, range_candidate_guide:effective/partially effective/non-effective)",
+            "side effect": "blank (data_type:string, range_candidate_guide:If there was a side effect, fill in this item. Otherwise, leave it as null.)"
+        }
+    },
+    "Family history": {
+        "presence": "blank (data_type:boolean, range_candidate_guide: Randomize(50%) the presence or absence of family history. If 'false', then remove all children of 'Family history' except this 'presence' which has 'false' as a child.)",
+        "diagnosis_n": "blank (data_type:string, range_candidate_guide: Describe a psychiatric family history. Given the patient's current diagnosis, set a probable family history.)",
+        "substance_use_n": "blank (data_type:string, range_candidate_guide: Describe a family history of substance use (alcohol, opioid, cannabinoid, hallucinogen, stimulant, narcotic, etc.).)"
+    },
+    "Developmental/Social history": {
+        "abnormality in prenatal/birthing history": "blank (data_type:string, range_candidate_guide:Randomize(50%) presence/absence. If yes, write a description; otherwise, enter null.)",
+        "delay in developmental milestone": "blank (data_type:string, range_candidate_guide:Randomize(50%) presence/absence. If yes, write a description; otherwise, enter null.)",
+        "childhood history": {
+            "home environment": "blank (data_type:string, range_candidate_guide:null)",
+            "members of family": "blank (data_type:string, range_candidate_guide:null)",
+            "social environment": "blank (data_type:string, range_candidate_guide:Describe things like number and quality of friends.)"
+        },
+        "school history": "blank (data_type:string, range_candidate_guide:special education/learning disorder/behavioral problem/low academic performance/problem in extracurricular activity)",
+        "work history": "blank (data_type:string, range_candidate_guide:Describe things like job, performance, reason for switching jobs, relationship with supervisor, coworker, etc.)",
+        "other history": "blank (data_type:string, range_candidate_guide:null)"
+    },
+    "Marriage/relationship history": {
+        "current family structure": "blank (data_type:string, range_candidate_guide:null)"
+    },
+    "Impulsivity": {
+        "suicidal ideation": "blank (data_type:string, range_candidate_guide:high/moderate/low)",
+        "suicidal plan": "blank (data_type:string, range_candidate_guide:presence/absence)",
+        "suicidal attempt": "blank (data_type:string, range_candidate_guide:presence/absence)",
+        "self mutilating behavior risk": "blank (data_type:string, range_candidate_guide:high/moderate/low)",
+        "homicide risk": "blank (data_type:string, range_candidate_guide:high/moderate/low)"
+    }
+}
