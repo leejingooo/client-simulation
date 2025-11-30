@@ -96,6 +96,7 @@ def validation_page(client_number, profile_version=5.0, beh_dir_version=5.0, con
 
             with st.chat_message("assistant"):
                 message_placeholder = st.empty()
+                # The agent function now handles adding user message to memory
                 full_response = agent(prompt)
                 message_placeholder.markdown(full_response)
     else:
@@ -103,15 +104,9 @@ def validation_page(client_number, profile_version=5.0, beh_dir_version=5.0, con
 
     if st.button("Start New Conversation"):
         if 'agent_and_memory' in st.session_state and st.session_state.agent_and_memory:
-            agent, old_memory = st.session_state.agent_and_memory
-            
-            # Create a fresh memory object to start a new conversation
-            # Note: The agent function references the old memory, so we need to create a new agent
-            # For now, we'll just reset by clearing session state and rerunning
-            if 'agent_and_memory' in st.session_state:
-                del st.session_state.agent_and_memory
-            
-            st.success("New conversation started. Reloading...")
+            # Reset the memory while keeping the agent
+            st.session_state.agent_and_memory = reset_agent_memory(st.session_state.agent_and_memory)
+            st.success("Conversation history cleared. Start a new conversation!")
             st.rerun()
         else:
             st.error(

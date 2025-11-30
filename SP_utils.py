@@ -361,8 +361,11 @@ def create_conversational_agent(profile_version, beh_dir_version, client_number,
     chain = chat_prompt | chat_llm
 
     def agent(human_input):
+        # Add the user message to memory FIRST
+        memory.add_user_message(human_input)
+        
         # Create a list to pass to the chain with current memory state
-        # This ensures the LLM receives the actual message history
+        # This ensures the LLM receives the actual message history including the latest user input
         messages = list(memory.messages) if memory.messages else []
         
         response = chain.invoke({
@@ -374,11 +377,26 @@ def create_conversational_agent(profile_version, beh_dir_version, client_number,
             "chat_history": messages,
             "human_input": human_input
         })
-        memory.add_user_message(human_input)
+        # Add the AI response to memory
         memory.add_ai_message(response.content)
         return response.content
 
     return agent, memory
+
+
+def reset_agent_memory(agent_and_memory):
+    """
+    Reset the memory of an agent while keeping the agent function intact.
+    This function clears all messages from the memory object.
+    """
+    if agent_and_memory:
+        agent, memory = agent_and_memory
+        # Clear all messages from memory by creating a new list without them
+        # Since InMemoryChatMessageHistory stores messages in an internal list,
+        # we need to clear it properly
+        memory.messages.clear()
+        return agent, memory
+    return None
 
 
 def save_conversation_to_firebase(firebase_ref, client_number, messages, con_agent_version, participant_name):
