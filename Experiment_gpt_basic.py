@@ -6,6 +6,10 @@ from firebase_config import get_firebase_ref
 import time
 
 from SP_utils import create_conversational_agent, save_to_firebase
+try:
+    from construct_generator import create_sp_construct
+except Exception:
+    create_sp_construct = None
 
 # PRESET
 profile_version = 6.0
@@ -192,6 +196,29 @@ def experiment_page(client_number):
 
             st.success(
                 f"Conversation and constructs saved with ID: {conversation_id}")
+
+        # Button to create SP construct from profile/beh_dir and given form
+        if st.sidebar.button("Create SP Construct"):
+            if create_sp_construct is None:
+                st.error("SP construct generator not available (missing module 'construct_generator').")
+            else:
+                given_form_path = f"data/prompts/paca_system_prompt/given_form_version{paca_version}.json"
+                try:
+                    sp_construct = create_sp_construct(
+                        client_number,
+                        f"{profile_version:.1f}",
+                        f"{beh_dir_version:.1f}",
+                        given_form_path,
+                    )
+                except Exception as e:
+                    st.error(f"Failed to create SP construct: {e}")
+                else:
+                    if sp_construct:
+                        save_to_firebase(firebase_ref, client_number,
+                                         f"sp_construct_version{paca_version}", sp_construct)
+                        st.success("SP-Construct generated/saved successfully!")
+                    else:
+                        st.error("SP-Construct generation returned no result.")
 
         if st.session_state.conversation:
             csv_data = save_conversation_to_csv(st.session_state.conversation)
