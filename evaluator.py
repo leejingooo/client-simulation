@@ -6,7 +6,7 @@ from langchain_core.prompts import PromptTemplate
 from SP_utils import load_from_firebase, get_firebase_ref
 import streamlit as st
 
-llm = ChatOpenAI(temperature=0, model="gpt-4o")
+llm = ChatOpenAI(temperature=0, model="gpt-5.1")
 
 
 def load_given_form(form_path: str) -> Dict[str, Any]:
