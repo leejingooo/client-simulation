@@ -6,9 +6,9 @@ import time
 from SP_utils import create_conversational_agent, save_to_firebase
 
 # PRESET
-profile_version = 5.0
-beh_dir_version = 5.0
-con_agent_version = 5.0
+profile_version = 6.0
+beh_dir_version = 6.0
+con_agent_version = 6.0
 paca_version = 3.0
 
 
