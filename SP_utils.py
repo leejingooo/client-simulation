@@ -33,7 +33,7 @@ chat_llm = ChatOpenAI(
 firebase_ref = get_firebase_ref()
 
 # Fixed date
-FIXED_DATE = "01/07/2024"
+FIXED_DATE = "2025-12-01"
 
 
 def sanitize_key(key):
