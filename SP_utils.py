@@ -20,12 +20,12 @@ from collections import OrderedDict
 # Initialize the language models
 llm = ChatOpenAI(
     temperature=0.7,
-    model="gpt-5-nano",
+    model="gpt-5.1",
 )
 
 chat_llm = ChatOpenAI(
     temperature=0.7,
-    model="gpt-5-nano",
+    model="gpt-5.1",
     streaming=True,
     callbacks=[StreamingStdOutCallbackHandler()]
 )
