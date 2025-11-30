@@ -1,7 +1,8 @@
 import pandas as pd
 import json
 from typing import Dict, Any, List, Tuple
-from langchain.chat_models import ChatOpenAI
+# from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
 from SP_utils import load_from_firebase, get_firebase_ref
 import streamlit as st
