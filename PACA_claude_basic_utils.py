@@ -40,16 +40,29 @@ def create_paca_agent(paca_version):
         ("human", "{human_input}")
     ])
 
-    # Replace ConversationBufferMemory with InMemoryChatMessageHistory
+    # Use InMemoryChatMessageHistory for proper message history management
     memory = InMemoryChatMessageHistory()
 
-    def paca_agent(human_input):
+    def paca_agent(human_input, is_initial_prompt=False):
         chain = chat_prompt | paca_llm_claude
+        
+        # Create a list to pass to the chain with current memory state
+        messages = list(memory.messages) if memory.messages else []
+        
         response = chain.invoke({
-            "chat_history": memory.messages,
+            "chat_history": messages,
             "human_input": human_input,
         })
-        memory.add_user_message(human_input)
+        
+        # Add messages to memory in the correct order
+        if is_initial_prompt:
+            # For initial prompt, add it as an AI message (from the doctor)
+            memory.add_ai_message(human_input)
+        else:
+            # For regular conversation, add as user message first
+            memory.add_user_message(human_input)
+        
+        # Always add the AI response
         memory.add_ai_message(response.content)
         return response.content
 
@@ -57,21 +70,23 @@ def create_paca_agent(paca_version):
 
 
 def simulate_conversation(paca_agent, sp_agent, max_turns=100):
-    # 대화 시작
-    initial_user_input = "대화 시작"
-    paca_response = paca_agent(initial_user_input)
-    yield ("PACA", paca_response)
+    # Initial greeting from the doctor
+    initial_prompt = "안녕하세요, 저는 정신과 의사 김민수입니다. 이름이 어떻게 되시나요?"
+    
+    # Add the initial prompt to PACA's memory as its own message
+    paca_agent(initial_prompt, is_initial_prompt=True)
+    yield ("PACA", initial_prompt)
 
     current_speaker = "SP"
-    current_message = paca_response
+    current_message = initial_prompt
 
-    for _ in range(max_turns - 1):
+    for _ in range(max_turns):
         if current_speaker == "SP":
             response = sp_agent(current_message)
             yield ("SP", response)
             current_speaker = "PACA"
         else:
-            response = paca_agent(current_message)
+            response = paca_agent(current_message, is_initial_prompt=False)
             yield ("PACA", response)
             current_speaker = "SP"
 

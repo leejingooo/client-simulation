@@ -47,11 +47,13 @@ def create_paca_agent(paca_version):
     memory = InMemoryChatMessageHistory()
 
     def paca_agent(human_input, is_initial_prompt=False):
-
         chain = chat_prompt | paca_llm_gpt
 
+        # Create a list to pass to the chain with current memory state
+        messages = list(memory.messages) if memory.messages else []
+        
         response = chain.invoke({
-            "chat_history": memory.messages,
+            "chat_history": messages,
             "human_input": human_input,
         })
         if is_initial_prompt:

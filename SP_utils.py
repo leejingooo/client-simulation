@@ -360,13 +360,16 @@ def create_conversational_agent(profile_version, beh_dir_version, client_number,
     chain = chat_prompt | chat_llm
 
     def agent(human_input):
+        # Create a list to pass to the chain with current memory state
+        messages = list(memory.messages) if memory.messages else []
+        
         response = chain.invoke({
             "given_information": given_information,
             "current_date": FIXED_DATE,
             "profile_json": json.dumps(profile_json, indent=2),
             "history": history,
             "behavioral_instruction": behavioral_instruction,
-            "chat_history": memory.messages,
+            "chat_history": messages,
             "human_input": human_input
         })
         memory.add_user_message(human_input)

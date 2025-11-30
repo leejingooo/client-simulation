@@ -2,16 +2,7 @@ import streamlit as st
 from PACA_claude_guided_utils import create_paca_agent, simulate_conversation, save_ai_conversation_to_firebase, save_conversation_to_csv
 from SP_utils import create_conversational_agent, load_from_firebase, get_diag_from_given_information, load_prompt_and_get_version
 from firebase_config import get_firebase_ref
-# from langchain.schema import HumanMessage, AIMessage
 import time
-# from langchain.chat_models import ChatOpenAI, ChatAnthropic
-from langchain_anthropic import ChatAnthropic
-# from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-# from langchain.schema import HumanMessage, AIMessage, SystemMessage
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.messages import HumanMessage, AIMessage
-from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-from langchain_core.chat_history import InMemoryChatMessageHistory
 from SP_utils import create_conversational_agent, save_to_firebase
 
 # PRESET
