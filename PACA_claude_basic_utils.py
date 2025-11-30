@@ -31,6 +31,7 @@ After the interview with the patient is complete, someone will come to ask you a
 """
 
 
+@st.cache_resource
 def create_paca_agent(paca_version):
     system_prompt = basic_prompt
 
@@ -41,6 +42,7 @@ def create_paca_agent(paca_version):
     ])
 
     # Use InMemoryChatMessageHistory for proper message history management
+    # This memory object will persist across Streamlit reruns because of @st.cache_resource
     memory = InMemoryChatMessageHistory()
 
     def paca_agent(human_input, is_initial_prompt=False):

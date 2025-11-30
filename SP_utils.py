@@ -354,13 +354,15 @@ def create_conversational_agent(profile_version, beh_dir_version, client_number,
         ("human", "{human_input}")
     ])
 
-    # Switch to langchain_core InMemoryChatMessageHistory
+    # Use InMemoryChatMessageHistory for proper message history management
+    # This memory object will persist across Streamlit reruns because of @st.cache_resource
     memory = InMemoryChatMessageHistory()
 
     chain = chat_prompt | chat_llm
 
     def agent(human_input):
         # Create a list to pass to the chain with current memory state
+        # This ensures the LLM receives the actual message history
         messages = list(memory.messages) if memory.messages else []
         
         response = chain.invoke({

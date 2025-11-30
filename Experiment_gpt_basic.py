@@ -101,6 +101,9 @@ def experiment_page(client_number):
                 client_number,
                 con_agent_system_prompt
             )
+            # Store SP memory in session state to maintain state across reruns
+            if 'sp_memory' not in st.session_state:
+                st.session_state.sp_memory = sp_memory
         else:
             st.error("Failed to load SP system prompt.")
             st.stop()
@@ -109,6 +112,8 @@ def experiment_page(client_number):
         if 'paca_agent' not in st.session_state or st.session_state.get('force_paca_update', False):
             st.session_state.paca_agent, st.session_state.paca_memory, actual_paca_version = create_paca_agent(
                 paca_version)
+        else:
+            actual_paca_version = paca_version
 
         paca_agent = st.session_state.paca_agent
         paca_memory = st.session_state.paca_memory
