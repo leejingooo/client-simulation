@@ -31,6 +31,13 @@ def validation_page(client_number, profile_version=5.0, beh_dir_version=5.0, con
 
     st.write(instructions, unsafe_allow_html=True)
 
+    # Create a unique key for this client's data in session_state
+    client_key = f"client_{client_number}"
+    
+    # Initialize client-specific session state if not already done
+    if client_key not in st.session_state:
+        st.session_state[client_key] = {}
+
     profile = load_from_firebase(
         firebase_ref, client_number, f"profile_version{profile_version:.1f}".replace(".", "_"))
     history = load_from_firebase(
@@ -39,9 +46,9 @@ def validation_page(client_number, profile_version=5.0, beh_dir_version=5.0, con
         firebase_ref, client_number, f"beh_dir_version{beh_dir_version:.1f}".replace(".", "_"))
 
     if all([profile, history, beh_dir]):
-        st.session_state.profile = profile
-        st.session_state.history = history
-        st.session_state.beh_dir = beh_dir
+        st.session_state[client_key]['profile'] = profile
+        st.session_state[client_key]['history'] = history
+        st.session_state[client_key]['beh_dir'] = beh_dir
 
         given_information = load_from_firebase(
             firebase_ref, client_number, "given_information")
@@ -57,15 +64,16 @@ def validation_page(client_number, profile_version=5.0, beh_dir_version=5.0, con
                 "con-agent", con_agent_version)
 
         if con_agent_system_prompt:
-            # Create or retrieve the agent
-            if 'agent_and_memory' not in st.session_state:
+            # Create or retrieve the agent - use client-specific key
+            agent_memory_key = f"agent_and_memory_{client_number}"
+            if agent_memory_key not in st.session_state:
                 agent, memory = create_conversational_agent(
                     f"{profile_version:.1f}".replace(".", "_"),
                     f"{beh_dir_version:.1f}".replace(".", "_"),
                     client_number,
                     con_agent_system_prompt
                 )
-                st.session_state.agent_and_memory = (agent, memory)
+                st.session_state[agent_memory_key] = (agent, memory)
             st.success(f"Start a conversation.")
         else:
             st.error("Failed to load conversational agent system prompt.")
@@ -75,11 +83,14 @@ def validation_page(client_number, profile_version=5.0, beh_dir_version=5.0, con
 
     st.header("Simulated Session")
 
-    if 'agent_and_memory' in st.session_state and st.session_state.agent_and_memory:
-        agent, memory = st.session_state.agent_and_memory
+    # Use client-specific agent key
+    agent_memory_key = f"agent_and_memory_{client_number}"
+    if agent_memory_key in st.session_state and st.session_state[agent_memory_key]:
+        agent, memory = st.session_state[agent_memory_key]
         
         # Debug info
         with st.sidebar.expander("🔍 Debug Info - Memory Status"):
+            st.write(f"Client Number: {client_number}")
             st.write(f"Memory Messages Count: {len(memory.messages)}")
             if len(memory.messages) > 0:
                 st.write("**Last Memory Message:**")
@@ -103,9 +114,10 @@ def validation_page(client_number, profile_version=5.0, beh_dir_version=5.0, con
         st.warning("Please load client data first.")
 
     if st.button("Start New Conversation"):
-        if 'agent_and_memory' in st.session_state and st.session_state.agent_and_memory:
+        agent_memory_key = f"agent_and_memory_{client_number}"
+        if agent_memory_key in st.session_state and st.session_state[agent_memory_key]:
             # Reset the memory while keeping the agent
-            st.session_state.agent_and_memory = reset_agent_memory(st.session_state.agent_and_memory)
+            st.session_state[agent_memory_key] = reset_agent_memory(st.session_state[agent_memory_key])
             st.success("Conversation history cleared. Start a new conversation!")
             st.rerun()
         else:
@@ -113,8 +125,9 @@ def validation_page(client_number, profile_version=5.0, beh_dir_version=5.0, con
                 "Please load client data first before starting a new conversation.")
 
     if st.button("End/Save Conversation"):
-        if 'agent_and_memory' in st.session_state and st.session_state.agent_and_memory is not None:
-            _, memory = st.session_state.agent_and_memory
+        agent_memory_key = f"agent_and_memory_{client_number}"
+        if agent_memory_key in st.session_state and st.session_state[agent_memory_key] is not None:
+            _, memory = st.session_state[agent_memory_key]
             if 'name' in st.session_state and st.session_state['name_correct']:
                 participant_name = st.session_state['name']
                 filename = save_conversation_to_firebase(

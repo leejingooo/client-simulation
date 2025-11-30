@@ -337,7 +337,6 @@ def beh_dir_maker(profile_version, beh_dir_version, client_number, prompt, given
     return result.content
 
 
-@st.cache_resource
 def create_conversational_agent(profile_version, beh_dir_version, client_number, system_prompt):
     given_information = load_from_firebase(
         firebase_ref, client_number, "given_information")
