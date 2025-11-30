@@ -118,6 +118,14 @@ def experiment_page(client_number):
         paca_memory = st.session_state.paca_memory
 
         st.success("SP and PACA agents loaded successfully.")
+        
+        # Debug: Display memory status
+        with st.sidebar.expander("🔍 Debug Info - Memory Status"):
+            st.write(f"PACA Memory Messages Count: {len(paca_memory.messages)}")
+            st.write(f"SP Memory Messages Count: {len(st.session_state.sp_memory.messages) if 'sp_memory' in st.session_state else 'N/A'}")
+            if len(paca_memory.messages) > 0:
+                st.write("**Last PACA Memory Message:**")
+                st.write(paca_memory.messages[-1])
 
         # Initialize session state
         if 'conversation' not in st.session_state:
@@ -126,6 +134,11 @@ def experiment_page(client_number):
             # Create a fresh generator for the conversation
             st.session_state.conversation_generator = simulate_conversation(
                 paca_agent, sp_agent)
+            # Add the initial greeting to PACA's memory
+            paca_memory.add_ai_message("안녕하세요, 저는 정신과 의사 김민수입니다. 이름이 어떻게 되시나요?")
+            # SP needs to understand the initial message from PACA
+            # Add PACA's greeting to SP's memory so SP knows what was said
+            st.session_state.sp_memory.add_user_message("안녕하세요, 저는 정신과 의사 김민수입니다. 이름이 어떻게 되시나요?")
         if 'constructs' not in st.session_state:
             st.session_state.constructs = None
 

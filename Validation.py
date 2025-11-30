@@ -2,6 +2,7 @@ import streamlit as st
 from Home import check_participant
 from firebase_config import get_firebase_ref
 from SP_utils import *
+from langchain_core.chat_history import InMemoryChatMessageHistory
 
 
 instructions = """
@@ -56,12 +57,15 @@ def validation_page(client_number, profile_version=5.0, beh_dir_version=5.0, con
                 "con-agent", con_agent_version)
 
         if con_agent_system_prompt:
-            st.session_state.agent_and_memory = create_conversational_agent(
-                f"{profile_version:.1f}".replace(".", "_"),
-                f"{beh_dir_version:.1f}".replace(".", "_"),
-                client_number,
-                con_agent_system_prompt
-            )
+            # Create or retrieve the agent
+            if 'agent_and_memory' not in st.session_state:
+                agent, memory = create_conversational_agent(
+                    f"{profile_version:.1f}".replace(".", "_"),
+                    f"{beh_dir_version:.1f}".replace(".", "_"),
+                    client_number,
+                    con_agent_system_prompt
+                )
+                st.session_state.agent_and_memory = (agent, memory)
             st.success(f"Start a conversation.")
         else:
             st.error("Failed to load conversational agent system prompt.")
@@ -73,6 +77,15 @@ def validation_page(client_number, profile_version=5.0, beh_dir_version=5.0, con
 
     if 'agent_and_memory' in st.session_state and st.session_state.agent_and_memory:
         agent, memory = st.session_state.agent_and_memory
+        
+        # Debug info
+        with st.sidebar.expander("🔍 Debug Info - Memory Status"):
+            st.write(f"Memory Messages Count: {len(memory.messages)}")
+            if len(memory.messages) > 0:
+                st.write("**Last Memory Message:**")
+                st.write(memory.messages[-1])
+        
+        # Display all messages from memory
         for message in memory.messages:
             with st.chat_message("user" if isinstance(message, HumanMessage) else "assistant"):
                 st.markdown(message.content)
@@ -90,9 +103,15 @@ def validation_page(client_number, profile_version=5.0, beh_dir_version=5.0, con
 
     if st.button("Start New Conversation"):
         if 'agent_and_memory' in st.session_state and st.session_state.agent_and_memory:
-            agent, memory = st.session_state.agent_and_memory
-            memory.clear()
-            st.success("New conversation started with the same client data.")
+            agent, old_memory = st.session_state.agent_and_memory
+            
+            # Create a fresh memory object to start a new conversation
+            # Note: The agent function references the old memory, so we need to create a new agent
+            # For now, we'll just reset by clearing session state and rerunning
+            if 'agent_and_memory' in st.session_state:
+                del st.session_state.agent_and_memory
+            
+            st.success("New conversation started. Reloading...")
             st.rerun()
         else:
             st.error(
