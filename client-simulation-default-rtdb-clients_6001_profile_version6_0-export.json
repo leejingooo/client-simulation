@@ -1,0 +1,83 @@
+{
+  "Chief complaint": {
+    "description": "I feel exhausted and hopeless every day, and recently I started thinking about ending my life."
+  },
+  "Developmental_Social history": {
+    "childhood history": {
+      "home environment": "She grew up in a lower-middle-class household in Busan with both parents and one younger brother; the environment was generally stable but tense when her father drank heavily.",
+      "members of family": "Father, mother, one younger brother; she is the eldest child.",
+      "social environment": "She had a small but close group of friends in elementary and middle school, with no history of significant bullying or social isolation."
+    },
+    "other history": "She occasionally attends a Protestant church but has become less active in the past few months; no legal issues and no history of military service.",
+    "school history": "No special education needs; average academic performance in regular classes; no history of learning disorders or significant behavioral problems.",
+    "work history": "She has worked as an office administrative assistant for about 15 years at the same mid-sized trading company in Seoul, generally evaluated as reliable and organized; over the past year she reports decreased productivity, more mistakes, and increased tension with her demanding supervisor."
+  },
+  "Family history": {
+    "diagnosis_n": "Her mother had recurrent depressive episodes in her 50s and was treated with antidepressant medication by a local psychiatrist.",
+    "presence": true,
+    "substance_use_n": "Her father was a heavy alcohol user with frequent binge drinking on weekends, which sometimes led to verbal conflicts at home."
+  },
+  "Identifying data": {
+    "age": 40,
+    "marital status": "married",
+    "occupation": "Office administrative assistant at a trading company",
+    "patient name": "Kim Jiyoung",
+    "sex": "female"
+  },
+  "Impulsivity": {
+    "homicide risk": "low",
+    "self mutilating behavior risk": "high",
+    "suicidal attempt": "presence",
+    "suicidal ideation": "high",
+    "suicidal plan": "presence"
+  },
+  "Marriage_relationship history": {
+    "current family structure": "Married for 12 years, living in Seoul with her husband and a 9-year-old daughter in an apartment; reports increasing marital conflict over finances and shared responsibilities, but no physical violence."
+  },
+  "Past medical history": {
+    "current medication_n": [
+      {
+        "compliance": "good",
+        "duration": 156,
+        "effect": "effective",
+        "medication name": "Amlodipine 5 mg once daily"
+      }
+    ],
+    "history_n": "Diagnosed with essential hypertension 3 years ago, well controlled; no history of major surgeries or other chronic illnesses.",
+    "presence": true
+  },
+  "Past psychiatric history": {
+    "description": "None",
+    "presence": "None"
+  },
+  "Present illness": {
+    "stressor": "home/work/medical comorbidity/interpersonal difficulty",
+    "symptom_n": [
+      {
+        "alleviating factor": "Brief distraction when focusing on work tasks or when talking with her daughter",
+        "exacerbating factor": "Being alone at home in the evening and thinking about financial and marital problems",
+        "length": 16,
+        "name": "Depressed mood and loss of interest"
+      },
+      {
+        "alleviating factor": "Taking over-the-counter sleep aids occasionally and listening to relaxation music",
+        "exacerbating factor": "Ruminating about work mistakes and conflict with husband at night",
+        "length": 12,
+        "name": "Insomnia and early morning awakening"
+      },
+      {
+        "alleviating factor": "Short walks during lunch break and encouragement from a close coworker",
+        "exacerbating factor": "Increased workload, overtime, and criticism from her supervisor",
+        "length": 14,
+        "name": "Low energy, poor concentration, and psychomotor slowing"
+      },
+      {
+        "alleviating factor": "Talking briefly with a close friend by phone and attending church occasionally",
+        "exacerbating factor": "Arguments with husband, feeling like a burden to her family, and comparing herself with peers",
+        "length": 10,
+        "name": "Feelings of worthlessness, guilt, and recurrent suicidal thoughts"
+      }
+    ],
+    "triggering factor": "One week ago she prepared to overdose on her prescription antihypertensive medication after an argument with her husband about money, but stopped after thinking about her daughter; her coworker then strongly urged her to seek psychiatric help."
+  }
+}

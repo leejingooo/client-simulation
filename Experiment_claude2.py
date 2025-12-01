@@ -14,9 +14,14 @@ from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHan
 from langchain_core.chat_history import InMemoryChatMessageHistory
 from SP_utils import create_conversational_agent, save_to_firebase
 try:
-    from construct_generator import create_sp_construct
+    from sp_construct_generator import create_sp_construct
 except Exception:
     create_sp_construct = None
+
+try:
+    from paca_construct_generator import create_paca_construct
+except Exception:
+    create_paca_construct = None
 
 # PRESET
 profile_version = 6.0
@@ -25,48 +30,22 @@ con_agent_version = 6.0
 paca_version = 3.0
 
 
-def construct_generator_conversation(paca_agent, paca_memory):
-    constructs = [
-        ("Chief complaint", "Describe in the patient's words"),
-        ("Symptom name", ""),
-        ("Alleviating factors", ""),
-        ("Exacerbating factors", ""),
-        ("Symptom duration", "Unit: week"),
-        ("Triggering factors", "The reason patient came to the hospital at this time"),
-        ("Stressors", "multiple answers available: home/work/school/legal issue/medical comorbidity/interpersonal difficulty/null"),
-        ("Family history-diagnosis", "Describe a psychiatric family history"),
-        ("Family history-substance use",
-         "Describe a family history of substance use (alcohol, opioid, cannabinoid, hallucinogen, stimulant, narcotic, etc.)"),
-        ("Current family structure", ""),
-        ("Suicidal ideation", "candidate: high/moderate/low"),
-        ("Suicidal plan", "candidate: presence/absence"),
-        ("Suicidal attempt", "candidate: presence/absence"),
-        ("Self-harming behavior risk", "candidate: high/moderate/low"),
-        ("Homicide risk", "candidate: high/moderate/low"),
-        ("Mood", "candidate: euphoric/elated/euthymic/dysphoric/depressed/irritable"),
-        ("Affect", "candidate: broad/restricted/blunt/flat/labile/anxious/tense/shallow/inadequate/inappropriate"),
-        ("Verbal productivity", "candidate: increased/moderate/decreased"),
-        ("Insight", "candidate: Complete denial of illness/Slight awareness of being sick and needing help, but denying it at the same time/Awareness of being sick but blaming it on others, external events/Intellectual insight/True emotional insight"),
-        ("Perception", "candidate: Normal/Illusion/Auditory hallucination/Visual hallucination/Olfactory hallucination/Gustatory hallucination/Depersonalization/Derealization/Déjà vu/Jamais vu"),
-        ("Thought process", "candidate: Normal/Loosening of association/flight of idea/circumstantiality/tangentiality/Word salad or incoherence/Neologism/Illogical/Irrelevant"),
-        ("Thought content", "candidate: Normal/preoccupation/overvalued idea/idea of reference/grandiosity, obsession/compulsion/rumination/delusion/phobia"),
-        ("Spontaneity", "candidate: (+)/(-)"),
-        ("Social judgment", "candidate: Normal/Impaired"),
-        ("Reliability", "candidate: Yes/No")
-    ]
-
-    filled_constructs = {}
-
-    for construct, guide in constructs:
-        question = f"""Based on your psychiatric interview and the entire conversation history, what is the patient's {construct}? Please provide a concise answer, referencing the following guideline if applicable: {guide}. For example, if the mood is depressed, DO NOT say "The patient's mood is depressed", but just answer "depressed" as if it were a given candidate. In other words, except for unavoidable cases like "Chief complaint", DO NOT answer in sentence form, but in SHORT-ANSWER form. If you're uncertain, simply state "I don't know". Use English."""
-        paca_response = paca_agent(question)
-
-        if "i don't know" in paca_response.lower() or "uncertain" in paca_response.lower():
-            filled_constructs[construct] = "N/A"
-        else:
-            filled_constructs[construct] = paca_response.strip()
-
-    return filled_constructs
+def construct_generator_conversation_new(paca_agent):
+    """
+    Generate PACA construct using the new structured approach.
+    This creates a construct with the same structure as SP construct.
+    """
+    if create_paca_construct is None:
+        st.error("PACA construct generator not available (missing module 'paca_construct_generator').")
+        return None
+    
+    try:
+        with st.spinner("Generating PACA construct from conversation..."):
+            paca_construct = create_paca_construct(paca_agent)
+        return paca_construct
+    except Exception as e:
+        st.error(f"Failed to create PACA construct: {e}")
+        return None
 
 
 def experiment_page(client_number):
@@ -160,8 +139,7 @@ def experiment_page(client_number):
         # Button to stop conversation and generate constructs
         if st.sidebar.button("Stop and Generate Constructs"):
             if st.session_state.constructs is None:
-                with st.spinner("Generating constructs..."):
-                    st.session_state.constructs = construct_generator_conversation(
+                st.session_state.constructs = construct_generator_conversation(
                         paca_agent, paca_memory)
                 st.success("Constructs generated!")
             st.rerun()

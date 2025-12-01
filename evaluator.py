@@ -97,40 +97,52 @@ def normalize_value(value: str) -> str:
     return value
 
 
-def flatten_construct(construct: Dict[str, Any], parent_key='') -> Dict[str, str]:
-    """Flatten nested construct into key-value pairs."""
+def flatten_construct(construct: Dict[str, Any], parent_key='') -> Dict[str, Any]:
+    """
+    Flatten nested construct into key-value pairs.
+    Handles arrays specially by iterating through items.
+    """
     items = {}
     if isinstance(construct, dict):
         for k, v in construct.items():
             new_key = f"{parent_key}.{k}" if parent_key else k
-            if isinstance(v, dict) and not isinstance(v, str):
+            if isinstance(v, list):
+                # For arrays like symptom_n, keep as list
+                items[new_key] = v
+            elif isinstance(v, dict) and not isinstance(v, str):
                 items.update(flatten_construct(v, new_key))
             else:
                 items[new_key] = str(v) if v is not None else ""
     return items
 
 
-def get_value_from_construct(construct: Dict[str, Any], field_name: str) -> str:
+def get_value_from_construct(construct: Dict[str, Any], field_name: str) -> Any:
     """
     Retrieve value from construct by field name (case-insensitive, nested-aware).
-    Returns normalized string value or None if not found.
+    Returns the value as-is (could be string, list, dict, etc.) or None if not found.
     """
     if construct is None:
         return None
     
-    flat = flatten_construct(construct)
+    # First, try direct access to top-level fields
     field_lower = field_name.lower()
+    for key, val in construct.items():
+        if key.lower() == field_lower:
+            return val
+    
+    # Then flatten and search
+    flat = flatten_construct(construct)
     
     # Direct exact match
     for key, val in flat.items():
         if key.lower() == field_lower:
-            return normalize_value(val)
+            return val
     
     # Match on last part of key path
     for key, val in flat.items():
         last_part = key.split('.')[-1].lower()
         if last_part == field_lower:
-            return normalize_value(val)
+            return val
     
     return None
 
