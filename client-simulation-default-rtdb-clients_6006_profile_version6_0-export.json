@@ -1,0 +1,61 @@
+{
+  "Chief complaint": {
+    "description": "I can’t stop checking if the door is locked and if the gas is off, and it’s getting worse and interfering with my work."
+  },
+  "Developmental_Social history": {
+    "childhood history": {
+      "home environment": "Grew up in Seoul in a middle-class family; parents were generally supportive but somewhat perfectionistic and strict about cleanliness and academic performance.",
+      "members of family": "Lived with both parents and one younger sister; no history of separation or major conflict during childhood.",
+      "social environment": "Had a small but stable group of close friends; described himself as shy but not isolated, with no significant bullying reported."
+    },
+    "other history": "Currently lives in a studio apartment near his workplace on weekdays and returns to his parents’ home on weekends; enjoys online gaming and reading webtoons but has recently reduced leisure activities due to time consumed by compulsions.",
+    "school history": "No special education or behavioral problems; maintained above-average academic performance with some perfectionistic study habits and anxiety before exams.",
+    "work history": "Has worked as a software engineer for 3 years at the same company; performance reviews have been generally positive but recent comments noted decreased efficiency and lateness due to his checking behaviors; relationships with supervisor and coworkers are polite but somewhat distant."
+  },
+  "Family history": {
+    "diagnosis_n": "Maternal aunt diagnosed with obsessive-compulsive disorder in her 30s, treated with medication and psychotherapy.",
+    "presence": true,
+    "substance_use_n": "Paternal grandfather with long-standing alcohol use disorder requiring multiple hospitalizations for withdrawal complications."
+  },
+  "Identifying data": {
+    "age": 25,
+    "marital status": "single",
+    "occupation": "Software engineer at a mid-sized IT company",
+    "patient name": "Kim Min-jun",
+    "sex": "male"
+  },
+  "Impulsivity": {
+    "homicide risk": "low",
+    "self mutilating behavior risk": "low",
+    "suicidal attempt": "absence",
+    "suicidal ideation": "low",
+    "suicidal plan": "absence"
+  },
+  "Marriage_relationship history": {
+    "current family structure": "Unmarried and currently not in a romantic relationship; maintains regular contact with parents and younger sister and occasionally meets university friends."
+  },
+  "Past medical history": {
+    "current medication_n": {
+      "compliance": "good",
+      "duration": 52,
+      "effect": "partially effective",
+      "medication name": "Loratadine 10 mg as needed for allergic rhinitis"
+    },
+    "history_n": "Allergic rhinitis diagnosed at age 15, managed with intermittent antihistamines.",
+    "presence": true
+  },
+  "Past psychiatric history": {
+    "description": "None",
+    "presence": "None"
+  },
+  "Present illness": {
+    "stressor": "work",
+    "symptom_n": {
+      "alleviating factor": "Double-checking multiple times before leaving home, asking family members for reassurance, arriving at work very early to complete checking rituals, avoiding using the gas stove when possible",
+      "exacerbating factor": "Increased workload and responsibility at his job, lack of sleep, living alone on weekdays, watching news about fires or accidents, and receiving critical feedback at work",
+      "length": 24,
+      "name": "Repetitive checking rituals related to door locks, gas valves, and electronic devices with intrusive fears of causing harm or accidents"
+    },
+    "triggering factor": "Over the past month, he has been repeatedly late to work because of prolonged checking rituals, and his manager warned him that his job could be at risk, prompting him to seek psychiatric help for the first time."
+  }
+}

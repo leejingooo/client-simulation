@@ -11,20 +11,27 @@ def load_form(form_path: str) -> Dict[str, Any]:
 
 def extract_mse_from_instruction(instruction: str) -> Dict[str, str]:
     """Extract Mental Status Examination from instruction."""
-    try:
-        mse_section = instruction.split("<Form>")[1].split("</Form>")[0].strip()
-    except Exception:
+    if not instruction:
         return {}
-
+    
     mse = {}
-    pattern = r'- *([\w /]+) *: *(.+?)(?=- *[\w /]+ *:|$)'
-    matches = re.findall(pattern, mse_section, re.DOTALL)
-
+    
+    # Pattern to match "- Key : Value" where Value can be multiline until next "- Key"
+    pattern = r'- ([\w\s/]+?) *: *(.+?)(?=\n- |\Z)'
+    matches = re.findall(pattern, instruction, re.DOTALL)
+    
     for key, value in matches:
-        cleaned_value = re.sub(r'"[^\"]*"', '', value).strip()
-        cleaned_value = re.sub(r'\s+', ' ', cleaned_value)
-        mse[key.strip()] = cleaned_value
-
+        key = key.strip()
+        # Clean up the value: remove quotes and extra whitespace
+        value = value.strip()
+        # Remove quoted examples
+        value = re.sub(r'"[^"]*"', '', value)
+        # Clean up whitespace
+        value = re.sub(r'\s+', ' ', value).strip()
+        
+        if value:
+            mse[key] = value
+    
     return mse
 
 
@@ -163,9 +170,14 @@ def create_sp_construct(client_number: str, profile_version: str, instruction_ve
     sp_construct["Chief complaint"]["description"] = cc or ""
 
     # === Present Illness ===
-    # Handle multiple symptoms
+    # Handle symptoms - can be dict (single) or list (multiple)
     symptom_list = get_nested_value(profile, "Present illness.symptom_n")
-    if isinstance(symptom_list, list):
+    
+    if isinstance(symptom_list, dict):
+        # Single symptom as dict
+        sp_construct["Present illness"]["symptom_n"] = [symptom_list]
+    elif isinstance(symptom_list, list):
+        # Already a list
         sp_construct["Present illness"]["symptom_n"] = symptom_list
     else:
         sp_construct["Present illness"]["symptom_n"] = []
@@ -179,11 +191,19 @@ def create_sp_construct(client_number: str, profile_version: str, instruction_ve
     sp_construct["Present illness"]["stressor"] = stressor or ""
 
     # === Family History ===
+    # diagnosis_n can be string or list
     diagnosis = get_nested_value(profile, "Family history.diagnosis_n")
-    sp_construct["Family history"]["diagnosis"] = diagnosis or ""
+    if isinstance(diagnosis, list):
+        sp_construct["Family history"]["diagnosis"] = " ".join(str(d) for d in diagnosis) if diagnosis else ""
+    else:
+        sp_construct["Family history"]["diagnosis"] = str(diagnosis) if diagnosis else ""
 
+    # substance_use_n can be string or list
     substance = get_nested_value(profile, "Family history.substance_use_n")
-    sp_construct["Family history"]["substance use"] = substance or ""
+    if isinstance(substance, list):
+        sp_construct["Family history"]["substance use"] = " ".join(str(s) for s in substance) if substance else ""
+    else:
+        sp_construct["Family history"]["substance use"] = str(substance) if substance else ""
 
     # === Marriage/Relationship History ===
     family_struct = get_nested_value(profile, "Marriage_relationship history.current family structure")
@@ -207,25 +227,35 @@ def create_sp_construct(client_number: str, profile_version: str, instruction_ve
     mse_from_instruction = extract_mse_from_instruction(instruction) if instruction else {}
     
     mse_fields = [
-        ("Mood", "mood"),
-        ("Affect", "affect"),
-        ("Verbal productivity", "verbal_productivity"),
-        ("Insight", "insight"),
-        ("Perception", "perception"),
-        ("Thought process", "thought_process"),
-        ("Thought content", "thought_content"),
-        ("Spontaneity", "spontaneity"),
-        ("Social judgement", "social_judgement"),
-        ("Reliability", "reliability"),
+        "Mood",
+        "Affect", 
+        "Verbal productivity",
+        "Insight",
+        "Perception",
+        "Thought process",
+        "Thought content",
+        "Spontaneity",
+        "Social judgement",
+        "Reliability",
     ]
     
-    for rubric_key, profile_key in mse_fields:
-        # Try instruction first
-        if rubric_key in mse_from_instruction:
-            sp_construct["Mental Status Examination"][rubric_key] = mse_from_instruction[rubric_key]
+    for field in mse_fields:
+        # Try instruction first (exact match or case-insensitive)
+        value = None
+        
+        if field in mse_from_instruction:
+            value = mse_from_instruction[field]
         else:
-            # Try profile
-            val = get_nested_value(profile, f"Mental Status Examination.{rubric_key}")
-            sp_construct["Mental Status Examination"][rubric_key] = val or ""
+            # Try case-insensitive match in instruction
+            for key in mse_from_instruction.keys():
+                if key.lower() == field.lower():
+                    value = mse_from_instruction[key]
+                    break
+        
+        # If not found in instruction, try profile
+        if not value:
+            value = get_nested_value(profile, f"Mental Status Examination.{field}")
+        
+        sp_construct["Mental Status Examination"][field] = value or ""
 
     return sp_construct
