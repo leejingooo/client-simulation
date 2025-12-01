@@ -226,6 +226,72 @@ def create_sp_construct(client_number: str, profile_version: str, instruction_ve
     # Try to extract from instruction first, then profile
     mse_from_instruction = extract_mse_from_instruction(instruction) if instruction else {}
     
+    # Define candidates for MSE fields (from given_form_version3.0.json)
+    mse_candidates = {
+        "Mood": ["euphoric", "elated", "euthymic", "dysphoric", "depressed", "irritable"],
+        "Affect": ["broad", "restricted", "blunt", "flat", "labile", "anxious", "tense", "shallow", "inadequate", "inappropriate"],
+        "Verbal productivity": ["increased", "moderate", "decreased"],
+        "Spontaneity": ["(+)", "(-)"],
+        "Insight": ["Complete denial of illness", "Slight awareness of being sick and needing help, but denying it at the same time", 
+                    "Awareness of being sick but blaming it on others, external events", "Intellectual insight", "True emotional insight"],
+        "Perception": ["Normal", "Illusion", "Auditory hallucination", "Visual hallucination", "Olfactory hallucination", 
+                       "Gustatory hallucination", "Depersonalization", "Derealization", "Déjà vu", "Jamais vu"],
+        "Thought process": ["Normal", "Loosening of association", "flight of idea", "circumstantiality", "tangentiality", 
+                            "Word salad or incoherence", "Neologism", "Illogical", "Irrelevant"],
+        "Thought content": ["Normal", "preoccupation", "overvalued idea", "idea of reference", "grandiosity, obsession/compulsion", 
+                            "rumination", "delusion", "phobia"],
+        "Social judgement": ["Normal", "Impaired"],
+        "Reliability": ["Yes", "No"],
+    }
+    
+    def normalize_mse_value(field: str, raw_value: str) -> str:
+        """Normalize MSE value to match candidates from given_form"""
+        if not raw_value:
+            return ""
+        
+        if field not in mse_candidates:
+            return raw_value
+        
+        raw_lower = raw_value.lower()
+        candidates = mse_candidates[field]
+        
+        # Exact match (case-insensitive)
+        for candidate in candidates:
+            if raw_lower == candidate.lower():
+                return candidate
+        
+        # For Affect: allow multiple selections (comma-separated)
+        if field == "Affect":
+            # Split by comma or parentheses and find all matching candidates
+            parts = raw_value.replace('(', ',').replace(')', ',').split(',')
+            matched = []
+            for part in parts:
+                word = part.strip().lower()
+                if word:
+                    for candidate in candidates:
+                        if word == candidate.lower():
+                            matched.append(candidate)
+                            break
+            if matched:
+                # Return comma-separated list of matched affects
+                return ", ".join(matched)
+        
+        # For Thought content: look for matching keywords
+        if field == "Thought content":
+            keywords = raw_value.lower().split()
+            for keyword in keywords:
+                for candidate in candidates:
+                    if keyword in candidate.lower():
+                        return candidate
+        
+        # Substring match - find best match
+        for candidate in candidates:
+            if candidate.lower() in raw_lower or raw_lower in candidate.lower():
+                return candidate
+        
+        # Default: return first candidate if no match found
+        return candidates[0] if candidates else raw_value
+    
     mse_fields = [
         "Mood",
         "Affect", 
@@ -256,6 +322,8 @@ def create_sp_construct(client_number: str, profile_version: str, instruction_ve
         if not value:
             value = get_nested_value(profile, f"Mental Status Examination.{field}")
         
-        sp_construct["Mental Status Examination"][field] = value or ""
+        # Normalize to match candidates
+        normalized_value = normalize_mse_value(field, value)
+        sp_construct["Mental Status Examination"][field] = normalized_value or ""
 
     return sp_construct

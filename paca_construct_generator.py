@@ -209,7 +209,7 @@ def create_paca_construct(paca_agent) -> Dict[str, Any]:
         ),
         "Affect": generate_field(
             paca_agent, "Affect",
-            "candidate: broad/restricted/blunt/flat/labile/anxious/tense/shallow/inadequate/inappropriate"
+            "candidate (multiple selections allowed, comma-separated): broad/restricted/blunt/flat/labile/anxious/tense/shallow/inadequate/inappropriate"
         ),
         "Verbal productivity": generate_field(
             paca_agent, "Verbal productivity",
