@@ -18,8 +18,10 @@ def generate_symptoms_from_paca(paca_agent) -> List[Dict[str, Any]]:
     """
     
     # Step 1: Ask how many main symptoms
-    prompt_symptoms_count = """Based on the patient interview, how many main psychiatric symptoms did the patient present? 
-    Please provide ONLY a number (e.g., 1, 2, 3, 4, etc.). If uncertain, provide your best estimate."""
+    prompt_symptoms_count = """Based on the patient interview, how many main psychiatric symptoms did the patient present?
+    Please provide ONLY a number (e.g., 1, 2, etc.).
+    If uncertain, provide your best estimate.
+    If multiple features can be reasonably summarized as a single main symptom, count them as one; do not split them unnecessarily."""
     
     response = paca_agent(prompt_symptoms_count)
     try:
