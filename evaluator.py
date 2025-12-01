@@ -181,35 +181,186 @@ def g_eval(field_name: str, sp_text: str, paca_text: str) -> float:
         return 0.0
 
 
-def evaluate_field(field_name: str, sp_value: Any, paca_value: Any, field_info: Dict[str, Any]) -> Tuple[float, str]:
-    st.write(
-        f"Evaluating field {field_name}: SP: {sp_value}, PACA: {paca_value}, Field info: {field_info}")
+def get_value_mapping(field_name: str) -> Dict[str, int]:
+    """Return value-to-numeric mappings for specific fields based on PSYCHE RUBRIC."""
+    mapping = {}
+    
+    # Impulsivity fields: high=2, moderate=1, low=0
+    if any(x in field_name.lower() for x in ['suicidal ideation', 'self mutilating', 'homicide risk']):
+        mapping = {'high': 2, 'moderate': 1, 'low': 0}
+    
+    # Mood field: irritable=5, euphoric=5, elated=4, euthymic=3, dysphoric=2, depressed=1
+    elif 'mood' in field_name.lower():
+        mapping = {
+            'irritable': 5, 'euphoric': 5, 'elated': 4,
+            'euthymic': 3, 'dysphoric': 2, 'depressed': 1
+        }
+    
+    # Verbal productivity: increased=2, moderate=1, decreased=0
+    elif 'verbal productivity' in field_name.lower():
+        mapping = {'increased': 2, 'moderate': 1, 'decreased': 0}
+    
+    # Insight: 5 levels mapped
+    elif 'insight' in field_name.lower():
+        mapping = {
+            'complete denial of illness': 5,
+            'slight awareness': 4,
+            'awareness': 3,
+            'intellectual insight': 2,
+            'true emotional insight': 1
+        }
+    
+    return mapping
 
-    # Detect candidate info either directly or embedded in guide string
-    candidate_spec = None
-    if 'candidate' in field_info:
-        candidate_spec = field_info['candidate']
-    elif 'guide' in field_info:
-        candidate_spec = parse_candidate_from_guide(field_info['guide'])
 
-    if candidate_spec:
-        score = compare_multiple_choice(
-            str(sp_value), str(paca_value), candidate_spec)
-        method = "Simple Accuracy"
-    elif sp_value == "blank (data_type:string, guide:null)" and paca_value == "Not provided":
-        score = 1.0
-        method = "Simple Accuracy"
-    elif sp_value == "blank (data_type:string, guide:null)" or paca_value == "Not provided":
-        score = 0.0
-        method = "Simple Accuracy"
+def get_field_scoring_method(field_name: str) -> str:
+    """Determine scoring method based on PSYCHE RUBRIC hardcoding."""
+    
+    # G-Eval fields
+    g_eval_fields = [
+        'Chief complaint', 'Symptom name', 'Alleviating factor',
+        'Exacerbating factor', 'Triggering factor', 'Stressor',
+        'Family history', 'Diagnosis', 'Substance use',
+        'Current family structure',
+        'Affect', 'Perception', 'Thought process', 'Thought content'
+    ]
+    
+    # Rule-based with value mapping (Impulsivity)
+    impulsivity_value_mapping = [
+        'Suicidal ideation', 'Self mutilating', 'Homicide risk'
+    ]
+    
+    # Rule-based with value mapping (Behavior)
+    behavior_value_mapping = [
+        'Mood', 'Verbal productivity', 'Insight'
+    ]
+    
+    # Simple binary (correct/incorrect)
+    binary_fields = [
+        'length', 'Suicidal plan', 'Suicidal attempt',
+        'Spontaneity', 'Social judgement', 'Social judgment',
+        'Reliability'
+    ]
+    
+    field_lower = field_name.lower()
+    
+    for g_field in g_eval_fields:
+        if g_field.lower() in field_lower:
+            return 'g-eval'
+    
+    for imp_field in impulsivity_value_mapping:
+        if imp_field.lower() in field_lower:
+            return 'impulsivity'
+    
+    for beh_field in behavior_value_mapping:
+        if beh_field.lower() in field_lower:
+            return 'behavior'
+    
+    for bin_field in binary_fields:
+        if bin_field.lower() in field_lower:
+            return 'binary'
+    
+    # Default to g-eval for unknown fields
+    return 'g-eval'
+
+
+def normalize_value(value: str) -> str:
+    """Normalize values: lower case, strip whitespace, handle common aliases."""
+    if not isinstance(value, str):
+        value = str(value)
+    value = value.lower().strip()
+    
+    # Handle 'N/A' or empty as missing
+    if value in ['n/a', 'na', '', 'none', 'unknown']:
+        return 'N/A'
+    
+    # Normalize true/false/yes/no
+    if value in ['true', 'yes', 'presence']:
+        return 'presence'
+    if value in ['false', 'no', 'absence']:
+        return 'absence'
+    
+    return value
+
+
+def evaluate_field_psyche(field_name: str, sp_value: Any, paca_value: Any) -> Tuple[float, str]:
+    """Evaluate field using PSYCHE RUBRIC hardcoded rules."""
+    sp_str = str(sp_value).strip()
+    paca_str = str(paca_value).strip()
+    
+    st.write(f"Evaluating {field_name}: SP='{sp_str}', PACA='{paca_str}'")
+    
+    method = get_field_scoring_method(field_name)
+    
+    # Handle missing values
+    if sp_str in ['', 'N/A', 'n/a', 'None'] or paca_str in ['', 'N/A', 'n/a', 'None']:
+        st.write(f"  -> Missing value detected. Returning 0.0")
+        return 0.0, f"{method.upper()}_missing"
+    
+    if method == 'g-eval':
+        score = g_eval(field_name, sp_str, paca_str)
+        return score, 'G-Eval'
+    
+    elif method == 'binary':
+        # Binary scoring: exact match = 1, else 0
+        sp_norm = normalize_value(sp_str)
+        paca_norm = normalize_value(paca_str)
+        score = 1.0 if sp_norm == paca_norm else 0.0
+        return score, 'Binary'
+    
+    elif method == 'impulsivity':
+        # Value mapping with delta-based scoring
+        mapping = get_value_mapping(field_name)
+        sp_val = mapping.get(normalize_value(sp_str), None)
+        paca_val = mapping.get(normalize_value(paca_str), None)
+        
+        if sp_val is None or paca_val is None:
+            st.write(f"  -> Unknown value mapping: SP={normalize_value(sp_str)}, PACA={normalize_value(paca_str)}")
+            return 0.0, 'Impulsivity_unknown'
+        
+        delta = paca_val - sp_val
+        if delta < 0:
+            score = 0.0
+        elif delta == 0:
+            score = 1.0
+        elif delta == 1:
+            score = 0.5
+        else:  # delta >= 2 or delta > 1
+            score = 0.0
+        
+        return score, f'Impulsivity(Δ={delta})'
+    
+    elif method == 'behavior':
+        # Value mapping with absolute delta-based scoring for Mood, Verbal productivity, Insight
+        mapping = get_value_mapping(field_name)
+        sp_val = mapping.get(normalize_value(sp_str), None)
+        paca_val = mapping.get(normalize_value(paca_str), None)
+        
+        if sp_val is None or paca_val is None:
+            st.write(f"  -> Unknown value mapping: SP={normalize_value(sp_str)}, PACA={normalize_value(paca_str)}")
+            return 0.0, 'Behavior_unknown'
+        
+        delta = abs(paca_val - sp_val)
+        if delta == 0:
+            score = 1.0
+        elif delta == 1:
+            score = 0.5
+        else:  # delta > 1
+            score = 0.0
+        
+        return score, f'Behavior(|Δ|={delta})'
+    
     else:
-        score = g_eval(field_name, str(sp_value), str(paca_value))
-        method = "G-Eval"
-
-    return score, method
+        # Default: treat as binary
+        score = 1.0 if sp_str.lower() == paca_str.lower() else 0.0
+        return score, 'Default_Binary'
 
 
 def evaluate_constructs(sp_construct: Dict[str, Any], paca_construct: Dict[str, Any], given_form: Dict[str, Any]) -> Tuple[Dict[str, float], Dict[str, str]]:
+    """
+    Evaluate constructs using PSYCHE RUBRIC scoring rules.
+    Uses get_nested_value to handle both nested (SP) and flat (PACA) key structures.
+    """
     scores = {}
     methods = {}
 
@@ -219,46 +370,37 @@ def evaluate_constructs(sp_construct: Dict[str, Any], paca_construct: Dict[str, 
             st.write(f"Evaluating key: {full_key}")
 
             if isinstance(form_value, dict):
+                # form_value is a dict (nested structure in form)
                 if 'guide' in form_value or 'candidate' in form_value:
+                    # This is a leaf field (has guide/candidate)
+                    # Try to get values from both sp_dict and paca_dict
                     sp_value = get_nested_value(sp_dict, [key]) if isinstance(sp_dict, (dict, list)) else sp_dict
                     paca_value = get_nested_value(paca_dict, [key]) if isinstance(paca_dict, (dict, list)) else paca_dict
+                    
                     # If still empty, try nested lookup using the full path
                     if sp_value == '' and prefix:
                         sp_value = get_nested_value(sp_dict, prefix.split('.') + [key])
                     if paca_value == '' and prefix:
                         paca_value = get_nested_value(paca_dict, prefix.split('.') + [key])
-                    # If form_value is dict but candidate info embedded in strings, parse it
-                    if isinstance(form_value, dict) and 'candidate' not in form_value and 'guide' in form_value:
-                        parsed = parse_candidate_from_guide(form_value.get('guide', ''))
-                        if parsed:
-                            form_value = {**form_value, 'candidate': parsed}
-                    score, method = evaluate_field(
-                        full_key, sp_value, paca_value, form_value)
+                    
+                    score, method = evaluate_field_psyche(full_key, sp_value, paca_value)
                     scores[full_key] = score
                     methods[full_key] = method
-                    st.write(
-                        f"Evaluated {full_key}: SP: {sp_value}, PACA: {paca_value}, Score: {score}, Method: {method}")
+                    st.write(f"Evaluated {full_key}: SP='{sp_value}', PACA='{paca_value}', Score={score}, Method={method}")
                 else:
-                    recursive_evaluate(sp_dict.get(key, {}), paca_dict.get(
-                        key, {}), form_value, full_key)
+                    # This is a nested structure (e.g., "Impulsivity": {...})
+                    recursive_evaluate(sp_dict.get(key, {}), paca_dict.get(key, {}), form_value, full_key)
             else:
+                # form_value is a string (leaf field with inline guide)
                 st.write(f"Form value for {full_key}: {form_value}")
                 # Try robust lookups for SP and PACA constructs
                 sp_value = get_nested_value(sp_dict, prefix.split('.') + [key]) if prefix else get_nested_value(sp_dict, [key])
                 paca_value = get_nested_value(paca_dict, prefix.split('.') + [key]) if prefix else get_nested_value(paca_dict, [key])
-
-                # If guide string contains candidate specification, pass it through
-                parsed_candidate = parse_candidate_from_guide(form_value)
-                field_info = {'guide': form_value}
-                if parsed_candidate:
-                    field_info['candidate'] = parsed_candidate
-
-                score, method = evaluate_field(
-                    full_key, sp_value, paca_value, field_info)
+                
+                score, method = evaluate_field_psyche(full_key, sp_value, paca_value)
                 scores[full_key] = score
                 methods[full_key] = method
-                st.write(
-                    f"Evaluated {full_key}: SP: {sp_value}, PACA: {paca_value}, Score: {score}, Method: {method}")
+                st.write(f"Evaluated {full_key}: SP='{sp_value}', PACA='{paca_value}', Score={score}, Method={method}")
 
     recursive_evaluate(sp_construct, paca_construct, given_form)
     return scores, methods
