@@ -113,6 +113,8 @@ def experiment_page(client_number):
                 paca_agent, sp_agent)
         if 'constructs' not in st.session_state:
             st.session_state.constructs = None
+        if 'sp_construct' not in st.session_state:
+            st.session_state.sp_construct = None
 
         # Conversation area
         conversation_area = st.empty()
@@ -183,7 +185,7 @@ def experiment_page(client_number):
 
         if st.sidebar.button("Create SP Construct"):
             if create_sp_construct is None:
-                st.error("SP construct generator not available (missing module 'construct_generator').")
+                st.error("SP construct generator not available (missing module 'sp_construct_generator').")
             else:
                 given_form_path = f"data/prompts/paca_system_prompt/given_form_version{paca_version}.json"
                 try:
@@ -193,15 +195,28 @@ def experiment_page(client_number):
                         f"{beh_dir_version:.1f}",
                         given_form_path,
                     )
+                    if sp_construct:
+                        st.session_state.sp_construct = sp_construct
+                        st.success("SP Construct generated!")
+                    else:
+                        st.error("SP Construct generation returned no result.")
                 except Exception as e:
                     st.error(f"Failed to create SP construct: {e}")
-                else:
-                    if sp_construct:
-                        save_to_firebase(firebase_ref, client_number,
-                                         f"sp_construct_version{paca_version}", sp_construct)
-                        st.success("SP-Construct generated/saved successfully!")
-                    else:
-                        st.error("SP-Construct generation returned no result.")
+            st.rerun()
+
+        # Display SP construct if it has been generated
+        if st.session_state.sp_construct:
+            st.subheader("SP Construct Output")
+            st.json(st.session_state.sp_construct)
+            
+            # Save SP construct button
+            if st.button("Save SP Construct"):
+                try:
+                    save_to_firebase(firebase_ref, client_number,
+                                     f"sp_construct_version{paca_version}", st.session_state.sp_construct)
+                    st.success("SP Construct saved successfully!")
+                except Exception as e:
+                    st.error(f"Failed to save SP construct: {e}")
 
         if st.session_state.conversation:
             csv_data = save_conversation_to_csv(st.session_state.conversation)
