@@ -6,3 +6,5 @@ new/
 files/
 .cache/
 .streamlit
+__pycache__/
+*.pyc
