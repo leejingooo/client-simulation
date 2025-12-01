@@ -19,6 +19,68 @@ def is_multiple_choice(field: Dict[str, Any]) -> bool:
     return 'candidate' in field
 
 
+def parse_candidate_from_guide(guide: str) -> str:
+    """If the guide string contains 'candidate:...', return the candidate substring after the colon."""
+    if not guide or not isinstance(guide, str):
+        return None
+    lower = guide.lower()
+    if 'candidate:' in lower:
+        # find the part after 'candidate:' in original guide to preserve casing
+        parts = guide.split('candidate:')
+        if len(parts) >= 2:
+            return parts[1].strip()
+    return None
+
+
+def get_nested_value(container: Any, key_parts: List[str]):
+    """Try to retrieve a value from nested dicts using key_parts.
+    Fallbacks:
+    - direct lookup by last key (case-insensitive)
+    - search for any key containing the last key substring (case-insensitive)
+    Returns '' if not found.
+    """
+    if container is None:
+        return ''
+
+    # Try nested traversal
+    current = container
+    for i, k in enumerate(key_parts):
+        if isinstance(current, dict) and k in current:
+            current = current.get(k)
+        else:
+            # try keys case-insensitive
+            if isinstance(current, dict):
+                found = False
+                for key in current.keys():
+                    if key.lower() == k.lower():
+                        current = current.get(key)
+                        found = True
+                        break
+                if found:
+                    continue
+            current = None
+            break
+
+    # If nested traversal succeeded and current is not None, return it
+    if current is not None:
+        return current
+
+    # Fallback: try direct lookup by last key in top-level container
+    last = key_parts[-1]
+    if isinstance(container, dict):
+        # exact case-insensitive match
+        for key, val in container.items():
+            if key.lower() == last.lower():
+                return val
+
+        # substring match
+        for key, val in container.items():
+            if last.lower() in key.lower():
+                return val
+
+    return ''
+
+
 def compare_multiple_choice(sp_value: str, paca_value: str, candidates: str) -> float:
     st.write(f"Comparing multiple choice: SP: {sp_value}, PACA: {paca_value}")
     if paca_value.lower() == sp_value.lower():
@@ -87,12 +149,35 @@ def g_eval(field_name: str, sp_text: str, paca_text: str) -> float:
         result = response
 
     try:
-        rating_line = [line for line in result.split(
-            '\n') if line.startswith('Score:')][0]
-        rating = float(rating_line.split(':')[1].strip())
-        return max(0, min(1, rating))  # Ensure the rating is between 0 and 1
-    except (IndexError, ValueError):
-        st.error(f"Error parsing G-eval result: {result}")
+        # First try to parse lines like 'Score: 0.85'
+        lines = [line.strip() for line in str(result).split('\n') if line.strip()]
+        rating = None
+        for line in lines:
+            if line.lower().startswith('score:'):
+                try:
+                    rating = float(line.split(':', 1)[1].strip())
+                    break
+                except Exception:
+                    continue
+
+        # Fallback: try to parse any float present in the output (e.g., '1.0' or '0.75')
+        if rating is None:
+            import re
+            text = '\n'.join(lines)
+            m = re.search(r'([-+]?[0-9]*\.?[0-9]+)', text)
+            if m:
+                try:
+                    rating = float(m.group(1))
+                except Exception:
+                    rating = None
+
+        if rating is None:
+            st.error(f"Error parsing G-eval result: {result}")
+            return 0.0
+
+        return max(0, min(1, float(rating)))  # Ensure the rating is between 0 and 1
+    except Exception as e:
+        st.error(f"Error in g_eval: {str(e)}")
         return 0.0
 
 
@@ -100,9 +185,16 @@ def evaluate_field(field_name: str, sp_value: Any, paca_value: Any, field_info: 
     st.write(
         f"Evaluating field {field_name}: SP: {sp_value}, PACA: {paca_value}, Field info: {field_info}")
 
+    # Detect candidate info either directly or embedded in guide string
+    candidate_spec = None
     if 'candidate' in field_info:
+        candidate_spec = field_info['candidate']
+    elif 'guide' in field_info:
+        candidate_spec = parse_candidate_from_guide(field_info['guide'])
+
+    if candidate_spec:
         score = compare_multiple_choice(
-            str(sp_value), str(paca_value), field_info['candidate'])
+            str(sp_value), str(paca_value), candidate_spec)
         method = "Simple Accuracy"
     elif sp_value == "blank (data_type:string, guide:null)" and paca_value == "Not provided":
         score = 1.0
@@ -128,10 +220,18 @@ def evaluate_constructs(sp_construct: Dict[str, Any], paca_construct: Dict[str, 
 
             if isinstance(form_value, dict):
                 if 'guide' in form_value or 'candidate' in form_value:
-                    sp_value = sp_dict.get(key, '') if isinstance(
-                        sp_dict, dict) else sp_dict
-                    paca_value = paca_dict.get(key, '') if isinstance(
-                        paca_dict, dict) else paca_dict
+                    sp_value = get_nested_value(sp_dict, [key]) if isinstance(sp_dict, (dict, list)) else sp_dict
+                    paca_value = get_nested_value(paca_dict, [key]) if isinstance(paca_dict, (dict, list)) else paca_dict
+                    # If still empty, try nested lookup using the full path
+                    if sp_value == '' and prefix:
+                        sp_value = get_nested_value(sp_dict, prefix.split('.') + [key])
+                    if paca_value == '' and prefix:
+                        paca_value = get_nested_value(paca_dict, prefix.split('.') + [key])
+                    # If form_value is dict but candidate info embedded in strings, parse it
+                    if isinstance(form_value, dict) and 'candidate' not in form_value and 'guide' in form_value:
+                        parsed = parse_candidate_from_guide(form_value.get('guide', ''))
+                        if parsed:
+                            form_value = {**form_value, 'candidate': parsed}
                     score, method = evaluate_field(
                         full_key, sp_value, paca_value, form_value)
                     scores[full_key] = score
@@ -143,12 +243,18 @@ def evaluate_constructs(sp_construct: Dict[str, Any], paca_construct: Dict[str, 
                         key, {}), form_value, full_key)
             else:
                 st.write(f"Form value for {full_key}: {form_value}")
-                sp_value = sp_dict.get(key, '') if isinstance(
-                    sp_dict, dict) else sp_dict
-                paca_value = paca_dict.get(key, '') if isinstance(
-                    paca_dict, dict) else paca_dict
+                # Try robust lookups for SP and PACA constructs
+                sp_value = get_nested_value(sp_dict, prefix.split('.') + [key]) if prefix else get_nested_value(sp_dict, [key])
+                paca_value = get_nested_value(paca_dict, prefix.split('.') + [key]) if prefix else get_nested_value(paca_dict, [key])
+
+                # If guide string contains candidate specification, pass it through
+                parsed_candidate = parse_candidate_from_guide(form_value)
+                field_info = {'guide': form_value}
+                if parsed_candidate:
+                    field_info['candidate'] = parsed_candidate
+
                 score, method = evaluate_field(
-                    full_key, sp_value, paca_value, {'guide': form_value})
+                    full_key, sp_value, paca_value, field_info)
                 scores[full_key] = score
                 methods[full_key] = method
                 st.write(
@@ -165,21 +271,9 @@ def calculate_overall_score(scores: Dict[str, float]) -> float:
 def create_evaluation_table(sp_construct: Dict[str, Any], paca_construct: Dict[str, Any], scores: Dict[str, float], methods: Dict[str, str]) -> pd.DataFrame:
     data = []
     for key in scores.keys():
-        sp_value = sp_construct
-        paca_value = paca_construct
         key_parts = key.split('.')
-        for i, k in enumerate(key_parts):
-            if isinstance(sp_value, dict):
-                sp_value = sp_value.get(k, '')
-            elif i < len(key_parts) - 1:
-                sp_value = ''
-                break
-
-            if isinstance(paca_value, dict):
-                paca_value = paca_value.get(k, '')
-            elif i < len(key_parts) - 1:
-                paca_value = ''
-                break
+        sp_value = get_nested_value(sp_construct, key_parts)
+        paca_value = get_nested_value(paca_construct, key_parts)
 
         data.append({
             'Field': key,
