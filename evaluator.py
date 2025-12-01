@@ -4,7 +4,7 @@ from typing import Dict, Any, List, Tuple
 # from langchain.chat_models import ChatOpenAI
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
-from SP_utils import load_from_firebase, get_firebase_ref
+from SP_utils import load_from_firebase, get_firebase_ref, sanitize_key
 import streamlit as st
 
 llm = ChatOpenAI(temperature=0, model="gpt-5.1")
@@ -198,8 +198,35 @@ def evaluate_paca_performance(client_number: str, sp_construct_version: str, pac
         firebase_ref, client_number, f"paca_construct_version{paca_construct_version}")
     given_form = load_given_form(given_form_path)
 
+    # Fallback: if either construct isn't found via the expected versioned key,
+    # try scanning the client's stored keys for alternate saves (e.g., constructs_{conversation_id}).
     if sp_construct is None or paca_construct is None:
-        raise ValueError("Failed to load constructs from Firebase")
+        try:
+            client_path = sanitize_key(f"clients/{client_number}")
+            client_data = firebase_ref.child(client_path).get()
+        except Exception as e:
+            client_data = None
+
+        if isinstance(client_data, dict):
+            # Try to find SP construct if missing
+            if sp_construct is None:
+                for k, v in client_data.items():
+                    if k.startswith('sp_construct_version') or k.startswith('sp_construct'):
+                        sp_construct = v
+                        break
+
+            # Try to find PACA construct if missing
+            if paca_construct is None:
+                for k, v in client_data.items():
+                    # common keys: 'paca_construct_versionX_X' or 'constructs_{conversation_id}'
+                    if k.startswith('paca_construct_version') or k.startswith('constructs_'):
+                        # if value looks like a dict (expected construct), accept it
+                        if isinstance(v, dict):
+                            paca_construct = v
+                            break
+
+        if sp_construct is None or paca_construct is None:
+            raise ValueError("Failed to load constructs from Firebase")
 
     st.write("SP Construct:", sp_construct)
     st.write("PACA Construct:", paca_construct)

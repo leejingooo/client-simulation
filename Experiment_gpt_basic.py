@@ -194,6 +194,14 @@ def experiment_page(client_number):
                 save_to_firebase(firebase_ref, client_number,
                                  f"constructs_{conversation_id}", st.session_state.constructs)
 
+            # Also save PACA constructs under a versioned key so evaluator can load it
+            if st.session_state.constructs:
+                try:
+                    save_to_firebase(firebase_ref, client_number,
+                                     f"paca_construct_version{actual_paca_version}", st.session_state.constructs)
+                except Exception as e:
+                    st.error(f"Failed to save PACA construct under versioned key: {e}")
+
             st.success(
                 f"Conversation and constructs saved with ID: {conversation_id}")
 
