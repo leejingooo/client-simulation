@@ -1,485 +1,422 @@
 import pandas as pd
 import json
+import re
 from typing import Dict, Any, List, Tuple
-# from langchain.chat_models import ChatOpenAI
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
-from SP_utils import load_from_firebase, get_firebase_ref, sanitize_key
 import streamlit as st
 
-llm = ChatOpenAI(temperature=0, model="gpt-5.1")
+llm = ChatOpenAI(temperature=0, model="gpt-4")
 
 
-def load_given_form(form_path: str) -> Dict[str, Any]:
-    with open(form_path, 'r') as f:
-        return json.load(f)
+# ============================================================================
+# PSYCHE RUBRIC DEFINITIONS
+# ============================================================================
 
-
-def is_multiple_choice(field: Dict[str, Any]) -> bool:
-    return 'candidate' in field
-
-
-def parse_candidate_from_guide(guide: str) -> str:
-    """If the guide string contains 'candidate:...', return the candidate substring after the colon."""
-    if not guide or not isinstance(guide, str):
-        return None
-    lower = guide.lower()
-    if 'candidate:' in lower:
-        # find the part after 'candidate:' in original guide to preserve casing
-        parts = guide.split('candidate:')
-        if len(parts) >= 2:
-            return parts[1].strip()
-    return None
-
-
-def get_nested_value(container: Any, key_parts: List[str]):
-    """Try to retrieve a value from nested dicts using key_parts.
-    Fallbacks:
-    - direct lookup by last key (case-insensitive)
-    - search for any key containing the last key substring (case-insensitive)
-    Returns '' if not found.
-    """
-    if container is None:
-        return ''
-
-    # Try nested traversal
-    current = container
-    for i, k in enumerate(key_parts):
-        if isinstance(current, dict) and k in current:
-            current = current.get(k)
-        else:
-            # try keys case-insensitive
-            if isinstance(current, dict):
-                found = False
-                for key in current.keys():
-                    if key.lower() == k.lower():
-                        current = current.get(key)
-                        found = True
-                        break
-                if found:
-                    continue
-            current = None
-            break
-
-    # If nested traversal succeeded and current is not None, return it
-    if current is not None:
-        return current
-
-    # Fallback: try direct lookup by last key in top-level container
-    last = key_parts[-1]
-    if isinstance(container, dict):
-        # exact case-insensitive match
-        for key, val in container.items():
-            if key.lower() == last.lower():
-                return val
-
-        # substring match
-        for key, val in container.items():
-            if last.lower() in key.lower():
-                return val
-
-    return ''
-
-
-def compare_multiple_choice(sp_value: str, paca_value: str, candidates: str) -> float:
-    st.write(f"Comparing multiple choice: SP: {sp_value}, PACA: {paca_value}")
-    if paca_value.lower() == sp_value.lower():
-        return 1.0
-    return 0.0
-
-
-def g_eval(field_name: str, sp_text: str, paca_text: str) -> float:
-    st.write(f"G-eval for {field_name}: SP: {sp_text}, PACA: {paca_text}")
-    prompt_template = """
-    Task description:
-    Your task is to compare two pieces of text: the Original Text and the Generated Text. The generated text is the AI agent's assessment of a psychiatric patient after interviewing him/her. The original text is the actual information about this patient and is the correct answer.
+PSYCHE_RUBRIC = {
+    # Subjective Information (G-Eval or Binary)
+    "Chief complaint": {"type": "g-eval", "weight": 1},
+    "Symptom name": {"type": "g-eval", "weight": 1},
+    "Alleviating factor": {"type": "g-eval", "weight": 1},
+    "Exacerbating factor": {"type": "g-eval", "weight": 1},
+    "Triggering factor": {"type": "g-eval", "weight": 1},
+    "Stressor": {"type": "g-eval", "weight": 1},
+    "Diagnosis": {"type": "g-eval", "weight": 1},
+    "Substance use": {"type": "g-eval", "weight": 1},
+    "Current family structure": {"type": "g-eval", "weight": 1},
+    "length": {"type": "binary", "weight": 1},  # Correct=1, Incorrect=0
     
-    Evaluation steps:
-    1. Understand the Context:
-    - Read the Original Text carefully to understand the context, details, and overall sentiment of the psychiatric patient's case.
-    - Read the Generated Text to grasp the AI agent's interpretation and summary of the patient's information.
-
-    2. Compare Key Information:
-    - Compare essential elements present in both texts.
-    - Check for Omissions: Note if any important details from the original text are missing or inaccurately represented in the generated text.
-
-    3. Assess Accuracy and Completeness:
-    - Accuracy: Determine if the information in the generated text correctly reflects the facts and observations from the original text.
-    - Completeness: Evaluate whether the generated text covers all the significant aspects mentioned in the original text without adding irrelevant information.
-
-    4. Check for Paraphrasing and Interpretation:
-    - Determine if the generated text is a paraphrased version of the original text or if it introduces any new interpretations that deviate from the original meaning.
-    - Evaluate whether the paraphrasing maintains the integrity of the original information.
-
-    5. Determine Overall Similarity:
-    - Based on the comparisons, assess how similar the generated text is to the original text in terms of meaning and detail.
-    - Consider any discrepancies in information or completeness when determining the similarity.
-
-    6. Assign a Score:
-    - Provide a score between 0 and 1 that reflects the degree of similarity between the original text and the generated text.
-    - A score of 1 indicates that the texts are identical in meaning, while a score of 0 indicates they are completely different.
+    # Impulsivity (w=5)
+    "Suicidal ideation": {
+        "type": "impulsivity",
+        "weight": 5,
+        "values": {"high": 2, "moderate": 1, "low": 0}
+    },
+    "Self mutilating behavior risk": {
+        "type": "impulsivity",
+        "weight": 5,
+        "values": {"high": 2, "moderate": 1, "low": 0}
+    },
+    "Homicide risk": {
+        "type": "impulsivity",
+        "weight": 5,
+        "values": {"high": 2, "moderate": 1, "low": 0}
+    },
+    "Suicidal plan": {"type": "binary", "weight": 5},
+    "Suicidal attempt": {"type": "binary", "weight": 5},
     
-    Original text:
-    {field_name}: {original_text}
-    
-    Generated text:
-    {field_name}: {generated_text}
-    
-    Provide your Score as a float between 0 and 1.
-    
-    Score:
-    """
-
-    prompt = PromptTemplate(
-        input_variables=["field_name", "original_text", "generated_text"],
-        template=prompt_template
-    )
-    # New LangChain v1.x style: compose prompt + llm using the runnable (prompt | llm)
-    chain = prompt | llm
-
-    # invoke() returns a response object for chat LLMs; adjust to accept either string or response
-    response = chain.invoke({
-        "field_name": field_name,
-        "original_text": sp_text,
-        "generated_text": paca_text,
-    })
-    if hasattr(response, 'content'):
-        result = response.content
-    else:
-        result = response
-
-    try:
-        # First try to parse lines like 'Score: 0.85'
-        lines = [line.strip() for line in str(result).split('\n') if line.strip()]
-        rating = None
-        for line in lines:
-            if line.lower().startswith('score:'):
-                try:
-                    rating = float(line.split(':', 1)[1].strip())
-                    break
-                except Exception:
-                    continue
-
-        # Fallback: try to parse any float present in the output (e.g., '1.0' or '0.75')
-        if rating is None:
-            import re
-            text = '\n'.join(lines)
-            m = re.search(r'([-+]?[0-9]*\.?[0-9]+)', text)
-            if m:
-                try:
-                    rating = float(m.group(1))
-                except Exception:
-                    rating = None
-
-        if rating is None:
-            st.error(f"Error parsing G-eval result: {result}")
-            return 0.0
-
-        return max(0, min(1, float(rating)))  # Ensure the rating is between 0 and 1
-    except Exception as e:
-        st.error(f"Error in g_eval: {str(e)}")
-        return 0.0
-
-
-def get_value_mapping(field_name: str) -> Dict[str, int]:
-    """Return value-to-numeric mappings for specific fields based on PSYCHE RUBRIC."""
-    mapping = {}
-    
-    # Impulsivity fields: high=2, moderate=1, low=0
-    if any(x in field_name.lower() for x in ['suicidal ideation', 'self mutilating', 'homicide risk']):
-        mapping = {'high': 2, 'moderate': 1, 'low': 0}
-    
-    # Mood field: irritable=5, euphoric=5, elated=4, euthymic=3, dysphoric=2, depressed=1
-    elif 'mood' in field_name.lower():
-        mapping = {
-            'irritable': 5, 'euphoric': 5, 'elated': 4,
-            'euthymic': 3, 'dysphoric': 2, 'depressed': 1
+    # Behavior (w=2)
+    "Mood": {
+        "type": "behavior",
+        "weight": 2,
+        "values": {
+            "irritable": 5, "euphoric": 5, "elated": 4,
+            "euthymic": 3, "dysphoric": 2, "depressed": 1
         }
-    
-    # Verbal productivity: increased=2, moderate=1, decreased=0
-    elif 'verbal productivity' in field_name.lower():
-        mapping = {'increased': 2, 'moderate': 1, 'decreased': 0}
-    
-    # Insight: 5 levels mapped
-    elif 'insight' in field_name.lower():
-        mapping = {
-            'complete denial of illness': 5,
-            'slight awareness': 4,
-            'awareness': 3,
-            'intellectual insight': 2,
-            'true emotional insight': 1
+    },
+    "Verbal productivity": {
+        "type": "behavior",
+        "weight": 2,
+        "values": {"increased": 2, "moderate": 1, "decreased": 0}
+    },
+    "Insight": {
+        "type": "behavior",
+        "weight": 2,
+        "values": {
+            "complete denial of illness": 5,
+            "slight awareness of being sick and needing help, but denying it at the same time": 4,
+            "awareness of being sick but blaming it on others, external events": 3,
+            "intellectual insight": 2,
+            "true emotional insight": 1
         }
-    
-    return mapping
+    },
+    "Affect": {"type": "g-eval", "weight": 2},
+    "Perception": {"type": "g-eval", "weight": 2},
+    "Thought process": {"type": "g-eval", "weight": 2},
+    "Thought content": {"type": "g-eval", "weight": 2},
+    "Spontaneity": {"type": "binary", "weight": 2},
+    "Social judgement": {"type": "binary", "weight": 2},
+    "Reliability": {"type": "binary", "weight": 2},
+}
 
 
-def get_field_scoring_method(field_name: str) -> str:
-    """Determine scoring method based on PSYCHE RUBRIC hardcoding."""
-    
-    # G-Eval fields
-    g_eval_fields = [
-        'Chief complaint', 'Symptom name', 'Alleviating factor',
-        'Exacerbating factor', 'Triggering factor', 'Stressor',
-        'Family history', 'Diagnosis', 'Substance use',
-        'Current family structure',
-        'Affect', 'Perception', 'Thought process', 'Thought content'
-    ]
-    
-    # Rule-based with value mapping (Impulsivity)
-    impulsivity_value_mapping = [
-        'Suicidal ideation', 'Self mutilating', 'Homicide risk'
-    ]
-    
-    # Rule-based with value mapping (Behavior)
-    behavior_value_mapping = [
-        'Mood', 'Verbal productivity', 'Insight'
-    ]
-    
-    # Simple binary (correct/incorrect)
-    binary_fields = [
-        'length', 'Suicidal plan', 'Suicidal attempt',
-        'Spontaneity', 'Social judgement', 'Social judgment',
-        'Reliability'
-    ]
-    
-    field_lower = field_name.lower()
-    
-    for g_field in g_eval_fields:
-        if g_field.lower() in field_lower:
-            return 'g-eval'
-    
-    for imp_field in impulsivity_value_mapping:
-        if imp_field.lower() in field_lower:
-            return 'impulsivity'
-    
-    for beh_field in behavior_value_mapping:
-        if beh_field.lower() in field_lower:
-            return 'behavior'
-    
-    for bin_field in binary_fields:
-        if bin_field.lower() in field_lower:
-            return 'binary'
-    
-    # Default to g-eval for unknown fields
-    return 'g-eval'
-
+# ============================================================================
+# UTILITY FUNCTIONS
+# ============================================================================
 
 def normalize_value(value: str) -> str:
-    """Normalize values: lower case, strip whitespace, handle common aliases."""
+    """Normalize values: lower case, strip whitespace."""
     if not isinstance(value, str):
         value = str(value)
     value = value.lower().strip()
     
     # Handle 'N/A' or empty as missing
-    if value in ['n/a', 'na', '', 'none', 'unknown']:
-        return 'N/A'
-    
-    # Normalize true/false/yes/no
-    if value in ['true', 'yes', 'presence']:
-        return 'presence'
-    if value in ['false', 'no', 'absence']:
-        return 'absence'
+    if value in ['n/a', 'na', '', 'none', 'unknown', 'null']:
+        return None
     
     return value
 
 
-def evaluate_field_psyche(field_name: str, sp_value: Any, paca_value: Any) -> Tuple[float, str]:
-    """Evaluate field using PSYCHE RUBRIC hardcoded rules."""
-    sp_str = str(sp_value).strip()
-    paca_str = str(paca_value).strip()
+def flatten_construct(construct: Dict[str, Any], parent_key='') -> Dict[str, str]:
+    """Flatten nested construct into key-value pairs."""
+    items = {}
+    if isinstance(construct, dict):
+        for k, v in construct.items():
+            new_key = f"{parent_key}.{k}" if parent_key else k
+            if isinstance(v, dict) and not isinstance(v, str):
+                items.update(flatten_construct(v, new_key))
+            else:
+                items[new_key] = str(v) if v is not None else ""
+    return items
+
+
+def get_value_from_construct(construct: Dict[str, Any], field_name: str) -> str:
+    """
+    Retrieve value from construct by field name (case-insensitive, nested-aware).
+    Returns normalized string value or None if not found.
+    """
+    if construct is None:
+        return None
     
-    st.write(f"Evaluating {field_name}: SP='{sp_str}', PACA='{paca_str}'")
+    flat = flatten_construct(construct)
+    field_lower = field_name.lower()
     
-    method = get_field_scoring_method(field_name)
+    # Direct exact match
+    for key, val in flat.items():
+        if key.lower() == field_lower:
+            return normalize_value(val)
+    
+    # Match on last part of key path
+    for key, val in flat.items():
+        last_part = key.split('.')[-1].lower()
+        if last_part == field_lower:
+            return normalize_value(val)
+    
+    return None
+
+
+# ============================================================================
+# SCORING FUNCTIONS
+# ============================================================================
+
+def g_eval(field_name: str, sp_text: str, paca_text: str) -> float:
+    """G-Eval scoring using LLM."""
+    if not sp_text or not paca_text:
+        return 0.0
+    
+    prompt_template = """Task: Compare two psychiatric assessment texts for similarity.
+
+Original (SP): {original_text}
+
+Generated (PACA): {generated_text}
+
+Evaluate on accuracy, completeness, and meaning preservation.
+Score between 0 (completely different) and 1 (identical in meaning).
+
+Return ONLY a single float between 0 and 1."""
+
+    prompt = PromptTemplate(
+        input_variables=["original_text", "generated_text"],
+        template=prompt_template
+    )
+    
+    chain = prompt | llm
+    
+    try:
+        response = chain.invoke({
+            "original_text": sp_text,
+            "generated_text": paca_text,
+        })
+        
+        result = response.content if hasattr(response, 'content') else str(response)
+        
+        # Extract float from response
+        match = re.search(r'(0?\.\d+|1\.0|1)', result.strip())
+        if match:
+            score = float(match.group(1))
+            return max(0, min(1, score))
+        
+        return 0.0
+    except Exception as e:
+        st.warning(f"G-eval error for {field_name}: {str(e)}")
+        return 0.0
+
+
+def score_impulsivity(sp_value: str, paca_value: str, values_map: Dict[str, int]) -> Tuple[float, str]:
+    """
+    Score impulsivity fields using delta scoring.
+    Δ = (PACA value) - (SP value)
+    Score = 1 if Δ=0, 0.5 if Δ=1, 0 if Δ<0 or Δ≥2
+    """
+    sp_val = values_map.get(sp_value)
+    paca_val = values_map.get(paca_value)
+    
+    if sp_val is None or paca_val is None:
+        return 0.0, f"Invalid: SP={sp_value}, PACA={paca_value}"
+    
+    delta = paca_val - sp_val
+    
+    if delta < 0:
+        score = 0.0
+    elif delta == 0:
+        score = 1.0
+    elif delta == 1:
+        score = 0.5
+    else:  # delta >= 2
+        score = 0.0
+    
+    return score, f"Δ={delta:+d}"
+
+
+def score_behavior(sp_value: str, paca_value: str, values_map: Dict[str, int]) -> Tuple[float, str]:
+    """
+    Score behavior fields (Mood, Verbal productivity, Insight).
+    Δ = (PACA value) - (SP value)
+    Score = 1 if |Δ|=0, 0.5 if |Δ|=1, 0 if |Δ|>1
+    """
+    sp_val = values_map.get(sp_value)
+    paca_val = values_map.get(paca_value)
+    
+    if sp_val is None or paca_val is None:
+        return 0.0, f"Invalid: SP={sp_value}, PACA={paca_value}"
+    
+    delta = abs(paca_val - sp_val)
+    
+    if delta == 0:
+        score = 1.0
+    elif delta == 1:
+        score = 0.5
+    else:  # delta > 1
+        score = 0.0
+    
+    return score, f"|Δ|={delta}"
+
+
+def score_binary(sp_value: str, paca_value: str) -> Tuple[float, str]:
+    """
+    Binary scoring: exact match = 1, else = 0.
+    Handles presence/absence, yes/no normalization.
+    """
+    sp_norm = sp_value.lower()
+    paca_norm = paca_value.lower()
+    
+    # Normalize presence/absence
+    presence_aliases = ['true', 'yes', 'presence', '+', '(+)']
+    absence_aliases = ['false', 'no', 'absence', '-', '(-)']
+    
+    if sp_norm in presence_aliases:
+        sp_norm = 'presence'
+    elif sp_norm in absence_aliases:
+        sp_norm = 'absence'
+    
+    if paca_norm in presence_aliases:
+        paca_norm = 'presence'
+    elif paca_norm in absence_aliases:
+        paca_norm = 'absence'
+    
+    score = 1.0 if sp_norm == paca_norm else 0.0
+    return score, f"Match={sp_norm == paca_norm}"
+
+
+# ============================================================================
+# MAIN EVALUATION FUNCTION
+# ============================================================================
+
+def evaluate_construct(field_name: str, sp_value: str, paca_value: str) -> Tuple[float, str, int]:
+    """
+    Evaluate a single field using PSYCHE RUBRIC.
+    Returns: (score, method_description, weight)
+    """
+    
+    # Check if field is in rubric
+    if field_name not in PSYCHE_RUBRIC:
+        st.warning(f"Field '{field_name}' not in PSYCHE RUBRIC. Skipping.")
+        return 0.0, "NOT_IN_RUBRIC", 0
+    
+    rubric_entry = PSYCHE_RUBRIC[field_name]
+    weight = rubric_entry.get("weight", 1)
+    scoring_type = rubric_entry.get("type", "g-eval")
     
     # Handle missing values
-    if sp_str in ['', 'N/A', 'n/a', 'None'] or paca_str in ['', 'N/A', 'n/a', 'None']:
-        st.write(f"  -> Missing value detected. Returning 0.0")
-        return 0.0, f"{method.upper()}_missing"
+    if not sp_value or not paca_value:
+        st.warning(f"Missing value for '{field_name}': SP={sp_value}, PACA={paca_value}")
+        return 0.0, "MISSING_VALUE", weight
     
-    if method == 'g-eval':
-        score = g_eval(field_name, sp_str, paca_str)
-        return score, 'G-Eval'
+    # Apply scoring method
+    if scoring_type == "binary":
+        score, desc = score_binary(sp_value, paca_value)
+        return score, f"Binary({desc})", weight
     
-    elif method == 'binary':
-        # Binary scoring: exact match = 1, else 0
-        sp_norm = normalize_value(sp_str)
-        paca_norm = normalize_value(paca_str)
-        score = 1.0 if sp_norm == paca_norm else 0.0
-        return score, 'Binary'
+    elif scoring_type == "impulsivity":
+        values_map = rubric_entry.get("values", {})
+        sp_norm = sp_value  # Already normalized
+        paca_norm = paca_value  # Already normalized
+        score, desc = score_impulsivity(sp_norm, paca_norm, values_map)
+        return score, f"Impulsivity({desc})", weight
     
-    elif method == 'impulsivity':
-        # Value mapping with delta-based scoring
-        mapping = get_value_mapping(field_name)
-        sp_val = mapping.get(normalize_value(sp_str), None)
-        paca_val = mapping.get(normalize_value(paca_str), None)
-        
-        if sp_val is None or paca_val is None:
-            st.write(f"  -> Unknown value mapping: SP={normalize_value(sp_str)}, PACA={normalize_value(paca_str)}")
-            return 0.0, 'Impulsivity_unknown'
-        
-        delta = paca_val - sp_val
-        if delta < 0:
-            score = 0.0
-        elif delta == 0:
-            score = 1.0
-        elif delta == 1:
-            score = 0.5
-        else:  # delta >= 2 or delta > 1
-            score = 0.0
-        
-        return score, f'Impulsivity(Δ={delta})'
+    elif scoring_type == "behavior":
+        values_map = rubric_entry.get("values", {})
+        sp_norm = sp_value  # Already normalized
+        paca_norm = paca_value  # Already normalized
+        score, desc = score_behavior(sp_norm, paca_norm, values_map)
+        return score, f"Behavior({desc})", weight
     
-    elif method == 'behavior':
-        # Value mapping with absolute delta-based scoring for Mood, Verbal productivity, Insight
-        mapping = get_value_mapping(field_name)
-        sp_val = mapping.get(normalize_value(sp_str), None)
-        paca_val = mapping.get(normalize_value(paca_str), None)
-        
-        if sp_val is None or paca_val is None:
-            st.write(f"  -> Unknown value mapping: SP={normalize_value(sp_str)}, PACA={normalize_value(paca_str)}")
-            return 0.0, 'Behavior_unknown'
-        
-        delta = abs(paca_val - sp_val)
-        if delta == 0:
-            score = 1.0
-        elif delta == 1:
-            score = 0.5
-        else:  # delta > 1
-            score = 0.0
-        
-        return score, f'Behavior(|Δ|={delta})'
+    elif scoring_type == "g-eval":
+        score = g_eval(field_name, sp_value, paca_value)
+        return score, "G-Eval", weight
     
     else:
-        # Default: treat as binary
-        score = 1.0 if sp_str.lower() == paca_str.lower() else 0.0
-        return score, 'Default_Binary'
+        st.warning(f"Unknown scoring type '{scoring_type}' for field '{field_name}'")
+        return 0.0, "UNKNOWN_TYPE", weight
 
 
-def evaluate_constructs(sp_construct: Dict[str, Any], paca_construct: Dict[str, Any], given_form: Dict[str, Any]) -> Tuple[Dict[str, float], Dict[str, str]]:
+def evaluate_constructs(sp_construct: Dict[str, Any], paca_construct: Dict[str, Any]) -> Tuple[Dict[str, float], Dict[str, str], float]:
     """
-    Evaluate constructs using PSYCHE RUBRIC scoring rules.
-    Uses get_nested_value to handle both nested (SP) and flat (PACA) key structures.
+    Evaluate both constructs against PSYCHE RUBRIC.
+    
+    Returns:
+        - field_scores: Dict[field_name -> score]
+        - field_methods: Dict[field_name -> method_description]
+        - weighted_score: Overall weighted score
     """
-    scores = {}
-    methods = {}
-
-    def recursive_evaluate(sp_dict, paca_dict, form_dict, prefix=''):
-        for key, form_value in form_dict.items():
-            full_key = f"{prefix}.{key}" if prefix else key
-            st.write(f"Evaluating key: {full_key}")
-
-            if isinstance(form_value, dict):
-                # form_value is a dict (nested structure in form)
-                if 'guide' in form_value or 'candidate' in form_value:
-                    # This is a leaf field (has guide/candidate)
-                    # Try to get values from both sp_dict and paca_dict
-                    sp_value = get_nested_value(sp_dict, [key]) if isinstance(sp_dict, (dict, list)) else sp_dict
-                    paca_value = get_nested_value(paca_dict, [key]) if isinstance(paca_dict, (dict, list)) else paca_dict
-                    
-                    # If still empty, try nested lookup using the full path
-                    if sp_value == '' and prefix:
-                        sp_value = get_nested_value(sp_dict, prefix.split('.') + [key])
-                    if paca_value == '' and prefix:
-                        paca_value = get_nested_value(paca_dict, prefix.split('.') + [key])
-                    
-                    score, method = evaluate_field_psyche(full_key, sp_value, paca_value)
-                    scores[full_key] = score
-                    methods[full_key] = method
-                    st.write(f"Evaluated {full_key}: SP='{sp_value}', PACA='{paca_value}', Score={score}, Method={method}")
-                else:
-                    # This is a nested structure (e.g., "Impulsivity": {...})
-                    recursive_evaluate(sp_dict.get(key, {}), paca_dict.get(key, {}), form_value, full_key)
-            else:
-                # form_value is a string (leaf field with inline guide)
-                st.write(f"Form value for {full_key}: {form_value}")
-                # Try robust lookups for SP and PACA constructs
-                sp_value = get_nested_value(sp_dict, prefix.split('.') + [key]) if prefix else get_nested_value(sp_dict, [key])
-                paca_value = get_nested_value(paca_dict, prefix.split('.') + [key]) if prefix else get_nested_value(paca_dict, [key])
-                
-                score, method = evaluate_field_psyche(full_key, sp_value, paca_value)
-                scores[full_key] = score
-                methods[full_key] = method
-                st.write(f"Evaluated {full_key}: SP='{sp_value}', PACA='{paca_value}', Score={score}, Method={method}")
-
-    recursive_evaluate(sp_construct, paca_construct, given_form)
-    return scores, methods
+    field_scores = {}
+    field_methods = {}
+    field_weights = {}
+    
+    st.write("### Starting Evaluation Against PSYCHE RUBRIC")
+    
+    # Evaluate each field in PSYCHE RUBRIC
+    for field_name in PSYCHE_RUBRIC.keys():
+        sp_value = get_value_from_construct(sp_construct, field_name)
+        paca_value = get_value_from_construct(paca_construct, field_name)
+        
+        score, method, weight = evaluate_construct(field_name, sp_value, paca_value)
+        
+        if weight > 0:  # Only include fields that are in rubric
+            field_scores[field_name] = score
+            field_methods[field_name] = method
+            field_weights[field_name] = weight
+            
+            st.write(f"**{field_name}**: SP='{sp_value}' | PACA='{paca_value}' | Score={score:.2f} | {method}")
+    
+    # Calculate weighted overall score
+    if field_scores:
+        total_weight = sum(field_weights.values())
+        weighted_sum = sum(score * field_weights.get(field, 1) for field, score in field_scores.items())
+        weighted_score = weighted_sum / total_weight if total_weight > 0 else 0.0
+    else:
+        weighted_score = 0.0
+    
+    return field_scores, field_methods, weighted_score
 
 
-def calculate_overall_score(scores: Dict[str, float]) -> float:
-    return sum(scores.values()) / len(scores) if scores else 0
+# ============================================================================
+# RESULT FORMATTING
+# ============================================================================
 
-
-def create_evaluation_table(sp_construct: Dict[str, Any], paca_construct: Dict[str, Any], scores: Dict[str, float], methods: Dict[str, str]) -> pd.DataFrame:
+def create_evaluation_table(field_scores: Dict[str, float], field_methods: Dict[str, str]) -> pd.DataFrame:
+    """Create evaluation results dataframe."""
     data = []
-    for key in scores.keys():
-        key_parts = key.split('.')
-        sp_value = get_nested_value(sp_construct, key_parts)
-        paca_value = get_nested_value(paca_construct, key_parts)
-
+    for field_name in sorted(field_scores.keys()):
         data.append({
-            'Field': key,
-            'SP-Construct': str(sp_value),
-            'PACA-Construct': str(paca_value),
-            'Method': methods[key],
-            'Score': f"{scores[key]:.2f}"
+            'Field': field_name,
+            'Score': f"{field_scores[field_name]:.2f}",
+            'Method': field_methods.get(field_name, 'Unknown'),
+            'Weight': PSYCHE_RUBRIC[field_name].get('weight', 1)
         })
-
+    
     return pd.DataFrame(data)
 
 
-def evaluate_paca_performance(client_number: str, sp_construct_version: str, paca_construct_version: str, given_form_path: str) -> Tuple[Dict[str, float], float, pd.DataFrame]:
-    firebase_ref = get_firebase_ref()
+# ============================================================================
+# FIREBASE INTEGRATION (Legacy - simplified)
+# ============================================================================
 
-    sp_construct = load_from_firebase(
-        firebase_ref, client_number, f"sp_construct_version{sp_construct_version}")
-    paca_construct = load_from_firebase(
-        firebase_ref, client_number, f"paca_construct_version{paca_construct_version}")
-    given_form = load_given_form(given_form_path)
+def load_given_form(form_path: str) -> Dict[str, Any]:
+    """Load given form from JSON file."""
+    try:
+        with open(form_path, 'r') as f:
+            return json.load(f)
+    except Exception as e:
+        st.error(f"Failed to load given form: {e}")
+        return None
 
-    # Fallback: if either construct isn't found via the expected versioned key,
-    # try scanning the client's stored keys for alternate saves (e.g., constructs_{conversation_id}).
-    if sp_construct is None or paca_construct is None:
-        try:
-            client_path = sanitize_key(f"clients/{client_number}")
-            client_data = firebase_ref.child(client_path).get()
-        except Exception as e:
-            client_data = None
 
-        if isinstance(client_data, dict):
-            # Try to find SP construct if missing
-            if sp_construct is None:
-                for k, v in client_data.items():
-                    if k.startswith('sp_construct_version') or k.startswith('sp_construct'):
-                        sp_construct = v
-                        break
-
-            # Try to find PACA construct if missing
-            if paca_construct is None:
-                for k, v in client_data.items():
-                    # common keys: 'paca_construct_versionX_X' or 'constructs_{conversation_id}'
-                    if k.startswith('paca_construct_version') or k.startswith('constructs_'):
-                        # if value looks like a dict (expected construct), accept it
-                        if isinstance(v, dict):
-                            paca_construct = v
-                            break
-
-        if sp_construct is None or paca_construct is None:
-            raise ValueError("Failed to load constructs from Firebase")
-
-    st.write("SP Construct:", sp_construct)
-    st.write("PACA Construct:", paca_construct)
-    st.write("Given Form:", given_form)
-
-    scores, methods = evaluate_constructs(
-        sp_construct, paca_construct, given_form)
-    overall_score = calculate_overall_score(scores)
-
-    st.write("Final Scores:", scores)
-    st.write("Evaluation Methods:", methods)
-    st.write("Overall Score:", overall_score)
-
-    evaluation_table = create_evaluation_table(
-        sp_construct, paca_construct, scores, methods)
-
-    return scores, overall_score, evaluation_table
+def evaluate_paca_performance(
+    client_number: str,
+    sp_construct: Dict[str, Any],
+    paca_construct: Dict[str, Any]
+) -> Tuple[Dict[str, float], Dict[str, str], float, pd.DataFrame]:
+    """
+    Main evaluation function using PSYCHE RUBRIC.
+    
+    Args:
+        client_number: Client ID
+        sp_construct: SP construct dictionary
+        paca_construct: PACA construct dictionary
+    
+    Returns:
+        - field_scores: Individual field scores
+        - field_methods: Scoring methods used
+        - weighted_score: Overall weighted score
+        - evaluation_table: Results as DataFrame
+    """
+    
+    st.write(f"### Evaluating Client {client_number}")
+    
+    # Validate inputs
+    if not sp_construct or not paca_construct:
+        raise ValueError("Both SP and PACA constructs are required")
+    
+    st.write("**SP Construct:**", sp_construct)
+    st.write("**PACA Construct:**", paca_construct)
+    
+    # Evaluate
+    field_scores, field_methods, weighted_score = evaluate_constructs(sp_construct, paca_construct)
+    
+    st.write(f"## Overall Weighted Score: {weighted_score:.2f}")
+    
+    # Create results table
+    evaluation_table = create_evaluation_table(field_scores, field_methods)
+    
+    return field_scores, field_methods, weighted_score, evaluation_table
