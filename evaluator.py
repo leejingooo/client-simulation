@@ -76,8 +76,11 @@ def g_eval(field_name: str, sp_text: str, paca_text: str) -> float:
     chain = prompt | llm
 
     # invoke() returns a response object for chat LLMs; adjust to accept either string or response
-    response = chain.invoke(field_name=field_name, original_text=sp_text,
-                            generated_text=paca_text)
+    response = chain.invoke({
+        "field_name": field_name,
+        "original_text": sp_text,
+        "generated_text": paca_text,
+    })
     if hasattr(response, 'content'):
         result = response.content
     else:
