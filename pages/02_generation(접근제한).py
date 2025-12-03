@@ -126,11 +126,11 @@ def main():
     else:  # Create new data
         st.sidebar.subheader("Version Settings")
         profile_version = st.sidebar.number_input(
-            "Profile Version", min_value=1.0, value=5.0, step=0.1, format="%.1f")
+            "Profile Version", min_value=1.0, value=6.0, step=0.1, format="%.1f")
         beh_dir_version = st.sidebar.number_input(
-            "Beh-dir-maker Version", min_value=1.0, value=5.0, step=0.1, format="%.1f")
+            "Beh-dir-maker Version", min_value=1.0, value=6.0, step=0.1, format="%.1f")
         con_agent_version = st.sidebar.number_input(
-            "Con-agent Version", min_value=1.0, value=5.0, step=0.1, format="%.1f")
+            "Con-agent Version", min_value=1.0, value=6.0, step=0.1, format="%.1f")
 
         # Load prompts based on versions
         profile_system_prompt, actual_profile_version = load_prompt_and_get_version(
