@@ -205,7 +205,7 @@ def create_paca_construct(paca_agent) -> Dict[str, Any]:
     paca_construct["Mental Status Examination"] = {
         "Mood": generate_field(
             paca_agent, "Mood",
-            "candidate: euphoric/elated/euthymic/dysphoric/depressed/irritable"
+            "candidate (multiple selections allowed, comma-separated): euphoric/elated/euthymic/dysphoric/depressed/irritable"
         ),
         "Affect": generate_field(
             paca_agent, "Affect",
@@ -217,19 +217,19 @@ def create_paca_construct(paca_agent) -> Dict[str, Any]:
         ),
         "Insight": generate_field(
             paca_agent, "Insight",
-            "candidate: Complete denial of illness/Slight awareness.../Awareness.../Intellectual insight/True emotional insight"
+            "candidate: Complete denial of illness/Slight awareness of being sick and needing help, but denying it at the same time/Awareness of being sick but blaming it on others, external events/Intellectual insight/True emotional insight"
         ),
         "Perception": generate_field(
             paca_agent, "Perception",
-            "candidate: Normal/Illusion/Auditory hallucination/Visual hallucination/etc."
+            "candidate (multiple selections allowed, comma-separated): Normal/Illusion/Auditory hallucination/Visual hallucination/Olfactory hallucination/Gustatory hallucination/Depersonalization/Derealization/Déjà vu/Jamais vu"
         ),
         "Thought process": generate_field(
             paca_agent, "Thought process",
-            "candidate: Normal/Loosening of association/flight of idea/etc."
+            "candidate (multiple selections allowed, comma-separated): Normal/Loosening of association/Flight of idea/Circumstantiality/Tangentiality/Word salad/Neologism/Illogical/Irrelevant"
         ),
         "Thought content": generate_field(
             paca_agent, "Thought content",
-            "candidate: Normal/preoccupation/overvalued idea/etc."
+            "candidate (multiple selections allowed, comma-separated): Normal/Preoccupation/Overvalued idea/Idea of reference/Grandiosity/Obsession/Compulsion/Rumination/Delusion/Phobia"
         ),
         "Spontaneity": generate_field(
             paca_agent, "Spontaneity",
