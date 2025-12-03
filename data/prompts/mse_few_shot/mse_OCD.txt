@@ -9,4 +9,4 @@
 - Reliability : Yes
 - Perception : Normal
 - Thought process : Normal
-- Thought content : Obsession (+) """Repetitive and persistent images of 'male and female genitals', 'oneself spraying semen on people'. Thoughts like 'I might have sexually harassed others without realizing it' and 'What if the police find out that I watched illegal pornography'.""", Compulsion (+) """Washing hands with hand sanitizer for over 30 minutes. Checking with passersby to see if one might have touched them inappropriately. Repeatedly checking the mailbox multiple times in case there's mail from the police station."""
+- Thought content : Obsession """Repetitive and persistent images of 'male and female genitals', 'oneself spraying semen on people'. Thoughts like 'I might have sexually harassed others without realizing it' and 'What if the police find out that I watched illegal pornography'.""", Compulsion """Washing hands with hand sanitizer for over 30 minutes. Checking with passersby to see if one might have touched them inappropriately. Repeatedly checking the mailbox multiple times in case there's mail from the police station."""

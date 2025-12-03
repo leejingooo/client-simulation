@@ -9,4 +9,4 @@
 - Reliability : Yes
 - Perception : Normal
 - Thought process : Normal
-- Thought content : Preoccupation (+) “I feel like I’m a burden to my company and family because of my shortcomings.”
+- Thought content : Preoccupation “I feel like I’m a burden to my company and family because of my shortcomings.”

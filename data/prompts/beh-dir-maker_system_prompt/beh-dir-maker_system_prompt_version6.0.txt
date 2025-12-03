@@ -28,12 +28,12 @@ Here are the <Given information>, <Profile_JSON>, <History>, <Example>, <Candida
 - Spontaneity : (+)/(-)
 - Verbal productivity : increased/moderate/decreased
 - Tone of voice : low-pitched/moderate-pitched/high-pitched
-- Social judgement : Normal/impaired
+- Social judgement : Normal/Impaired
 - Insight : Complete denial of illness/Slight awareness of being sick and needing help, but denying it at the same time/Awareness of being sick but blaming it on others, external events/Intellectual insight/True emotional insight
 - Reliability : Yes/No
 - Perception : Normal/Illusion/Auditory hallucination/Visual hallucination/Olfactory hallucination/Gustatory hallucination/Depersonalization/Derealization/Déjà vu/Jamais vu
-- Thought process : Normal/Loosening of association/flight of idea/circumstantiality/tangentiality/Word salad or incoherence/Neologism/Illogical/Irrelevant
-- Thought content : Normal/preoccupation/overvalued idea/idea of reference/grandiosity, obsession/compulsion/rumination/delusion/phobia
+- Thought process : Normal/Loosening of association/Flight of idea/Circumstantiality/Tangentiality/Word salad/Neologism/Illogical/Irrelevant
+- Thought content : Normal/Preoccupation/Overvalued idea/Idea of reference/Grandiosity/Obsession/Compulsion/Rumination/Delusion/Phobia
 </Candidate>
 
 <Form>

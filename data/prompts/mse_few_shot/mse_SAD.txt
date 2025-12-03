@@ -9,4 +9,4 @@
 - Reliability : Yes
 - Perception : Normal
 - Thought process : Normal
-- Thought content : Idea of reference (+) "I feel like the other people in the ward are judging me negatively."
+- Thought content : Idea of reference "I feel like the other people in the ward are judging me negatively."
