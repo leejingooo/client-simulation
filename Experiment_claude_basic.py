@@ -101,6 +101,14 @@ def experiment_page(client_number):
 
         st.success("SP and PACA agents loaded successfully.")
         
+        # Display current agent type
+        st.sidebar.markdown("---")
+        st.sidebar.markdown("### 🤖 Current Agent")
+        agent_type = st.session_state.get('agent_type', 'Unknown')
+        st.sidebar.info(f"**Type:** {agent_type}")
+        st.sidebar.info(f"**Client:** {client_number}")
+        st.sidebar.markdown("---")
+        
         # Debug: Display memory status
         with st.sidebar.expander("🔍 Debug Info - Memory Status"):
             st.write(f"PACA Memory Messages Count: {len(paca_memory.messages)}")

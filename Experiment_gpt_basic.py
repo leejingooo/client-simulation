@@ -102,6 +102,14 @@ def experiment_page(client_number):
         paca_memory = st.session_state.paca_memory
 
         st.success("SP and PACA agents loaded successfully.")
+        
+        # Display current agent type
+        st.sidebar.markdown("---")
+        st.sidebar.markdown("### 🤖 Current Agent")
+        agent_type = st.session_state.get('agent_type', 'Unknown')
+        st.sidebar.info(f"**Type:** {agent_type}")
+        st.sidebar.info(f"**Client:** {client_number}")
+        st.sidebar.markdown("---")
 
         # Initialize session state
         if 'conversation' not in st.session_state:

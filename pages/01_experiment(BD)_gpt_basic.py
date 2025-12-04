@@ -8,11 +8,13 @@ if 'current_page' not in st.session_state:
     st.session_state.current_page = None
 
 current_page = "bd)_gpt_basic.py"
+current_agent_type = "GPT Basic"
 
 # If page changed, clear relevant session state to reset LLM and memory
 if st.session_state.current_page != current_page:
     st.session_state.current_page = current_page
-    # Clear conversation and constructs but keep PACA agent for this session
+    st.session_state.agent_type = current_agent_type
+    # Clear conversation and constructs and FORCE PACA agent recreation
     if 'conversation' in st.session_state:
         st.session_state.conversation = []
     if 'conversation_generator' in st.session_state:
@@ -27,6 +29,12 @@ if st.session_state.current_page != current_page:
         del st.session_state.paca_memory
     if 'sp_memory' in st.session_state:
         del st.session_state.sp_memory
+    # Force PACA agent recreation
+    st.session_state.force_paca_update = True
+else:
+    # Same page, ensure agent_type is set
+    if 'agent_type' not in st.session_state:
+        st.session_state.agent_type = current_agent_type
 
 if __name__ == "__main__":
     experiment_page(client_number)
