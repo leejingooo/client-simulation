@@ -10,7 +10,7 @@
         "description": "blank (data_type:string, range_candidate_guide:Describe in the patient's words)"
     },
     "Present illness": {
-        "symptom_n": {
+        "symptom_n (INSTRUCTION: Replace 'symptom_n' with 'symptom_1', 'symptom_2', etc. as separate sibling keys. Create at least 1, or multiple if clinically appropriate.)": {
             "name": "blank (data_type:string, range_candidate_guide:null)",
             "length": "blank (data_type:number, range_candidate_guide:0-24 (Unit: week, over 24 is represented as 24))",
             "alleviating factor": "blank (data_type:string, range_candidate_guide:null)",
@@ -25,8 +25,8 @@
     },
     "Past medical history": {
         "presence": "blank (data_type:boolean, range_candidate_guide:Randomize(50%) the presence or absence of past medical history. If 'false', then remove all children of 'Past medical history' except this 'presence' which has 'false' as a child.)",
-        "history_n": "blank (data_type:string, range_candidate_guide:Describe a past medical history)",
-        "current medication_n": {
+        "history_n (INSTRUCTION: Replace with 'history_1', 'history_2', etc. as separate sibling keys if multiple histories exist.)": "blank (data_type:string, range_candidate_guide:Describe a past medical history)",
+        "current medication_n (INSTRUCTION: Replace with 'current medication_1', 'current medication_2', etc. as separate sibling keys if multiple medications exist.)": {
             "medication name": "blank (data_type:string, range_candidate_guide:Name of the medication the patient is currently taking)",
             "duration": "blank (data_type:number, range_candidate_guide:(Unit: week))",
             "compliance": "blank (data_type:string, range_candidate_guide:good/bad)",
@@ -36,8 +36,8 @@
     },
     "Family history": {
         "presence": "blank (data_type:boolean, range_candidate_guide: Randomize(50%) the presence or absence of family history. If 'false', then remove all children of 'Family history' except this 'presence' which has 'false' as a child.)",
-        "diagnosis_n": "blank (data_type:string, range_candidate_guide: Describe a psychiatric family history. Given the patient's current diagnosis, set a probable family history.)",
-        "substance_use_n": "blank (data_type:string, range_candidate_guide: Describe a family history of substance use (alcohol, opioid, cannabinoid, hallucinogen, stimulant, narcotic, etc.).)"
+        "diagnosis_n (INSTRUCTION: Replace with 'diagnosis_1', 'diagnosis_2', etc. as separate sibling keys if multiple family diagnoses exist.)": "blank (data_type:string, range_candidate_guide: Describe a psychiatric family history. Given the patient's current diagnosis, set a probable family history.)",
+        "substance_use_n (INSTRUCTION: Replace with 'substance_use_1', 'substance_use_2', etc. as separate sibling keys if multiple substance use histories exist.)": "blank (data_type:string, range_candidate_guide: Describe a family history of substance use (alcohol, opioid, cannabinoid, hallucinogen, stimulant, narcotic, etc.).)"
     },
     "Developmental/Social history": {
         "abnormality in prenatal/birthing history": "blank (data_type:string, range_candidate_guide:Randomize(50%) presence/absence. If yes, write a description; otherwise, enter null.)",
