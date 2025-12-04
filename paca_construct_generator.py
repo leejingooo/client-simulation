@@ -10,11 +10,11 @@ from typing import Dict, Any, List, Tuple
 import re
 
 
-def generate_symptoms_from_paca(paca_agent) -> List[Dict[str, Any]]:
+def generate_symptoms_from_paca(paca_agent) -> Dict[str, Dict[str, Any]]:
     """
     Query PACA for multiple symptoms.
     
-    Returns a list of symptom dicts with keys: name, length, alleviating_factor, exacerbating_factor
+    Returns a dict with keys symptom_1, symptom_2, etc., each containing: name, length, alleviating factor, exacerbating factor
     """
     
     # Step 1: Ask how many main symptoms
@@ -30,7 +30,7 @@ def generate_symptoms_from_paca(paca_agent) -> List[Dict[str, Any]]:
     except:
         num_symptoms = 1
     
-    symptoms = []
+    symptoms = {}
     
     # Step 2: For each symptom, gather details
     for i in range(num_symptoms):
@@ -66,18 +66,18 @@ def generate_symptoms_from_paca(paca_agent) -> List[Dict[str, Any]]:
         Please provide a concise answer. If none, state "None"."""
         
         response = paca_agent(prompt_alleviating)
-        symptom['alleviating_factor'] = response.strip()
+        symptom['alleviating factor'] = response.strip()
         
         # Get exacerbating factors
         prompt_exacerbating = f"""For the patient's symptom "{symptom['name']}", what makes it worse or triggers it?
         Please provide a concise answer. If none, state "None"."""
         
         response = paca_agent(prompt_exacerbating)
-        symptom['exacerbating_factor'] = response.strip()
+        symptom['exacerbating factor'] = response.strip()
         
-        symptoms.append(symptom)
+        symptoms[f"symptom_{symptom_num}"] = symptom
     
-    return symptoms if symptoms else [{"name": "N/A", "length": 0, "alleviating_factor": "", "exacerbating_factor": ""}]
+    return symptoms if symptoms else {"symptom_1": {"name": "N/A", "length": 0, "alleviating factor": "", "exacerbating factor": ""}}
 
 
 def generate_field(paca_agent, field_name: str, guide: str = "") -> str:
@@ -142,9 +142,12 @@ def create_paca_construct(paca_agent) -> Dict[str, Any]:
     # === Present Illness ===
     paca_construct["Present illness"] = {}
     
-    # Generate multiple symptoms
+    # Generate multiple symptoms (returns dict with symptom_1, symptom_2, etc.)
     symptoms = generate_symptoms_from_paca(paca_agent)
-    paca_construct["Present illness"]["symptom_n"] = symptoms
+    
+    # Add symptoms to construct (will be collected as list by sp_construct_generator logic)
+    for symptom_key, symptom_data in symptoms.items():
+        paca_construct["Present illness"][symptom_key] = symptom_data
     
     # Get triggering factor
     paca_construct["Present illness"]["triggering_factor"] = generate_field(

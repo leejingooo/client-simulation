@@ -170,17 +170,19 @@ def create_sp_construct(client_number: str, profile_version: str, instruction_ve
     sp_construct["Chief complaint"]["description"] = cc or ""
 
     # === Present Illness ===
-    # Handle symptoms - can be dict (single) or list (multiple)
-    symptom_list = get_nested_value(profile, "Present illness.symptom_n")
+    # Handle symptoms - collect all symptom_1, symptom_2, symptom_3, etc.
+    present_illness = get_nested_value(profile, "Present illness")
+    symptom_list = []
     
-    if isinstance(symptom_list, dict):
-        # Single symptom as dict
-        sp_construct["Present illness"]["symptom_n"] = [symptom_list]
-    elif isinstance(symptom_list, list):
-        # Already a list
-        sp_construct["Present illness"]["symptom_n"] = symptom_list
-    else:
-        sp_construct["Present illness"]["symptom_n"] = []
+    if present_illness and isinstance(present_illness, dict):
+        # Collect all symptom_n keys (symptom_1, symptom_2, etc.)
+        for key in present_illness.keys():
+            if key.startswith("symptom_"):
+                symptom_data = present_illness[key]
+                if isinstance(symptom_data, dict):
+                    symptom_list.append(symptom_data)
+    
+    sp_construct["Present illness"]["symptom_n"] = symptom_list
 
     # Triggering factor
     tf = get_nested_value(profile, "Present illness.triggering factor")
