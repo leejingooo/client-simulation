@@ -120,9 +120,15 @@ def get_value_from_construct(construct: Dict[str, Any], field_name: str) -> Any:
     """
     Retrieve value from construct by field name (case-insensitive, nested-aware).
     Returns the value as-is (could be string, list, dict, etc.) or None if not found.
+    
+    Special handling for symptom fields: collects all symptom_1, symptom_2, etc. into a combined text.
     """
     if construct is None:
         return None
+    
+    # Special handling for symptom-related fields
+    if field_name.lower() in ['symptom name', 'alleviating factor', 'exacerbating factor', 'length']:
+        return get_symptom_field_value(construct, field_name)
     
     # First, try direct access to top-level fields
     field_lower = field_name.lower()
@@ -145,6 +151,62 @@ def get_value_from_construct(construct: Dict[str, Any], field_name: str) -> Any:
             return val
     
     return None
+
+
+def get_symptom_field_value(construct: Dict[str, Any], field_name: str) -> str:
+    """
+    Collect all symptom_1, symptom_2, ... values for a specific field and combine them.
+    
+    Args:
+        construct: The construct dictionary
+        field_name: One of 'symptom name', 'alleviating factor', 'exacerbating factor', 'length'
+    
+    Returns:
+        Combined text of all symptom values for this field
+        For 'length': returns the maximum value as a string
+    """
+    present_illness = construct.get('Present illness', {})
+    if not present_illness:
+        return None
+    
+    # Collect all symptom_n entries
+    symptom_values = []
+    
+    # Iterate through keys to find symptom_1, symptom_2, etc.
+    for key in sorted(present_illness.keys()):
+        if key.startswith('symptom_'):
+            symptom_data = present_illness[key]
+            if isinstance(symptom_data, dict):
+                # Map field_name to actual key in symptom dict
+                field_map = {
+                    'symptom name': 'name',
+                    'alleviating factor': 'alleviating factor',
+                    'exacerbating factor': 'exacerbating factor',
+                    'length': 'length'
+                }
+                
+                actual_key = field_map.get(field_name.lower())
+                if actual_key and actual_key in symptom_data:
+                    value = symptom_data[actual_key]
+                    if value:
+                        symptom_values.append(str(value))
+    
+    # Combine all values
+    if not symptom_values:
+        return None
+    
+    # For 'length', return the maximum value
+    if field_name.lower() == 'length':
+        try:
+            lengths = [int(v) for v in symptom_values if v.replace('-', '').isdigit()]
+            if lengths:
+                return str(max(lengths))
+        except:
+            pass
+        return None
+    
+    # For text fields, return as bullet points for better readability
+    return '\n'.join(f"- {val}" for val in symptom_values)
 
 
 # ============================================================================
