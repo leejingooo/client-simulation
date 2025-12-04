@@ -158,7 +158,7 @@ def create_sp_construct(client_number: str, profile_version: str, instruction_ve
     # Initialize construct with PSYCHE RUBRIC structure
     sp_construct = {
         "Chief complaint": {},
-        "Present illness": {"symptom_n": []},
+        "Present illness": {},
         "Family history": {},
         "Marriage/Relationship History": {},
         "Impulsivity": {},
@@ -172,17 +172,14 @@ def create_sp_construct(client_number: str, profile_version: str, instruction_ve
     # === Present Illness ===
     # Handle symptoms - collect all symptom_1, symptom_2, symptom_3, etc.
     present_illness = get_nested_value(profile, "Present illness")
-    symptom_list = []
     
     if present_illness and isinstance(present_illness, dict):
-        # Collect all symptom_n keys (symptom_1, symptom_2, etc.)
-        for key in present_illness.keys():
+        # Collect all symptom_n keys (symptom_1, symptom_2, etc.) and add them directly
+        for key in sorted(present_illness.keys()):
             if key.startswith("symptom_"):
                 symptom_data = present_illness[key]
                 if isinstance(symptom_data, dict):
-                    symptom_list.append(symptom_data)
-    
-    sp_construct["Present illness"]["symptom_n"] = symptom_list
+                    sp_construct["Present illness"][key] = symptom_data
 
     # Triggering factor
     tf = get_nested_value(profile, "Present illness.triggering factor")
