@@ -46,18 +46,25 @@ def evaluation_page():
                 
                 # Get all keys for this client from Firebase
                 try:
-                    client_data = firebase_ref.child(f"clients/{client_number}").get()
-                    if client_data:
-                        # Extract experiment numbers from keys
+                    # Try to get data directly using the path structure
+                    all_data = firebase_ref.get()
+                    
+                    if all_data:
+                        # Extract experiment numbers from all keys
                         exp_numbers = set()
-                        for key in client_data.keys():
-                            if key.startswith("construct_sp_") or key.startswith("construct_paca_"):
+                        
+                        # Search through all keys in Firebase
+                        for key in all_data.keys():
+                            # Keys are stored as: clients_{client_number}_{data_type}
+                            if key.startswith(f"clients_{client_number}_construct_"):
                                 parts = key.split("_")
-                                if len(parts) >= 3:
+                                # Format: clients_CLIENTNUM_construct_sp_CLIENTNUM_EXPNUM or
+                                # Format: clients_CLIENTNUM_construct_paca_CLIENTNUM_EXPNUM
+                                if len(parts) >= 5:
                                     try:
                                         exp_num = int(parts[-1])
                                         exp_numbers.add(exp_num)
-                                    except ValueError:
+                                    except (ValueError, IndexError):
                                         continue
                         
                         # Check each experiment number
@@ -85,8 +92,13 @@ def evaluation_page():
                                 })
                         
                         st.session_state.available_experiments = available_experiments
+                    else:
+                        st.warning("No data found in Firebase")
+                        
                 except Exception as e:
                     st.error(f"Error searching experiments: {e}")
+                    import traceback
+                    st.code(traceback.format_exc())
             
             if st.session_state.available_experiments:
                 st.success(f"Found {len(st.session_state.available_experiments)} experiment(s)")
