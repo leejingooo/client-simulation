@@ -23,6 +23,24 @@ con_agent_version = 6.0
 paca_version = 3.0
 
 
+def check_experiment_number_exists(firebase_ref, client_number, exp_number):
+    """
+    Check if the experiment number is already used for this client.
+    Returns True if any of the expected keys exist.
+    """
+    keys_to_check = [
+        f"construct_sp_{client_number}_{exp_number}",
+        f"construct_paca_{client_number}_{exp_number}",
+        f"conversation_log_{client_number}_{exp_number}"
+    ]
+    
+    for key in keys_to_check:
+        data = load_from_firebase(firebase_ref, client_number, key)
+        if data is not None:
+            return True
+    return False
+
+
 def construct_generator_conversation_new(paca_agent):
     """
     Generate PACA construct using the new structured approach.
@@ -110,6 +128,29 @@ def experiment_page(client_number):
         st.sidebar.info(f"**Type:** {agent_type}")
         st.sidebar.info(f"**Client:** {client_number}")
         st.sidebar.markdown("---")
+        
+        # Experiment number input
+        st.sidebar.markdown("### 📝 Experiment Number")
+        exp_number = st.sidebar.text_input(
+            "Enter experiment number:",
+            key="exp_number_input",
+            help="Enter a unique number for this experiment"
+        )
+        
+        # Validate experiment number
+        exp_number_valid = False
+        if exp_number:
+            if not exp_number.isdigit():
+                st.sidebar.error("⚠️ Please enter a valid number")
+            elif check_experiment_number_exists(firebase_ref, client_number, exp_number):
+                st.sidebar.error(f"⚠️ Experiment number {exp_number} is already used. Please enter a different number.")
+            else:
+                st.sidebar.success(f"✅ Experiment number {exp_number} is available")
+                exp_number_valid = True
+        else:
+            st.sidebar.info("Please enter an experiment number before saving")
+        
+        st.sidebar.markdown("---")
 
         # Initialize session state
         if 'conversation' not in st.session_state:
@@ -170,28 +211,35 @@ def experiment_page(client_number):
 
         # Save conversation button
         if st.button("Save Conversation and Constructs"):
-            conversation_id = save_ai_conversation_to_firebase(
-                firebase_ref,
-                client_number,
-                st.session_state.conversation,
-                actual_paca_version,
-                actual_con_agent_version
-            )
-
-            if st.session_state.constructs:
-                save_to_firebase(firebase_ref, client_number,
-                                 f"constructs_{conversation_id}", st.session_state.constructs)
-
-            # Also save PACA constructs under a versioned key so evaluator can load it
-            if st.session_state.constructs:
-                try:
-                    save_to_firebase(firebase_ref, client_number,
-                                     f"paca_construct_version{actual_paca_version}", st.session_state.constructs)
-                except Exception as e:
-                    st.error(f"Failed to save PACA construct under versioned key: {e}")
-
-            st.success(
-                f"Conversation and constructs saved with ID: {conversation_id}")
+            if not exp_number_valid:
+                st.error("⚠️ Please enter a valid and unique experiment number before saving.")
+            else:
+                # Save conversation with new naming convention
+                conversation_data = [
+                    {'speaker': speaker, 'message': message}
+                    for speaker, message in st.session_state.conversation
+                ]
+                
+                conversation_content = {
+                    'paca_version': actual_paca_version,
+                    'sp_version': actual_con_agent_version,
+                    'timestamp': int(__import__('time').time()),
+                    'data': conversation_data
+                }
+                
+                conversation_key = f"conversation_log_{client_number}_{exp_number}"
+                save_to_firebase(firebase_ref, client_number, conversation_key, conversation_content)
+                
+                # Save PACA construct with new naming convention
+                if st.session_state.constructs:
+                    paca_construct_key = f"construct_paca_{client_number}_{exp_number}"
+                    save_to_firebase(firebase_ref, client_number, paca_construct_key, st.session_state.constructs)
+                
+                st.success(
+                    f"✅ Conversation and constructs saved successfully!\n\n"
+                    f"- Conversation: {conversation_key}\n"
+                    f"- PACA Construct: construct_paca_{client_number}_{exp_number}"
+                )
 
         # Button to create SP construct from profile/beh_dir and given form
         if st.sidebar.button("Create SP Construct"):
@@ -222,12 +270,15 @@ def experiment_page(client_number):
             
             # Save SP construct button
             if st.button("Save SP Construct"):
-                try:
-                    save_to_firebase(firebase_ref, client_number,
-                                     f"sp_construct_version{paca_version}", st.session_state.sp_construct)
-                    st.success("SP Construct saved successfully!")
-                except Exception as e:
-                    st.error(f"Failed to save SP construct: {e}")
+                if not exp_number_valid:
+                    st.error("⚠️ Please enter a valid and unique experiment number before saving.")
+                else:
+                    try:
+                        sp_construct_key = f"construct_sp_{client_number}_{exp_number}"
+                        save_to_firebase(firebase_ref, client_number, sp_construct_key, st.session_state.sp_construct)
+                        st.success(f"✅ SP Construct saved successfully!\n\nKey: {sp_construct_key}")
+                    except Exception as e:
+                        st.error(f"Failed to save SP construct: {e}")
 
         if st.session_state.conversation:
             csv_data = save_conversation_to_csv(st.session_state.conversation)

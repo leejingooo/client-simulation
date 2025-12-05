@@ -384,18 +384,20 @@ def evaluate_construct(field_name: str, sp_value: str, paca_value: str) -> Tuple
         return 0.0, "UNKNOWN_TYPE", weight
 
 
-def evaluate_constructs(sp_construct: Dict[str, Any], paca_construct: Dict[str, Any]) -> Tuple[Dict[str, float], Dict[str, str], float]:
+def evaluate_constructs(sp_construct: Dict[str, Any], paca_construct: Dict[str, Any]) -> Tuple[Dict[str, float], Dict[str, str], float, Dict[str, Any]]:
     """
     Evaluate both constructs against PSYCHE RUBRIC.
     
     Returns:
         - field_scores: Dict[field_name -> score]
         - field_methods: Dict[field_name -> method_description]
-        - weighted_score: Overall weighted score
+        - weighted_score: Overall weighted score (sum of weighted scores)
+        - detailed_results: Dict with sp_content, paca_content, score, weight, weighted_score for each field
     """
     field_scores = {}
     field_methods = {}
     field_weights = {}
+    detailed_results = {}
     
     st.write("### Starting Evaluation Against PSYCHE RUBRIC")
     
@@ -411,17 +413,25 @@ def evaluate_constructs(sp_construct: Dict[str, Any], paca_construct: Dict[str, 
             field_methods[field_name] = method
             field_weights[field_name] = weight
             
+            # Store detailed results for each element
+            weighted_score_value = score * weight
+            detailed_results[field_name] = {
+                'sp_content': str(sp_value) if sp_value is not None else '',
+                'paca_content': str(paca_value) if paca_value is not None else '',
+                'score': score,
+                'weight': weight,
+                'weighted_score': weighted_score_value
+            }
+            
             st.write(f"**{field_name}**: SP='{sp_value}' | PACA='{paca_value}' | Score={score:.2f} | {method}")
     
-    # Calculate weighted overall score
+    # Calculate weighted overall score as simple sum
     if field_scores:
-        total_weight = sum(field_weights.values())
-        weighted_sum = sum(score * field_weights.get(field, 1) for field, score in field_scores.items())
-        weighted_score = weighted_sum / total_weight if total_weight > 0 else 0.0
+        weighted_score = sum(score * field_weights.get(field, 1) for field, score in field_scores.items())
     else:
         weighted_score = 0.0
     
-    return field_scores, field_methods, weighted_score
+    return field_scores, field_methods, weighted_score, detailed_results
 
 
 # ============================================================================
@@ -460,7 +470,7 @@ def evaluate_paca_performance(
     client_number: str,
     sp_construct: Dict[str, Any],
     paca_construct: Dict[str, Any]
-) -> Tuple[Dict[str, float], Dict[str, str], float, pd.DataFrame]:
+) -> Tuple[Dict[str, float], Dict[str, str], float, pd.DataFrame, Dict[str, Any]]:
     """
     Main evaluation function using PSYCHE RUBRIC.
     
@@ -472,8 +482,9 @@ def evaluate_paca_performance(
     Returns:
         - field_scores: Individual field scores
         - field_methods: Scoring methods used
-        - weighted_score: Overall weighted score
+        - weighted_score: Overall weighted score (sum)
         - evaluation_table: Results as DataFrame
+        - detailed_results: Detailed results for Firebase storage
     """
     
     st.write(f"### Evaluating Client {client_number}")
@@ -486,11 +497,11 @@ def evaluate_paca_performance(
     st.write("**PACA Construct:**", paca_construct)
     
     # Evaluate
-    field_scores, field_methods, weighted_score = evaluate_constructs(sp_construct, paca_construct)
+    field_scores, field_methods, weighted_score, detailed_results = evaluate_constructs(sp_construct, paca_construct)
     
-    st.write(f"## Overall Weighted Score: {weighted_score:.2f}")
+    st.write(f"## Overall PSYCHE Score (Sum): {weighted_score:.2f}")
     
     # Create results table
     evaluation_table = create_evaluation_table(field_scores, field_methods)
     
-    return field_scores, field_methods, weighted_score, evaluation_table
+    return field_scores, field_methods, weighted_score, evaluation_table, detailed_results
