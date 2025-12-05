@@ -191,8 +191,8 @@ def experiment_page(client_number):
         if st.sidebar.button("Stop and Generate Constructs"):
             # Generate PACA construct
             if st.session_state.constructs is None:
-                st.session_state.constructs = construct_generator_conversation(
-                        paca_agent, paca_memory)
+                st.session_state.constructs = construct_generator_conversation_new(
+                        paca_agent)
                 st.success("Constructs generated!")
             
             # Generate SP construct
