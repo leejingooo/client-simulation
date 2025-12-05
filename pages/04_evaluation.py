@@ -33,6 +33,10 @@ def evaluation_page():
         st.session_state.selected_exp_number = None
     if 'available_experiments' not in st.session_state:
         st.session_state.available_experiments = []
+    if 'evaluation_results' not in st.session_state:
+        st.session_state.evaluation_results = None
+    if 'current_client_number' not in st.session_state:
+        st.session_state.current_client_number = None
 
     # Input section
     st.subheader("1️⃣ Select Client and Experiment")
@@ -190,71 +194,93 @@ def evaluation_page():
                 field_scores, field_methods, psyche_score, evaluation_table, detailed_results = evaluate_paca_performance(
                     client_number, sp_construct, paca_construct)
 
-                # Display results
-                st.success("Evaluation Complete!")
-                
-                st.header("Evaluation Results")
-                st.metric("PSYCHE Score (Sum of Weighted Scores)", f"{psyche_score:.2f}", help="Sum of all weighted scores")
-
-                st.subheader("Detailed Field Scores")
-                st.dataframe(evaluation_table, use_container_width=True)
-                
-                # Create evaluation data structure for saving/downloading
-                evaluation_data = {}
-                for element_name, details in detailed_results.items():
-                    evaluation_data[element_name] = {
-                        'sp_content': details['sp_content'],
-                        'paca_content': details['paca_content'],
-                        'score': details['score'],
-                        'weight': details['weight'],
-                        'weighted_score': details['weighted_score']
-                    }
-                evaluation_data['psyche_score'] = psyche_score
-                
-                # Buttons for saving and downloading
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    # Save evaluation results button
-                    if st.button("💾 Save to Firebase", use_container_width=True):
-                        try:
-                            # Create key: psyche_질환명_모델명_experiment number
-                            eval_key = f"psyche_{diagnosis}_{model_name.lower()}_{exp_number}"
-                            save_to_firebase(firebase_ref, client_number, eval_key, evaluation_data)
-                            st.success(f"✅ Evaluation results saved!\n\nKey: {eval_key}")
-                        except Exception as e:
-                            st.error(f"Failed to save evaluation results: {e}")
-                
-                with col2:
-                    # Download as CSV button
-                    try:
-                        csv_data = psyche_json_to_csv(evaluation_data)
-                        csv_filename = f"psyche_{diagnosis}_{model_name.lower()}_{exp_number}.csv"
-                        st.download_button(
-                            label="📥 Download CSV",
-                            data=csv_data,
-                            file_name=csv_filename,
-                            mime="text/csv",
-                            use_container_width=True
-                        )
-                    except Exception as e:
-                        st.error(f"Failed to generate CSV: {e}")
-
-                # Display constructs side by side
-                st.subheader("Constructs Comparison")
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.subheader("SP Construct")
-                    st.json(sp_construct)
-                with col2:
-                    st.subheader("PACA Construct")
-                    st.json(paca_construct)
+                # Store results in session state
+                st.session_state.evaluation_results = {
+                    'field_scores': field_scores,
+                    'field_methods': field_methods,
+                    'psyche_score': psyche_score,
+                    'evaluation_table': evaluation_table,
+                    'detailed_results': detailed_results,
+                    'sp_construct': sp_construct,
+                    'paca_construct': paca_construct,
+                    'exp_number': exp_number,
+                    'diagnosis': diagnosis,
+                    'model_name': model_name
+                }
+                st.session_state.current_client_number = client_number
 
             except ValueError as e:
                 st.error(f"Evaluation Error: {str(e)}")
             except Exception as e:
                 st.error(f"An error occurred during evaluation: {str(e)}")
                 st.exception(e)
+
+    # Display results if available in session state
+    if st.session_state.evaluation_results:
+        results = st.session_state.evaluation_results
+        
+        # Display results
+        st.success("Evaluation Complete!")
+        
+        st.header("Evaluation Results")
+        st.metric("PSYCHE Score (Sum of Weighted Scores)", f"{results['psyche_score']:.2f}", help="Sum of all weighted scores")
+
+        st.subheader("Detailed Field Scores")
+        st.dataframe(results['evaluation_table'], use_container_width=True)
+        
+        # Create evaluation data structure for saving/downloading
+        evaluation_data = {}
+        for element_name, details in results['detailed_results'].items():
+            evaluation_data[element_name] = {
+                'sp_content': details['sp_content'],
+                'paca_content': details['paca_content'],
+                'score': details['score'],
+                'weight': details['weight'],
+                'weighted_score': details['weighted_score']
+            }
+        evaluation_data['psyche_score'] = results['psyche_score']
+        
+        # Buttons for saving and downloading
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Save evaluation results button
+            if st.button("💾 Save to Firebase", use_container_width=True, key="save_btn"):
+                try:
+                    # Create key: psyche_질환명_모델명_experiment number
+                    eval_key = f"psyche_{results['diagnosis']}_{results['model_name'].lower()}_{results['exp_number']}"
+                    save_to_firebase(firebase_ref, st.session_state.current_client_number, eval_key, evaluation_data)
+                    st.success(f"✅ Evaluation results saved!\n\nKey: {eval_key}")
+                except Exception as e:
+                    st.error(f"Failed to save evaluation results: {e}")
+                    import traceback
+                    st.code(traceback.format_exc())
+        
+        with col2:
+            # Download as CSV button
+            try:
+                csv_data = psyche_json_to_csv(evaluation_data)
+                csv_filename = f"psyche_{results['diagnosis']}_{results['model_name'].lower()}_{results['exp_number']}.csv"
+                st.download_button(
+                    label="📥 Download CSV",
+                    data=csv_data,
+                    file_name=csv_filename,
+                    mime="text/csv",
+                    use_container_width=True,
+                    key="download_btn"
+                )
+            except Exception as e:
+                st.error(f"Failed to generate CSV: {e}")
+
+        # Display constructs side by side
+        st.subheader("Constructs Comparison")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.subheader("SP Construct")
+            st.json(results['sp_construct'])
+        with col2:
+            st.subheader("PACA Construct")
+            st.json(results['paca_construct'])
 
 
 if __name__ == "__main__":
