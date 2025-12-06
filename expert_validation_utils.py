@@ -737,8 +737,8 @@ def create_validation_result(construct_data, expert_responses, exp_item, is_part
                 'weighted_score': weighted_score
             }
     
-    # Add total psyche score (matching psyche validation format)
-    result['psyche_score'] = total_weighted_score
+    # Add total expert score (sum of weighted scores from expert validation)
+    result['expert_score'] = total_weighted_score
     
     return result
 
