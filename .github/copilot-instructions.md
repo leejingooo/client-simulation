@@ -314,16 +314,20 @@ check_experiment_number_exists(firebase_ref, client_number, exp_number)
 7. **Session state on page change**: Must explicitly delete and recreate `paca_agent`/`paca_memory` when switching between experiment pages - set `force_paca_update=True`
 8. **Model configuration**: SP uses `gpt-5.1` by default (see `SP_utils.py`), PACA variants use different models per implementation
 9. **Authentication flow**: `Home.py` checks `st.secrets["participant"]` list - all pages call `check_participant()` or equivalent before rendering
+10. **Field name normalization**: `get_value_from_construct()` normalizes spaces to underscores (e.g., "Triggering factor" matches "triggering_factor") - see CODE_REVIEW_REPORT.txt
+11. **Marriage/Relationship History key**: In-memory constructs use `"Marriage/Relationship History"` (slash), but Firebase sanitizes to `"Marriage_Relationship History"` (underscore) via `sanitize_dict()` - code must handle both
+12. **Firebase sanitization**: `sanitize_dict()` converts `/$#[].` to `_` before saving - all slashes become underscores in stored data
 
 ## Key Files Reference
 
 - `SP_utils.py`: Core agent creation, Firebase I/O, sanitization
-- `evaluator.py`: PSYCHE RUBRIC, construct normalization, scoring
+- `evaluator.py`: PSYCHE RUBRIC, construct normalization, scoring, **field name normalization (space↔underscore)**
 - `expert_validation_utils.py`: Validation-specific scoring, aggregation logic
 - `firebase_config.py`: Firebase initialization
 - `paca_construct_generator.py`, `sp_construct_generator.py`: Post-conversation construct generation
 - `Experiment_claude_basic.py` (and variants): Base experiment logic imported by page-specific files
 - `EVALUATOR_REFACTOR.md`, `MEMORY_FIX_GUIDE.md`, `VALIDATION_CODE_REVIEW.md`: Architecture decision records
+- `CODE_REVIEW_REPORT.txt`: Comprehensive review of field mapping issues (Dec 2025)
 
 ## Testing
 

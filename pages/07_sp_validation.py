@@ -371,29 +371,38 @@ def show_validation_page():
         for element in VALIDATION_ELEMENTS:
             sp_content = get_sp_value(sp_construct, element)
             
+            # Check if SP content is None or empty
+            is_empty = sp_content is None or str(sp_content).strip() == '' or str(sp_content).lower() in ['none', 'n/a', 'null']
+            
             # Display element with SP content
             with st.expander(f"**{element}**", expanded=False):
-                st.markdown(f"**가상환자에게 지시된 내용:**\n {sp_content}")
-                
-                # Special help text for specific elements
-                if element == "Triggering factor":
-                    st.caption("💡 환자가 왜 하필 오늘 병원을 찾게 된 이유")
-                elif element == "Stressor":
-                    st.caption("💡 증상 유발 요인")
-                
-                # Radio button for validation
-                current_value = responses.get(element, "선택 안함")
-                if current_value not in ["선택 안함", "적절함", "적절하지 않음"]:
-                    current_value = "선택 안함"
-                
-                choice = st.radio(
-                    "가상 환자는 위 내용을 적절히 시뮬레이션 하였습니까?",
-                    options=["선택 안함", "적절함", "적절하지 않음"],
-                    key=f"validation_{response_key}_{element}",
-                    index=["선택 안함", "적절함", "적절하지 않음"].index(current_value),
-                    horizontal=True
-                )
-                responses[element] = choice
+                if is_empty:
+                    st.info("ℹ️ 지시된 내용이 없어 자동으로 '적절함' 처리되었습니다.")
+                    st.markdown(f"**가상환자에게 지시된 내용:** (없음)")
+                    # Auto-set to '적절함'
+                    responses[element] = "적절함"
+                else:
+                    st.markdown(f"**가상환자에게 지시된 내용:**\n{sp_content}")
+                    
+                    # Special help text for specific elements
+                    if element == "Triggering factor":
+                        st.caption("💡 환자가 왜 하필 오늘 병원을 찾게 된 이유")
+                    elif element == "Stressor":
+                        st.caption("💡 증상 유발 요인")
+                    
+                    # Radio button for validation (only if content exists)
+                    current_value = responses.get(element, "선택 안함")
+                    if current_value not in ["선택 안함", "적절함", "적절하지 않음"]:
+                        current_value = "선택 안함"
+                    
+                    choice = st.radio(
+                        "가상 환자는 위 내용을 적절히 시뮬레이션 하였습니까?",
+                        options=["선택 안함", "적절함", "적절하지 않음"],
+                        key=f"validation_{response_key}_{element}",
+                        index=["선택 안함", "적절함", "적절하지 않음"].index(current_value),
+                        horizontal=True
+                    )
+                    responses[element] = choice
         
         st.markdown("---")
         st.markdown("#### 추가 질문")

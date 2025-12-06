@@ -1,0 +1,77 @@
+{
+  "Chief complaint": {
+    "description": "I feel empty and exhausted all the time, and lately I keep thinking it would be better if I just disappeared."
+  },
+  "Developmental_Social history": {
+    "childhood history": {
+      "home environment": "Raised in Busan in a middle-class household; parents both worked full-time but were generally supportive and nonviolent; occasional conflicts about academic performance but no history of abuse or neglect.",
+      "members of family": "Lived with mother, father, and one younger sister; no other caregivers in the home.",
+      "social environment": "Had a few close friends during childhood and adolescence; described herself as shy but able to maintain stable friendships and participate in small-group activities."
+    },
+    "other history": "No history of physical, sexual, or emotional abuse reported; no significant legal or financial problems aside from current worries about household expenses.",
+    "school history": "No special education services; average academic performance; no history of learning disorder or significant behavioral problems; did not actively participate in extracurricular activities due to shyness.",
+    "work history": "Has worked as an administrative assistant for 12 years at the same trading company; previously evaluated as diligent and reliable; over the past 3 months, has shown decreased concentration and increased mistakes, leading to subtle criticism from her supervisor; maintains polite but somewhat distant relationships with coworkers."
+  },
+  "Family history": {
+    "presence": false
+  },
+  "Identifying data": {
+    "age": 40,
+    "marital status": "married",
+    "occupation": "Administrative assistant at a trading company",
+    "patient name": "Kim Ji-eun",
+    "sex": "female"
+  },
+  "Impulsivity": {
+    "homicide risk": "low",
+    "self mutilating behavior risk": "high",
+    "suicidal attempt": "presence",
+    "suicidal ideation": "high",
+    "suicidal plan": "presence"
+  },
+  "Marriage_relationship history": {
+    "current family structure": "Married for 10 years, lives with husband and two children (ages 8 and 5) in an apartment in Seoul; reports increasing emotional distance and frequent arguments with husband about childcare and finances over the last year."
+  },
+  "Past medical history": {
+    "current medication_1": {
+      "compliance": "good",
+      "duration": 260,
+      "effect": "effective",
+      "medication name": "Levothyroxine 50 mcg once daily"
+    },
+    "history_1": "Hypothyroidism diagnosed 5 years ago, stable on levothyroxine with regular follow-up at a local internal medicine clinic.",
+    "presence": true
+  },
+  "Past psychiatric history": {
+    "description": "None",
+    "presence": "None"
+  },
+  "Present illness": {
+    "stressor": "home/work/interpersonal difficulty",
+    "symptom_1": {
+      "alleviating factor": "Temporary relief when talking with a close friend or when her husband takes over childcare in the evening",
+      "exacerbating factor": "Work-related criticism, arguments with husband, and being alone at night",
+      "length": 12,
+      "name": "Low mood, loss of interest, and fatigue most of the day, nearly every day"
+    },
+    "symptom_2": {
+      "alleviating factor": "Taking over-the-counter sleep tea and listening to relaxation music",
+      "exacerbating factor": "Using her smartphone in bed and worrying about work and finances",
+      "length": 10,
+      "name": "Insomnia with early morning awakening and difficulty falling back asleep"
+    },
+    "symptom_3": {
+      "alleviating factor": "Supportive reassurance from her sister and brief positive feedback from her manager",
+      "exacerbating factor": "Perceived mistakes at work and comparing herself with peers on social media",
+      "length": 8,
+      "name": "Marked feelings of worthlessness and excessive guilt about being a burden to her family"
+    },
+    "symptom_4": {
+      "alleviating factor": "Being directly supervised by family and coming to the hospital for help",
+      "exacerbating factor": "Arguments with husband and thoughts about job insecurity",
+      "length": 2,
+      "name": "Recurrent suicidal thoughts with a past overdose attempt two weeks ago"
+    },
+    "triggering factor": "Brought to the emergency department by her husband after she ingested an excessive amount of over-the-counter sleeping pills two weeks ago and recently disclosed persistent suicidal thoughts to her sister."
+  }
+}

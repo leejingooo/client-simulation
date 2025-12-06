@@ -144,10 +144,12 @@ def get_value_from_construct(construct: Dict[str, Any], field_name: str) -> Any:
         if key.lower() == field_lower:
             return val
     
-    # Match on last part of key path
+    # Match on last part of key path (handles both "triggering factor" and "triggering_factor")
+    field_normalized = field_lower.replace(' ', '_')
     for key, val in flat.items():
         last_part = key.split('.')[-1].lower()
-        if last_part == field_lower:
+        last_part_normalized = last_part.replace(' ', '_')
+        if last_part == field_lower or last_part_normalized == field_normalized:
             return val
     
     return None
