@@ -250,7 +250,13 @@ def show_validation_page():
         return
     
     # Get SP construct
-    sp_construct = create_sp_construct(client_number, profile_version)
+    given_form_path = f"data/prompts/paca_system_prompt/given_form_version{con_agent_version}.json"
+    sp_construct = create_sp_construct(
+        client_number,
+        f"{profile_version:.1f}",
+        f"{beh_dir_version:.1f}",
+        given_form_path
+    )
     
     # Get diagnosis for system prompt
     diag = get_diag_from_given_information(given_information)
@@ -418,11 +424,20 @@ def save_sp_validation(firebase_ref, page_number, client_number, responses, memo
         'overall_comment': responses.get('overall_comment', '')
     }
     
-    # Add element validations
+        # Add element validations
     for element in VALIDATION_ELEMENTS:
         if element in responses:
             # Get SP content
-            sp_construct = create_sp_construct(client_number, 6.0)
+            profile_version = 6.0
+            beh_dir_version = 6.0
+            con_agent_version = 6.0
+            given_form_path = f"data/prompts/paca_system_prompt/given_form_version{con_agent_version:.1f}.json"
+            sp_construct = create_sp_construct(
+                client_number,
+                f"{profile_version:.1f}",
+                f"{beh_dir_version:.1f}",
+                given_form_path
+            )
             from evaluator import get_value_from_construct
             sp_content = get_value_from_construct(sp_construct, element)
             
