@@ -398,6 +398,16 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
     
     # Save and navigation buttons
     st.markdown("---")
+    
+    # Display save status if exists
+    if 'save_status' in st.session_state:
+        if st.session_state.save_status == 'success':
+            st.success("✅ 중간 저장이 완료되었습니다!")
+        elif st.session_state.save_status == 'error':
+            st.error("❌ 저장 실패. 다시 시도해주세요.")
+        # Clear status after displaying
+        del st.session_state.save_status
+    
     col1, col2, col3 = st.columns([1, 2, 1])
     
     with col1:
@@ -422,21 +432,14 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
                 save_validation_progress(firebase_ref, st.session_state.expert_name,
                                        st.session_state.current_experiment_index,
                                        st.session_state.validation_responses)
-                st.success("저장되었습니다!")
+                st.session_state.save_status = 'success'
                 st.rerun()
             else:
-                st.error("저장 실패. 다시 시도해주세요.")
+                st.session_state.save_status = 'error'
+                st.rerun()
     
     with col3:
         if st.button("✅ 완료 - 다음으로", use_container_width=True, type="primary"):
-            # Check if all elements have been evaluated
-            total_elements = sum(len(items) for items in scoring_options.values())
-            evaluated_elements = len(current_responses)
-            
-            if evaluated_elements < total_elements:
-                st.error(f"⚠️ 모든 항목을 평가해주세요! ({evaluated_elements}/{total_elements} 완료)")
-                st.stop()
-            
             # Calculate and save final validation result
             validation_result = create_validation_result(
                 construct_data,
