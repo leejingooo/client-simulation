@@ -1,0 +1,65 @@
+{
+  "Chief complaint": {
+    "description": "\"요즘 계속 너무 지치고, 뭐든 다 버겁고, 없어져 버리고 싶다는 생각이 자꾸 난다\""
+  },
+  "Family history": {
+    "diagnosis": "N/A",
+    "substance use": "N/A"
+  },
+  "Impulsivity": {
+    "Homicide risk": "low",
+    "Self mutilating behavior risk": "high",
+    "Suicidal attempt": "presence",
+    "Suicidal ideation": "high",
+    "Suicidal plan": "presence"
+  },
+  "Marriage_Relationship History": {
+    "current family structure": "남편과 자녀들과 함께 거주"
+  },
+  "Mental Status Examination": {
+    "Affect": "anxious, tense, restricted",
+    "Insight": "True emotional insight",
+    "Mood": "depressed, dysphoric",
+    "Perception": "Normal",
+    "Reliability": "Yes",
+    "Social judgement": "Normal",
+    "Spontaneity": "(+)",
+    "Thought content": "Preoccupation, Rumination",
+    "Thought process": "Normal",
+    "Verbal productivity": "moderate"
+  },
+  "Present illness": {
+    "stressor": "home, work, interpersonal difficulty",
+    "symptom_1": {
+      "alleviating factor": "None",
+      "exacerbating factor": "출근과 직장 스트레스, 돈 문제로 인한 남편과의 갈등",
+      "length": 24,
+      "name": "Suicidal ideation"
+    },
+    "symptom_2": {
+      "alleviating factor": "None",
+      "exacerbating factor": "출근과 직장 스트레스, 돈 문제로 인한 부부 갈등, 육아에 대한 죄책감",
+      "length": 24,
+      "name": "Depressed mood"
+    },
+    "symptom_3": {
+      "alleviating factor": "None",
+      "exacerbating factor": "출근과 직장 내 평가·지적에 대한 두려움, 돈 문제로 인한 부부 갈등",
+      "length": 24,
+      "name": "Anxiety"
+    },
+    "symptom_4": {
+      "alleviating factor": "None",
+      "exacerbating factor": "출근과 직장 스트레스, 전반적인 불안과 우울감",
+      "length": 24,
+      "name": "Insomnia"
+    },
+    "symptom_5": {
+      "alleviating factor": "None",
+      "exacerbating factor": "전반적인 우울감과 지친 상태, 출근 및 직장 스트레스",
+      "length": 24,
+      "name": "Loss of appetite"
+    },
+    "triggering_factor": "최근 수면제 과량 복용 후 응급실 방문과 그 이후에도 지속되는 지침과 죽고 싶은 생각"
+  }
+}

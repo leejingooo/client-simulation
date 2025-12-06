@@ -1,0 +1,441 @@
+import streamlit as st
+import json
+from datetime import datetime
+from SP_utils import get_firebase_ref, load_from_firebase
+from expert_validation_utils import (
+    calculate_score,
+    create_validation_result,
+    save_validation_to_firebase,
+    load_validation_progress,
+    get_scoring_options
+)
+
+# ================================
+# PRESET - 검증할 Experiment Numbers
+# ================================
+# 각 항목은 (client_number, experiment_number) 튜플입니다
+# client_number: 4자리 숫자 (예: 6101, 6102)
+# experiment_number: 실험 번호 (예: 101, 102)
+EXPERIMENT_NUMBERS = [
+    (6101, 101),  # 테스트용 예시 1
+    (6101, 102),  # 테스트용 예시 2
+    # 여기에 총 24개의 (client_number, experiment_number) 쌍을 추가하세요
+    # 예: (6101, 103), (6102, 101), ...
+]
+
+# ================================
+# Page Configuration
+# ================================
+st.set_page_config(
+    page_title="전문가 검증",
+    page_icon="📋",
+    layout="wide"
+)
+
+# ================================
+# Session State Initialization
+# ================================
+def init_session_state():
+    """Initialize session state variables"""
+    if 'validation_stage' not in st.session_state:
+        st.session_state.validation_stage = 'intro'  # intro, test, validation
+    if 'current_experiment_index' not in st.session_state:
+        st.session_state.current_experiment_index = 0
+    if 'validation_responses' not in st.session_state:
+        st.session_state.validation_responses = {}
+    if 'expert_name' not in st.session_state:
+        st.session_state.expert_name = None
+
+# ================================
+# Authentication Check
+# ================================
+def check_expert_login():
+    """Check if expert is logged in"""
+    if "name" not in st.session_state or not st.session_state.get("name_correct", False):
+        st.warning("⚠️ 먼저 Home 페이지에서 로그인해주세요.")
+        st.stop()
+    else:
+        st.session_state.expert_name = st.session_state["name"]
+        return True
+
+# ================================
+# Page 1: Introduction
+# ================================
+def show_intro_page():
+    """Display introduction page with instructions"""
+    st.title("📋 전문가 검증 시스템")
+    st.markdown("---")
+    
+    st.markdown("""
+    ## 검증 프로세스 안내
+    
+    안녕하세요, 전문가님. 본 시스템은 정신과 평가 대화형 에이전트(PACA, Psychiatric Assessment Conversational Agent)의 
+    성능을 검증하기 위한 전문가 평가 도구입니다.
+    
+    ### 📌 검증 절차
+    
+    1. **연습 단계**: 먼저 테스트 페이지에서 검증 방법을 연습합니다.
+    2. **실제 검증**: 총 **{total}개**의 대화-평가 쌍을 검증합니다.
+    3. **자동 저장**: 각 검증 완료 시 자동으로 Firebase에 저장됩니다.
+    
+    ### 📝 검증 내용
+    
+    각 케이스마다 다음을 검토하게 됩니다:
+    
+    - **왼쪽 패널**: SP(Simulated Patient)와 PACA 간의 대화 내역
+    - **오른쪽 패널**: PACA가 생성한 평가 리포트 (PACA Construct)
+    
+    ### ✅ 평가 기준
+    
+    다음 세 가지 영역에 대해 평가합니다:
+    
+    1. **주관적 정보 (Subjective Information)** - 가중치: 1
+       - Chief Complaint, Present Illness, Family History 등
+    
+    2. **충동성 (Impulsivity)** - 가중치: 5
+       - Suicidal ideation, Self-mutilating behavior risk 등
+    
+    3. **행동 (Behavior)** - 가중치: 2
+       - Mood, Verbal productivity, Insight, Affect 등
+    
+    ### 💾 중간 저장
+    
+    - 언제든지 중단하고 나갔다가 다시 로그인하면 이전에 저장한 시점부터 계속할 수 있습니다.
+    - "완료" 버튼을 누르면 해당 케이스의 검증이 저장되고 다음 케이스로 이동합니다.
+    
+    ### ⚠️ 유의사항
+    
+    - 모든 항목에 대해 신중하게 평가해주시기 바랍니다.
+    - SP Construct는 평가 대상에 포함되지 않습니다.
+    - 검증 결과는 향후 PACA 개선에 중요한 자료로 활용됩니다.
+    
+    """.format(total=len(EXPERIMENT_NUMBERS)))
+    
+    st.markdown("---")
+    
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
+        if st.button("▶️ 테스트 페이지로 이동", use_container_width=True, type="primary"):
+            st.session_state.validation_stage = 'test'
+            st.rerun()
+
+# ================================
+# Page 2: Test Page
+# ================================
+def show_test_page():
+    """Display test page with example validation"""
+    st.title("🧪 테스트 페이지")
+    st.info("실제 검증과 동일한 형식으로 연습해보세요. 이 페이지의 응답은 저장되지 않습니다.")
+    st.markdown("---")
+    
+    # Example data (hardcoded for demonstration)
+    example_conversation = [
+        {"speaker": "PACA", "message": "안녕하세요, 저는 정신과 의사 김민수입니다. 이름이 어떻게 되시나요?"},
+        {"speaker": "SP", "message": "김... 김지은이요."},
+        {"speaker": "PACA", "message": "지은님, 만나서 반가워요. 오늘 여기 오시게 된 가장 큰 이유가 뭐였는지 얘기해 주실 수 있을까요?"},
+        {"speaker": "SP", "message": "그냥... 요즘 계속 너무 지쳐서요. 뭐든 다 버겁고, 없어져 버리고 싶다는 생각이 자꾸 나요."},
+    ]
+    
+    example_construct = {
+        "Chief complaint": {
+            "description": "요즘 계속 너무 지치고, 뭐든 다 버겁고, 없어져 버리고 싶다는 생각이 자꾸 난다"
+        },
+        "Mental Status Examination": {
+            "Mood": "depressed, dysphoric",
+            "Affect": "anxious, tense, restricted"
+        }
+    }
+    
+    # 2-column layout
+    col1, col2 = st.columns([1, 1])
+    
+    with col1:
+        st.subheader("💬 대화 내역")
+        st.markdown("---")
+        for msg in example_conversation:
+            if msg["speaker"] == "PACA":
+                st.markdown(f"**🤖 PACA:** {msg['message']}")
+            else:
+                st.markdown(f"**👤 SP:** {msg['message']}")
+            st.markdown("")
+    
+    with col2:
+        st.subheader("📊 PACA Construct")
+        st.markdown("---")
+        st.json(example_construct)
+        
+        st.markdown("---")
+        st.subheader("✅ 평가 예시")
+        
+        st.markdown("**Chief Complaint - Description**")
+        st.caption(f"PACA 값: 요즘 계속 너무 지치고, 뭐든 다 버겁고, 없어져 버리고 싶다는 생각이 자꾸 난다")
+        st.selectbox(
+            "평가",
+            ["Correct", "Partially correct", "Incorrect"],
+            key="test_chief_complaint",
+            label_visibility="collapsed"
+        )
+        
+        st.markdown("")
+        st.markdown("**MSE - Mood**")
+        st.caption(f"PACA 값: depressed, dysphoric")
+        st.selectbox(
+            "Expert의 판단",
+            ["Irritable", "Euphoric", "Elated", "Euthymic", "Dysphoric", "Depressed"],
+            index=5,  # Default to "Depressed"
+            key="test_mood",
+            label_visibility="collapsed"
+        )
+        st.info("💡 Expert는 자신의 판단만 선택하면 됩니다. Score는 자동으로 계산됩니다.")
+    
+    st.markdown("---")
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
+        if st.button("✅ 테스트 완료 - 실제 검증 시작", use_container_width=True, type="primary"):
+            st.session_state.validation_stage = 'validation'
+            st.rerun()
+
+# ================================
+# Page 3+: Validation Pages
+# ================================
+def show_validation_page():
+    """Display actual validation page"""
+    st.title("📋 전문가 검증")
+    
+    # Initialize Firebase
+    firebase_ref = get_firebase_ref()
+    if firebase_ref is None:
+        st.error("Firebase 연결에 실패했습니다. 설정을 확인해주세요.")
+        st.stop()
+    
+    # Load progress
+    expert_name = st.session_state.expert_name
+    progress_data = load_validation_progress(firebase_ref, expert_name)
+    
+    if progress_data:
+        st.session_state.validation_responses = progress_data.get('responses', {})
+        st.session_state.current_experiment_index = progress_data.get('current_index', 0)
+    
+    # Progress display
+    current_idx = st.session_state.current_experiment_index
+    total_experiments = len(EXPERIMENT_NUMBERS)
+    
+    st.progress((current_idx) / total_experiments)
+    st.markdown(f"### 진행도: {current_idx}/{total_experiments}")
+    st.markdown("---")
+    
+    # Check if all validations are complete
+    if current_idx >= total_experiments:
+        st.success("🎉 모든 검증이 완료되었습니다!")
+        st.balloons()
+        st.markdown(f"총 **{total_experiments}개**의 케이스에 대한 검증을 완료하셨습니다.")
+        st.markdown("검증 결과는 Firebase에 저장되었습니다.")
+        st.stop()
+    
+    # Get current experiment number
+    current_item = EXPERIMENT_NUMBERS[current_idx]
+    client_number, exp_number = current_item
+    
+    # Convert to strings for Firebase keys
+    client_number_str = str(client_number)
+    exp_number_str = str(exp_number)
+    
+    st.info(f"**현재 검증 대상:** Client #{client_number}, Experiment #{exp_number}")
+    
+    # Load conversation and construct from Firebase
+    try:
+        conversation_key = f"conversation_log_{client_number_str}_{exp_number_str}"
+        construct_key = f"construct_paca_{client_number_str}_{exp_number_str}"
+        
+        conversation_data = load_from_firebase(firebase_ref, client_number_str, conversation_key)
+        construct_data = load_from_firebase(firebase_ref, client_number_str, construct_key)
+        
+        if not conversation_data or not construct_data:
+            st.error(f"데이터를 불러올 수 없습니다: Client {client_number}, Exp {exp_number}")
+            st.markdown("다음 케이스로 건너뛰시겠습니까?")
+            if st.button("다음으로 건너뛰기"):
+                st.session_state.current_experiment_index += 1
+                st.rerun()
+            st.stop()
+        
+        # Display validation interface
+        display_validation_interface(
+            conversation_data,
+            construct_data,
+            (client_number, exp_number),
+            firebase_ref
+        )
+        
+    except Exception as e:
+        st.error(f"데이터 로드 중 오류 발생: {e}")
+        import traceback
+        st.code(traceback.format_exc())
+
+# ================================
+# Validation Interface
+# ================================
+def display_validation_interface(conversation_data, construct_data, exp_item, firebase_ref):
+    """Display the main validation interface with scoring options"""
+    
+    client_number, exp_number = exp_item
+    exp_key = f"{client_number}_{exp_number}"  # Unique key for this experiment
+    
+    # 2-column layout
+    col1, col2 = st.columns([1, 1])
+    
+    with col1:
+        st.subheader("💬 대화 내역")
+        st.markdown("---")
+        
+        # Display conversation
+        if 'data' in conversation_data:
+            messages = conversation_data['data']
+            for msg in messages:
+                speaker = msg.get('speaker', 'Unknown')
+                message = msg.get('message', '')
+                
+                if speaker == 'PACA':
+                    st.markdown(f"**🤖 PACA:** {message}")
+                else:
+                    st.markdown(f"**👤 SP:** {message}")
+                st.markdown("")
+        else:
+            st.warning("대화 데이터 형식이 올바르지 않습니다.")
+    
+    with col2:
+        st.subheader("📊 PACA Construct")
+        st.markdown("---")
+        
+        # Display construct
+        with st.expander("📋 전체 Construct 보기", expanded=False):
+            st.json(construct_data)
+        
+        st.markdown("---")
+        st.subheader("✅ 평가 항목")
+        
+        # Initialize response storage for this experiment
+        if exp_key not in st.session_state.validation_responses:
+            st.session_state.validation_responses[exp_key] = {}
+        
+        current_responses = st.session_state.validation_responses[exp_key]
+        
+        # Display scoring options by category
+        scoring_options = get_scoring_options(construct_data)
+        
+        for category, items in scoring_options.items():
+            st.markdown(f"#### {category}")
+            
+            for item in items:
+                element_name = item['element']
+                options = item['options']
+                paca_value = item.get('paca_value', 'N/A')
+                
+                # Display PACA's value
+                st.markdown(f"**{element_name}**")
+                st.caption(f"PACA 값: {paca_value}")
+                
+                # Create unique key for this element
+                key = f"{exp_key}_{element_name}"
+                
+                # Get default value if already responded
+                default_idx = 0
+                if element_name in current_responses:
+                    try:
+                        default_idx = options.index(current_responses[element_name])
+                    except ValueError:
+                        default_idx = 0
+                
+                # Display selectbox
+                selected = st.selectbox(
+                    "평가",
+                    options,
+                    index=default_idx,
+                    key=key,
+                    label_visibility="collapsed"
+                )
+                
+                # Store response
+                current_responses[element_name] = selected
+                
+                st.markdown("")
+        
+        st.session_state.validation_responses[exp_key] = current_responses
+    
+    # Save and navigation buttons
+    st.markdown("---")
+    col1, col2, col3 = st.columns([1, 2, 1])
+    
+    with col1:
+        if st.button("💾 중간 저장", use_container_width=True):
+            save_validation_progress(firebase_ref, st.session_state.expert_name, 
+                                   st.session_state.current_experiment_index,
+                                   st.session_state.validation_responses)
+            st.success("저장되었습니다!")
+            st.rerun()
+    
+    with col3:
+        if st.button("✅ 완료 - 다음으로", use_container_width=True, type="primary"):
+            # Calculate and save final validation result
+            validation_result = create_validation_result(
+                construct_data,
+                current_responses,
+                exp_item  # Pass (client_number, exp_number) tuple
+            )
+            
+            # Save to Firebase
+            success = save_validation_to_firebase(
+                firebase_ref,
+                st.session_state.expert_name,
+                exp_item,  # Pass (client_number, exp_number) tuple
+                validation_result
+            )
+            
+            if success:
+                st.success(f"검증 결과가 저장되었습니다! (Client {client_number}, Exp {exp_number})")
+                st.session_state.current_experiment_index += 1
+                
+                # Also save progress
+                save_validation_progress(firebase_ref, st.session_state.expert_name,
+                                       st.session_state.current_experiment_index,
+                                       st.session_state.validation_responses)
+                st.rerun()
+            else:
+                st.error("저장 중 오류가 발생했습니다. 다시 시도해주세요.")
+
+def save_validation_progress(firebase_ref, expert_name, current_index, responses):
+    """Save validation progress to Firebase"""
+    try:
+        progress_key = f"expert_progress_{expert_name}"
+        progress_data = {
+            'current_index': current_index,
+            'responses': responses,
+            'timestamp': int(datetime.now().timestamp())
+        }
+        firebase_ref.child(progress_key).set(progress_data)
+        return True
+    except Exception as e:
+        st.error(f"진행도 저장 실패: {e}")
+        return False
+
+# ================================
+# Main Function
+# ================================
+def main():
+    """Main function to route to appropriate page"""
+    init_session_state()
+    check_expert_login()
+    
+    # Display appropriate page based on stage
+    stage = st.session_state.validation_stage
+    
+    if stage == 'intro':
+        show_intro_page()
+    elif stage == 'test':
+        show_test_page()
+    elif stage == 'validation':
+        show_validation_page()
+    else:
+        st.error("알 수 없는 단계입니다.")
+
+if __name__ == "__main__":
+    main()
