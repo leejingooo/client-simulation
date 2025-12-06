@@ -33,7 +33,7 @@ def check_participant():
         #     """"테스트" 라고 입력하세요 (쌍따옴표 제외). Please type "test" (without quotation marks)""", on_change=name_entered, key="name_input"
         # )
         st.text_input(
-            """"로그인""", on_change=name_entered, key="name_input"
+            "로그인", on_change=name_entered, key="name_input"
         )
         if "name_correct" in st.session_state and not st.session_state["name_correct"]:
             st.error("😕 등록되지 않은 이름입니다.")
