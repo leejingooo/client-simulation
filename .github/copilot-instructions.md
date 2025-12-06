@@ -9,24 +9,29 @@ This is a **psychiatric evaluation research platform** that simulates patient-cl
 
 The system generates conversations, produces structured psychiatric assessments ("constructs"), evaluates PACA performance against ground truth (SP constructs), and enables expert validation by psychiatrists.
 
+**Tech Stack**: Streamlit + LangChain + Firebase Realtime Database + OpenAI/Anthropic APIs
+
 ## Core Architecture
 
 ### Three-Layer Agent System
 
 1. **SP Agent** (`SP_utils.py`, `sp_construct_generator.py`)
-   - Built with LangChain + ChatOpenAI/ChatAnthropic
-   - Configured via: profile JSON, history narrative, behavioral instructions
+   - Built with LangChain + ChatOpenAI/ChatAnthropic (gpt-5.1 default model)
+   - Configured via: profile JSON, history narrative, behavioral instructions loaded from Firebase
    - Uses `InMemoryChatMessageHistory` for conversation state
-   - Cached with `@st.cache_resource` to persist across Streamlit reruns
+   - **Critical**: Cached with `@st.cache_resource` to persist across Streamlit reruns - without this, memory resets!
+   - Created via `create_conversational_agent()` which returns `(agent, memory)` tuple
 
 2. **PACA Agent** (`PACA_*_utils.py`, `paca_construct_generator.py`)
    - Multiple variants: `claude_basic`, `claude_guided`, `gpt_basic`, `gpt_guided`, `llama`
    - Each has initial greeting prompt hardcoded (e.g., "안녕하세요, 저는 정신과 의사...")
    - Generates psychiatric constructs by querying itself post-conversation
+   - **Critical**: Must be cached in `st.session_state.paca_agent` and `st.session_state.paca_memory`
+   - Created via `create_paca_agent(version)` which returns `(agent, memory, version)` tuple
 
 3. **Evaluator** (`evaluator.py`, `expert_validation_utils.py`)
    - Compares PACA construct vs SP construct (ground truth)
-   - Uses **PSYCHE RUBRIC** - standardized psychiatric evaluation criteria
+   - Uses **PSYCHE RUBRIC** - standardized psychiatric evaluation criteria (59 elements across 3 categories)
    - Three scoring methods: G-Eval (LLM-based), binary, ordinal/delta-based
 
 ### Data Storage: Firebase Realtime Database
@@ -70,36 +75,81 @@ PSYCHE_RUBRIC = {
 
 ## Development Workflows
 
+### Running the Application
+
+**Dev Container Setup** (`.devcontainer/devcontainer.json`):
+- Auto-installs dependencies from `requirements.txt` and `packages.txt` on container creation
+- Auto-runs `streamlit run Home.py --server.enableCORS false --server.enableXsrfProtection false` on attach
+- Exposes port 8501 with auto-preview
+
+**Manual start**:
+```bash
+streamlit run Home.py --server.enableCORS false --server.enableXsrfProtection false
+```
+
 ### Running Experiments
 
-1. **Preset versions** at top of Experiment files:
+**Critical Setup Pattern** - Each experiment page (`pages/01_experiment(BD|MDD|OCD)_<model>_<type>.py`):
+
+1. **Import base experiment logic**: `from Experiment_claude_basic import experiment_page`
+2. **Set client number**: `client_number = 6002` (BD=6002, MDD=6101, OCD=6006)
+3. **Session state reset** on page change to prevent memory leakage:
    ```python
-   profile_version = 6.0
-   beh_dir_version = 6.0
-   con_agent_version = 6.0
-   paca_version = 3.0
+   if st.session_state.current_page != current_page:
+       # Clear all agent/memory state
+       if 'paca_agent' in st.session_state:
+           del st.session_state.paca_agent
+       st.session_state.force_paca_update = True
    ```
 
-2. **Agent creation pattern**:
-   ```python
-   sp_agent, sp_memory = create_conversational_agent(
-       profile_version, beh_dir_version, client_number, system_prompt)
-   paca_agent, paca_memory, version = create_paca_agent(paca_version)
-   ```
+**Version presets** at top of base Experiment files (`Experiment_claude_basic.py`):
+```python
+profile_version = 6.0      # SP profile structure version
+beh_dir_version = 6.0      # Behavioral directive version
+con_agent_version = 6.0    # System prompt version
+paca_version = 3.0         # PACA agent version
+```
 
-3. **Conversation simulation**:
-   ```python
-   for speaker, message in simulate_conversation(paca_agent, sp_agent):
-       # Yields ("PACA", msg) or ("SP", msg)
-   ```
+**Agent creation pattern** (must preserve memory!):
+```python
+# SP Agent
+sp_agent, sp_memory = create_conversational_agent(
+    f"{profile_version:.1f}".replace(".", "_"),  # "6_0"
+    f"{beh_dir_version:.1f}".replace(".", "_"),
+    client_number,
+    con_agent_system_prompt
+)
+# MUST store memory in session state
+if 'sp_memory' not in st.session_state:
+    st.session_state.sp_memory = sp_memory
 
-4. **Construct generation** (post-conversation):
-   ```python
-   # Query PACA agent about what it learned
-   paca_construct = create_paca_construct(paca_agent)
-   # Ground truth from SP's profile
-   sp_construct = create_sp_construct(client_number, profile_version)
-   ```
+# PACA Agent - check for forced update
+if 'paca_agent' not in st.session_state or st.session_state.get('force_paca_update', False):
+    st.session_state.paca_agent, st.session_state.paca_memory, version = create_paca_agent(paca_version)
+    st.session_state.force_paca_update = False
+```
+
+**Conversation flow**:
+```python
+# Start simulation - yields ("PACA", msg) or ("SP", msg) tuples
+for speaker, message in simulate_conversation(paca_agent, sp_agent):
+    st.write(f"**{speaker}**: {message}")
+```
+
+**Construct generation** (post-conversation):
+```python
+# PACA construct - queries agent about what it learned
+paca_construct = create_paca_construct(paca_agent)
+
+# SP construct - ground truth from profile
+sp_construct = create_sp_construct(client_number, profile_version)
+```
+
+**Experiment number validation** (prevents overwrites):
+```python
+if check_experiment_number_exists(firebase_ref, client_number, exp_number):
+    st.error("Experiment number already used")
+```
 
 ### Memory Management (Critical!)
 
@@ -132,25 +182,68 @@ st.rerun()  # Trigger page refresh
 
 ### Expert Validation Workflow
 
-`pages/06_expert_validation.py`:
+`pages/06_expert_validation.py` - **Multi-stage wizard** for psychiatric expert review:
 
-1. **PRESET at top**: List of `(client_number, experiment_number)` tuples to validate
-2. **Three stages**: `intro` → `test` → `validation`
-3. **Scoring pattern**:
+1. **PRESET Configuration** (top of file):
    ```python
-   scoring_options = get_aggregated_scoring_options(construct_data)
-   # Returns {category: [{element, options, paca_value}, ...]}
-   
-   # Expert picks from options, score auto-calculated:
-   validation_result = create_validation_result(
-       construct_data, expert_responses, (client_num, exp_num))
+   EXPERIMENT_NUMBERS = [
+       (6101, 101),  # (client_number, experiment_number)
+       (6101, 102),
+       # Add all 24 experiments to validate
+   ]
    ```
 
-4. **Firebase save**:
+2. **Three-stage flow** (controlled by `st.session_state.validation_stage`):
+   - `intro`: Instructions page
+   - `test`: Practice validation with sample data
+   - `validation`: Loop through all EXPERIMENT_NUMBERS
+
+3. **Scoring pattern** - Uses aggregated options:
+   ```python
+   # Get all scoring options grouped by PSYCHE category
+   scoring_options = get_aggregated_scoring_options(construct_data)
+   # Returns: {category: [{element, options, paca_value}, ...]}
+   
+   # Expert selects from dropdown options
+   for category, elements in scoring_options.items():
+       for item in elements:
+           expert_choice = st.selectbox(
+               item['element'],
+               options=item['options']
+           )
+   
+   # Auto-calculate score based on expert choices
+   validation_result = create_validation_result(
+       construct_data, 
+       expert_responses,  # Dict of {element: choice}
+       (client_num, exp_num)
+   )
+   ```
+
+4. **Result structure** (changed from `expert_score` to `psyche_score`):
+   ```json
+   {
+     "elements": {
+       "Symptom name": {  // Aggregated from Symptom 1-N
+         "expert_choice": "Correct",
+         "paca_content": "- insomnia\n- anxiety\n- depressed mood",
+         "score": 1,
+         "weight": 1,
+         "weighted_score": 1
+       }
+     },
+     "psyche_score": 35.5,  // Total weighted score
+     "metadata": {...}
+   }
+   ```
+
+5. **Firebase save** (auto-sanitizes expert name):
    ```python
    save_validation_to_firebase(
-       firebase_ref, expert_name, (client_num, exp_num), result)
+       firebase_ref, expert_name, (client_num, exp_num), result
+   )
    # Saves to: expert_<sanitized_name>_<client>_<exp>
+   # e.g., expert_kim_soo_min_6101_101
    ```
 
 ## Common Patterns & Conventions
@@ -218,6 +311,9 @@ check_experiment_number_exists(firebase_ref, client_number, exp_number)
 4. **Memory leakage**: Without `@st.cache_resource`, agents lose conversation history on rerun
 5. **Expert name sanitization**: `sanitize_firebase_key()` required for Firebase keys (different from `sanitize_key()`)
 6. **Aggregation**: "Symptom 1-N" → "Symptom name" happens in `get_aggregated_scoring_options()`, not per-element
+7. **Session state on page change**: Must explicitly delete and recreate `paca_agent`/`paca_memory` when switching between experiment pages - set `force_paca_update=True`
+8. **Model configuration**: SP uses `gpt-5.1` by default (see `SP_utils.py`), PACA variants use different models per implementation
+9. **Authentication flow**: `Home.py` checks `st.secrets["participant"]` list - all pages call `check_participant()` or equivalent before rendering
 
 ## Key Files Reference
 
@@ -226,7 +322,23 @@ check_experiment_number_exists(firebase_ref, client_number, exp_number)
 - `expert_validation_utils.py`: Validation-specific scoring, aggregation logic
 - `firebase_config.py`: Firebase initialization
 - `paca_construct_generator.py`, `sp_construct_generator.py`: Post-conversation construct generation
+- `Experiment_claude_basic.py` (and variants): Base experiment logic imported by page-specific files
 - `EVALUATOR_REFACTOR.md`, `MEMORY_FIX_GUIDE.md`, `VALIDATION_CODE_REVIEW.md`: Architecture decision records
+
+## Testing
+
+**Test aggregation logic**:
+```bash
+python test_expert_validation_aggregation.py
+```
+This verifies that symptom aggregation and scoring options match expected format.
+
+**Check Firebase connection**:
+```python
+from firebase_config import get_firebase_ref
+ref = get_firebase_ref()
+# Should show "시스템 준비가 완료되었습니다."
+```
 
 ## Language
 

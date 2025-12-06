@@ -312,11 +312,11 @@ def expert_validation_converter():
                             col1, col2 = st.columns(2)
                             
                             with col1:
-                                # Show Expert score if available
-                                if 'expert_score' in expert_data:
+                                # Show PSYCHE score if available (primary score)
+                                if 'psyche_score' in expert_data:
                                     st.metric(
-                                        "Expert Score",
-                                        f"{expert_data['expert_score']:.2f}",
+                                        "PSYCHE Score",
+                                        f"{expert_data['psyche_score']:.2f}",
                                         help="Sum of all weighted scores from PSYCHE RUBRIC"
                                     )
                             
