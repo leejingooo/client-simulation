@@ -274,6 +274,20 @@ def show_validation_page():
         agent, memory = create_conversational_agent(
             "6_0", "6_0", client_number, con_agent_system_prompt
         )
+        
+        # Try to load previously saved conversation history
+        conversation_key = f"sp_conversation_{sanitize_key(expert_name)}_{client_number}_{page_number}"
+        saved_conversation = firebase_ref.child(conversation_key).get()
+        
+        if saved_conversation and 'conversation' in saved_conversation:
+            st.info("💬 이전 대화 내역을 불러왔습니다.")
+            # Add messages to memory
+            for msg_data in saved_conversation['conversation']:
+                if msg_data['role'] == 'user':
+                    memory.add_message(HumanMessage(content=msg_data['content']))
+                else:
+                    memory.add_message(AIMessage(content=msg_data['content']))
+        
         st.session_state[session_key] = {'agent': agent, 'memory': memory}
     
     agent_data = st.session_state[session_key]
@@ -322,6 +336,25 @@ def show_validation_page():
         response_key = f"sp_{page_number}_{client_number}"
         if response_key not in st.session_state.sp_validation_responses:
             st.session_state.sp_validation_responses[response_key] = {}
+            
+            # Try to load previously saved data
+            expert_name = st.session_state.expert_name
+            validation_key = f"sp_validation_{sanitize_key(expert_name)}_{client_number}_{page_number}"
+            saved_data = firebase_ref.child(validation_key).get()
+            
+            if saved_data:
+                st.info("💾 이전에 저장된 데이터를 불러왔습니다.")
+                # Load element responses
+                if 'elements' in saved_data:
+                    for elem_name, elem_data in saved_data['elements'].items():
+                        if 'expert_choice' in elem_data:
+                            st.session_state.sp_validation_responses[response_key][elem_name] = elem_data['expert_choice']
+                
+                # Load additional questions
+                if 'diagnosis_guess' in saved_data:
+                    st.session_state.sp_validation_responses[response_key]['diagnosis_guess'] = saved_data['diagnosis_guess']
+                if 'overall_comment' in saved_data:
+                    st.session_state.sp_validation_responses[response_key]['overall_comment'] = saved_data['overall_comment']
         
         responses = st.session_state.sp_validation_responses[response_key]
         
@@ -340,7 +373,7 @@ def show_validation_page():
             
             # Display element with SP content
             with st.expander(f"**{element}**", expanded=False):
-                st.markdown(f"**SP 지시 내용:** {sp_content}")
+                st.markdown(f"**SP 지시 내용:**\n {sp_content}")
                 
                 # Special help text for specific elements
                 if element == "Triggering factor":
@@ -349,11 +382,15 @@ def show_validation_page():
                     st.caption("💡 증상 유발 요인")
                 
                 # Radio button for validation
+                current_value = responses.get(element, "선택 안함")
+                if current_value not in ["선택 안함", "적절함", "적절하지 않음"]:
+                    current_value = "선택 안함"
+                
                 choice = st.radio(
                     "평가",
-                    options=["적절함", "적절하지 않음"],
+                    options=["선택 안함", "적절함", "적절하지 않음"],
                     key=f"validation_{response_key}_{element}",
-                    index=0 if responses.get(element) == "적절함" else (1 if responses.get(element) == "적절하지 않음" else 0),
+                    index=["선택 안함", "적절함", "적절하지 않음"].index(current_value),
                     horizontal=True
                 )
                 responses[element] = choice
@@ -409,7 +446,16 @@ def show_validation_page():
 
 
 def save_sp_validation(firebase_ref, page_number, client_number, responses, memory, is_final=True):
-    """Save SP validation result to Firebase"""
+    """Save SP validation result to Firebase
+    
+    Args:
+        firebase_ref: Firebase reference
+        page_number: SP page number (1-14)
+        client_number: Client number (6101-6107)
+        responses: Validation responses dict
+        memory: LangChain memory object with conversation history
+        is_final: Whether this is final save (True) or mid-save (False)
+    """
     expert_name = st.session_state.expert_name
     
     # Prepare validation result

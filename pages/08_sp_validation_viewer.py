@@ -186,7 +186,7 @@ try:
     st.subheader("📥 데이터 내보내기")
     
     if st.button("모든 검증 결과를 CSV로 다운로드"):
-        # Prepare CSV data
+        # Prepare CSV data - more efficient structure
         csv_rows = []
         
         for key, data in sp_validations.items():
@@ -198,24 +198,33 @@ try:
             diagnosis_guess = data.get('diagnosis_guess', '')
             overall_comment = data.get('overall_comment', '')
             
-            elements = data.get('elements', {})
+            # Create one row per validation (not per element)
+            row = {
+                'expert_name': expert,
+                'page_number': page_num,
+                'client_number': client_num,
+                'timestamp': timestamp,
+                'is_final': is_final,
+                'diagnosis_guess': diagnosis_guess,
+                'overall_comment': overall_comment
+            }
             
+            # Add each element as a column
+            elements = data.get('elements', {})
             for element_name, element_info in elements.items():
-                csv_rows.append({
-                    'expert_name': expert,
-                    'page_number': page_num,
-                    'client_number': client_num,
-                    'timestamp': timestamp,
-                    'is_final': is_final,
-                    'element': element_name,
-                    'sp_content': element_info.get('sp_content', ''),
-                    'expert_choice': element_info.get('expert_choice', ''),
-                    'diagnosis_guess': diagnosis_guess,
-                    'overall_comment': overall_comment
-                })
+                # Add expert choice for this element
+                row[f"{element_name}_choice"] = element_info.get('expert_choice', '')
+            
+            csv_rows.append(row)
         
         if csv_rows:
             export_df = pd.DataFrame(csv_rows)
+            
+            # Show preview
+            st.markdown("#### 📊 CSV 미리보기")
+            st.dataframe(export_df.head(10), use_container_width=True)
+            st.caption(f"총 {len(export_df)}개 행 (위는 처음 10개만 표시)")
+            
             csv = export_df.to_csv(index=False, encoding='utf-8-sig')
             
             st.download_button(
