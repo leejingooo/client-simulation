@@ -150,52 +150,52 @@ def main():
         ---
         """)
     
-    st.markdown("---")
+    # st.markdown("---")
     
-    # Detailed Status
-    col_left, col_right = st.columns(2)
+    # # Detailed Status
+    # col_left, col_right = st.columns(2)
     
-    # Expert Validation Details
-    with col_left:
-        st.header("📋 Expert Validation 상세")
-        st.progress(expert_progress, text=f"{len(expert_completed)}/{expert_total} 완료")
+    # # Expert Validation Details
+    # with col_left:
+    #     st.header("📋 Expert Validation 상세")
+    #     st.progress(expert_progress, text=f"{len(expert_completed)}/{expert_total} 완료")
         
-        if expert_progress < 1.0:
-            st.info("👉 Expert Validation 페이지로 이동하여 검증을 계속하세요.")
+    #     if expert_progress < 1.0:
+    #         st.info("👉 Expert Validation 페이지로 이동하여 검증을 계속하세요.")
         
-        # Group by client number
-        expert_by_client = {}
-        for client_num, exp_num in EXPERT_VALIDATION_EXPERIMENTS:
-            if client_num not in expert_by_client:
-                expert_by_client[client_num] = {'total': 0, 'completed': 0, 'experiments': []}
-            expert_by_client[client_num]['total'] += 1
-            expert_by_client[client_num]['experiments'].append(exp_num)
-            if (client_num, exp_num) in expert_completed:
-                expert_by_client[client_num]['completed'] += 1
+    #     # Group by client number
+    #     expert_by_client = {}
+    #     for client_num, exp_num in EXPERT_VALIDATION_EXPERIMENTS:
+    #         if client_num not in expert_by_client:
+    #             expert_by_client[client_num] = {'total': 0, 'completed': 0, 'experiments': []}
+    #         expert_by_client[client_num]['total'] += 1
+    #         expert_by_client[client_num]['experiments'].append(exp_num)
+    #         if (client_num, exp_num) in expert_completed:
+    #             expert_by_client[client_num]['completed'] += 1
         
-        for client_num in sorted(expert_by_client.keys()):
-            info = expert_by_client[client_num]
-            with st.expander(f"Client {client_num} - {info['completed']}/{info['total']} 완료"):
-                for exp_num in sorted(info['experiments']):
-                    if (client_num, exp_num) in expert_completed:
-                        st.success(f"✅ Experiment {exp_num}")
-                    else:
-                        st.warning(f"⏳ Experiment {exp_num} - 미완료")
+    #     for client_num in sorted(expert_by_client.keys()):
+    #         info = expert_by_client[client_num]
+    #         with st.expander(f"Client {client_num} - {info['completed']}/{info['total']} 완료"):
+    #             for exp_num in sorted(info['experiments']):
+    #                 if (client_num, exp_num) in expert_completed:
+    #                     st.success(f"✅ Experiment {exp_num}")
+    #                 else:
+    #                     st.warning(f"⏳ Experiment {exp_num} - 미완료")
     
-    # SP Validation Details
-    with col_right:
-        st.header("👥 SP Validation 상세")
-        st.progress(sp_progress, text=f"{len(sp_completed)}/{sp_total} 완료")
+    # # SP Validation Details
+    # with col_right:
+    #     st.header("👥 SP Validation 상세")
+    #     st.progress(sp_progress, text=f"{len(sp_completed)}/{sp_total} 완료")
         
-        if sp_progress < 1.0:
-            st.info("👉 SP Validation 페이지로 이동하여 검증을 계속하세요.")
+    #     if sp_progress < 1.0:
+    #         st.info("👉 SP Validation 페이지로 이동하여 검증을 계속하세요.")
         
-        # Display by page number
-        for page_num, client_num in SP_VALIDATION_SEQUENCE:
-            if (page_num, client_num) in sp_completed:
-                st.success(f"✅ 가상환자 {page_num} (Client {client_num})")
-            else:
-                st.warning(f"⏳ 가상환자 {page_num} (Client {client_num}) - 미완료")
+    #     # Display by page number
+    #     for page_num, client_num in SP_VALIDATION_SEQUENCE:
+    #         if (page_num, client_num) in sp_completed:
+    #             st.success(f"✅ 가상환자 {page_num} (Client {client_num})")
+    #         else:
+    #             st.warning(f"⏳ 가상환자 {page_num} (Client {client_num}) - 미완료")
     
     st.markdown("---")
     
