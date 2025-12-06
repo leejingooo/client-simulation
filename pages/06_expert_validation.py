@@ -72,33 +72,35 @@ def show_intro_page():
     st.markdown("""
     ## 검증 프로세스 안내
     
-    안녕하세요, 전문가님. 본 시스템은 정신과 평가 대화형 에이전트(PACA, Psychiatric Assessment Conversational Agent)의 
+    안녕하세요, 전문가님. 본 시스템은 정신과적 평가를 위한 대화형 에이전트(PACA, Psychiatric Assessment Conversational Agent)의 
     성능을 검증하기 위한 전문가 평가 도구입니다.
     
-    ### 📌 검증 절차
+    ### 📌 절차
     
-    1. **연습 단계**: 먼저 테스트 페이지에서 검증 방법을 연습합니다.
-    2. **실제 검증**: 총 **{total}개**의 대화-평가 쌍을 검증합니다.
-    3. **자동 저장**: 각 검증 완료 시 자동으로 Firebase에 저장됩니다.
+    1. **연습 단계**: 먼저 연습용 페이지에서 검증 방법을 연습합니다.
+    2. **실제 검증**: 총 **{total}개**의 대화-리포트 쌍을 검증합니다.
+    3. **자동 저장**: 각 케이스 검증 완료 시 자동으로 저장됩니다.
     
-    ### 📝 검증 내용
+    ### 📝 페이지 구성
     
-    각 케이스마다 다음을 검토하게 됩니다:
+    앞으로 보시게 될 페이지는 다음과 같이 구성될 예정입니다.
     
-    - **왼쪽 패널**: SP(Simulated Patient)와 PACA 간의 대화 내역
-    - **오른쪽 패널**: PACA가 생성한 평가 리포트 (PACA Construct)
+    - **왼쪽 패널**: 가상 환자(SP)와 PACA 간의 대화 내역
+    - **오른쪽 패널**: PACA가 생성한 가상 환자(SP)에 대한 정신과적 평가 리포트
     
-    ### ✅ 평가 기준
+    ### ✅ 검증 내용
     
-    다음 세 가지 영역에 대해 평가합니다:
+    PACA는 정신과 의사와 유사한 방식으로 가상 환자(Simulated Patient, SP)와 대화를 나누고, **리포트**를 생성합니다.
+    PACA는 다음 세 가지 영역에 대해 리포트를 생성하고, **전문가(당신)**는 이를 검증해야 합니다.
+    가상환자(SP)에 대해 PACA가 평가한 결과인 **리포트**를 보고, 그것이 올바르게 평가된 것인지 검증해주십시오.
     
-    1. **주관적 정보 (Subjective Information)** - 가중치: 1
+    1. **주관적 정보 (Subjective Information)**
        - Chief Complaint, Present Illness, Family History 등
     
-    2. **충동성 (Impulsivity)** - 가중치: 5
+    2. **충동성 (Impulsivity)**
        - Suicidal ideation, Self-mutilating behavior risk 등
     
-    3. **행동 (Behavior)** - 가중치: 2
+    3. **행동 (Behavior)** - Mental Status Examination에 해당하는 부분
        - Mood, Verbal productivity, Insight, Affect 등
     
     ### 💾 중간 저장
@@ -109,8 +111,8 @@ def show_intro_page():
     ### ⚠️ 유의사항
     
     - 모든 항목에 대해 신중하게 평가해주시기 바랍니다.
-    - SP Construct는 평가 대상에 포함되지 않습니다.
-    - 검증 결과는 향후 PACA 개선에 중요한 자료로 활용됩니다.
+    - "선택 안 함"으로 체크된 항목이 남아있지 않도록 유의 부탁드립니다.
+
     
     """.format(total=len(EXPERIMENT_NUMBERS)))
     
@@ -118,7 +120,7 @@ def show_intro_page():
     
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
-        if st.button("▶️ 테스트 페이지로 이동", use_container_width=True, type="primary"):
+        if st.button("▶️ 연습용 페이지로 이동", use_container_width=True, type="primary"):
             st.session_state.validation_stage = 'test'
             st.rerun()
 
@@ -127,7 +129,7 @@ def show_intro_page():
 # ================================
 def show_test_page():
     """Display test page with example validation"""
-    st.title("🧪 테스트 페이지")
+    st.title("🧪 연습용 페이지")
     st.info("실제 검증과 동일한 형식으로 연습해보세요. 이 페이지의 응답은 저장되지 않습니다.")
     st.markdown("---")
     
@@ -155,14 +157,14 @@ def show_test_page():
             st.markdown("")
     
     with col2:
-        st.subheader("✅ 평가 항목")
+        st.subheader("✅ 검증 항목")
         st.markdown("---")
         
         # Example evaluation items
         st.markdown("#### Subjective Information")
         
         st.markdown("**Chief complaint**")
-        st.info(f"📌 PACA 값: **불면증과 지속적인 걱정**")
+        st.info(f"📌 PACA의 리포트: **불면증과 지속적인 걱정**")
         st.radio(
             "평가",
             ["[선택 안 함]", "Correct", "Partially correct", "Incorrect"],
@@ -173,7 +175,7 @@ def show_test_page():
         st.markdown("")
         
         st.markdown("**Symptom name**")
-        st.info("📌 PACA 값:\n\n- Insomnia\n- Anxiety")
+        st.info("📌 PACA의 리포트:\n\n- Insomnia\n- Anxiety")
         st.radio(
             "평가",
             ["[선택 안 함]", "Correct", "Partially correct", "Incorrect"],
@@ -186,9 +188,9 @@ def show_test_page():
         st.markdown("#### Behavior (Mental Status Examination)")
         
         st.markdown("**Mood**")
-        st.info(f"📌 PACA 값: **anxious, dysphoric**")
+        st.info(f"📌 PACA의 리포트: **anxious, dysphoric**")
         st.radio(
-            "Expert의 판단",
+            "전문가의 판단",
             ["[선택 안 함]", "Irritable", "Euphoric", "Elated", "Euthymic", "Dysphoric", "Depressed"],
             key="test_mood",
             label_visibility="collapsed",
@@ -197,7 +199,7 @@ def show_test_page():
         st.markdown("")
         
         st.markdown("**Verbal productivity**")
-        st.info(f"📌 PACA 값: **moderate**")
+        st.info(f"📌 PACA의 리포트: **moderate**")
         st.radio(
             "Expert의 판단",
             ["[선택 안 함]", "Increased", "Moderate", "Decreased"],
@@ -238,7 +240,7 @@ def show_test_page():
             )
             st.markdown("")
         
-        st.info("💡 **안내사항**\n- Expert는 자신의 판단만 선택하면 됩니다. Score는 자동으로 계산됩니다.\n- PACA 값이 None 또는 N/A인 경우 자동으로 0점 처리됩니다.\n- '[선택 안 함]'으로 선택된 항목이 남아있으면 안 됩니다.")
+        st.info("💡 **안내사항**\n- 전문가는 자신의 판단만 선택하면 됩니다. \n- PACA 리포트가 None 또는 N/A으로 작성된 경우 전문가의 검증에 상관없이 0점 처리됩니다. \n- '[선택 안 함]'으로 선택된 항목이 남아있지 않도록 유의해주십시오.")
     
     st.markdown("---")
     col1, col2, col3 = st.columns([1, 1, 1])
@@ -293,6 +295,8 @@ def show_validation_page():
                 if 'quality_assessment' in existing_response:
                     quality_key = f"{exp_key}_quality"
                     st.session_state.validation_responses[quality_key] = existing_response['quality_assessment']
+                    # Debug: Show that quality assessment was loaded
+                    st.write(f"✅ Quality assessment loaded for {exp_key}: {existing_response['quality_assessment']}")
         
         st.session_state.firebase_loaded = True
         
@@ -315,7 +319,7 @@ def show_validation_page():
         st.success("🎉 모든 검증이 완료되었습니다!")
         st.balloons()
         st.markdown(f"총 **{total_experiments}개**의 케이스에 대한 검증을 완료하셨습니다.")
-        st.markdown("검증 결과는 Firebase에 저장되었습니다.")
+        st.markdown("검증 결과는 성공적으로 전송되었습니다.")
         st.stop()
     
     # Get current experiment number
@@ -389,7 +393,7 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
             st.warning("대화 데이터 형식이 올바르지 않습니다.")
     
     with col2:
-        st.subheader("✅ 평가 항목")
+        st.subheader("✅ 검증 항목")
         st.markdown("---")
         
         # Get current responses (already loaded from Firebase in show_validation_page)
@@ -420,9 +424,9 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
                 # Handle multiline PACA values properly (e.g., symptom lists)
                 if '\n' in str(paca_value):
                     # Display with proper line breaks
-                    st.info(f"📌 PACA 값:\n\n{paca_value}")
+                    st.info(f"📌 PACA의 리포트:\n\n{paca_value}")
                 else:
-                    st.info(f"📌 PACA 값: **{paca_value}**")
+                    st.info(f"📌 PACA의 리포트: **{paca_value}**")
                 
                 # Create unique key for this element
                 key = f"{exp_key}_{element_name}"
@@ -464,7 +468,7 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
         # PACA Quality Assessment (Likert Scale)
         # ================================
         st.markdown("---")
-        st.markdown("### 🎯 PACA 시뮬레이션 품질 평가")
+        st.markdown("### 🎯 PACA가 진행한 면담의 품질 평가")
         st.info("아래 3가지 항목에 대해 1-5점 척도로 PACA의 전반적인 면담 품질을 평가해주세요.")
         
         from expert_validation_utils import PACA_QUALITY_CRITERIA

@@ -11,7 +11,7 @@ instructions = """
     """
 
 
-def validation_page(client_number, profile_version=5.0, beh_dir_version=5.0, con_agent_version=5.0):
+def validation_page(client_number, profile_version=6.0, beh_dir_version=6.0, con_agent_version=6.0):
     st.set_page_config(
         page_title="정신과 환자의 다면적 시뮬레이션",
         page_icon="🔬",
