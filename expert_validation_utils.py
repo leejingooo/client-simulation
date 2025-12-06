@@ -190,13 +190,15 @@ def calculate_binary_score(selected_option):
 
 
 # ================================
-# Scoring Options Generator
+# Aggregated Scoring Options Generator (Psyche Validation Style)
 # ================================
 
-def get_scoring_options(construct_data):
+def get_aggregated_scoring_options(construct_data):
     """
-    Generate scoring options based on construct data
-    Returns a dictionary with categories and their scoring elements
+    Generate aggregated scoring options based on PSYCHE RUBRIC
+    Similar to evaluator.py - combines symptom_1, symptom_2, etc. into single categories
+    
+    Returns a dictionary with categories and their scoring elements (aggregated)
     """
     scoring_options = {
         'Subjective Information': [],
@@ -211,67 +213,91 @@ def get_scoring_options(construct_data):
     # Chief Complaint - Description
     if 'Chief complaint' in construct_data and 'description' in construct_data['Chief complaint']:
         scoring_options['Subjective Information'].append({
-            'element': 'Chief Complaint - Description',
+            'element': 'Chief complaint',
             'paca_value': construct_data['Chief complaint']['description'],
             'options': ['Correct', 'Partially correct', 'Incorrect'],
             'category': 'Subjective',
             'score_function': calculate_subjective_score
         })
     
-    # Present Illness - Symptoms
+    # Present Illness - Aggregated symptoms
     if 'Present illness' in construct_data:
         present_illness = construct_data['Present illness']
         
-        # Symptoms (name, alleviating factor, exacerbating factor)
-        for i in range(1, 6):
+        # Aggregate all symptoms into categories
+        symptom_names = []
+        alleviating_factors = []
+        exacerbating_factors = []
+        lengths = []
+        
+        for i in range(1, 10):  # Support up to 9 symptoms
             symptom_key = f'symptom_{i}'
             if symptom_key in present_illness:
                 symptom = present_illness[symptom_key]
                 
-                # Symptom Name
-                if 'name' in symptom:
-                    scoring_options['Subjective Information'].append({
-                        'element': f'Present Illness - Symptom {i} - Name',
-                        'paca_value': symptom['name'],
-                        'options': ['Correct', 'Partially correct', 'Incorrect'],
-                        'category': 'Subjective',
-                        'score_function': calculate_subjective_score
-                    })
+                if 'name' in symptom and symptom['name']:
+                    symptom_names.append(symptom['name'])
                 
-                # Alleviating Factor
-                if 'alleviating factor' in symptom:
-                    scoring_options['Subjective Information'].append({
-                        'element': f'Present Illness - Symptom {i} - Alleviating Factor',
-                        'paca_value': symptom['alleviating factor'],
-                        'options': ['Correct', 'Partially correct', 'Incorrect'],
-                        'category': 'Subjective',
-                        'score_function': calculate_subjective_score
-                    })
+                if 'alleviating factor' in symptom and symptom['alleviating factor']:
+                    alleviating_factors.append(symptom['alleviating factor'])
                 
-                # Exacerbating Factor
-                if 'exacerbating factor' in symptom:
-                    scoring_options['Subjective Information'].append({
-                        'element': f'Present Illness - Symptom {i} - Exacerbating Factor',
-                        'paca_value': symptom['exacerbating factor'],
-                        'options': ['Correct', 'Partially correct', 'Incorrect'],
-                        'category': 'Subjective',
-                        'score_function': calculate_subjective_score
-                    })
+                if 'exacerbating factor' in symptom and symptom['exacerbating factor']:
+                    exacerbating_factors.append(symptom['exacerbating factor'])
                 
-                # Length
-                if 'length' in symptom:
-                    scoring_options['Subjective Information'].append({
-                        'element': f'Present Illness - Symptom {i} - Length',
-                        'paca_value': symptom['length'],
-                        'options': ['Correct', 'Incorrect'],
-                        'category': 'Subjective',
-                        'score_function': calculate_length_score
-                    })
+                if 'length' in symptom and symptom['length']:
+                    lengths.append(symptom['length'])
+        
+        # Symptom name (aggregated)
+        if symptom_names:
+            combined_names = '\n'.join(f"- {name}" for name in symptom_names)
+            scoring_options['Subjective Information'].append({
+                'element': 'Symptom name',
+                'paca_value': combined_names,
+                'options': ['Correct', 'Partially correct', 'Incorrect'],
+                'category': 'Subjective',
+                'score_function': calculate_subjective_score
+            })
+        
+        # Alleviating factor (aggregated)
+        if alleviating_factors:
+            combined_alleviating = '\n'.join(f"- {factor}" for factor in alleviating_factors)
+            scoring_options['Subjective Information'].append({
+                'element': 'Alleviating factor',
+                'paca_value': combined_alleviating,
+                'options': ['Correct', 'Partially correct', 'Incorrect'],
+                'category': 'Subjective',
+                'score_function': calculate_subjective_score
+            })
+        
+        # Exacerbating factor (aggregated)
+        if exacerbating_factors:
+            combined_exacerbating = '\n'.join(f"- {factor}" for factor in exacerbating_factors)
+            scoring_options['Subjective Information'].append({
+                'element': 'Exacerbating factor',
+                'paca_value': combined_exacerbating,
+                'options': ['Correct', 'Partially correct', 'Incorrect'],
+                'category': 'Subjective',
+                'score_function': calculate_subjective_score
+            })
+        
+        # Length (max value)
+        if lengths:
+            try:
+                max_length = max(int(l) for l in lengths if str(l).replace('-', '').isdigit())
+                scoring_options['Subjective Information'].append({
+                    'element': 'length',
+                    'paca_value': str(max_length),
+                    'options': ['Correct', 'Incorrect'],
+                    'category': 'Subjective',
+                    'score_function': calculate_length_score
+                })
+            except:
+                pass
         
         # Triggering factor
-        if 'triggering_factor' in present_illness:
+        if 'triggering_factor' in present_illness and present_illness['triggering_factor']:
             scoring_options['Subjective Information'].append({
-                'element': 'Present Illness - Triggering Factor',
+                'element': 'Triggering factor',
                 'paca_value': present_illness['triggering_factor'],
                 'options': ['Correct', 'Partially correct', 'Incorrect'],
                 'category': 'Subjective',
@@ -279,9 +305,9 @@ def get_scoring_options(construct_data):
             })
         
         # Stressor
-        if 'stressor' in present_illness:
+        if 'stressor' in present_illness and present_illness['stressor']:
             scoring_options['Subjective Information'].append({
-                'element': 'Present Illness - Stressor',
+                'element': 'Stressor',
                 'paca_value': present_illness['stressor'],
                 'options': ['Correct', 'Partially correct', 'Incorrect'],
                 'category': 'Subjective',
@@ -292,18 +318,18 @@ def get_scoring_options(construct_data):
     if 'Family history' in construct_data:
         family_history = construct_data['Family history']
         
-        if 'diagnosis' in family_history:
+        if 'diagnosis' in family_history and family_history['diagnosis']:
             scoring_options['Subjective Information'].append({
-                'element': 'Family History - Diagnosis',
+                'element': 'Diagnosis',
                 'paca_value': family_history['diagnosis'],
                 'options': ['Correct', 'Partially correct', 'Incorrect'],
                 'category': 'Subjective',
                 'score_function': calculate_subjective_score
             })
         
-        if 'substance use' in family_history:
+        if 'substance use' in family_history and family_history['substance use']:
             scoring_options['Subjective Information'].append({
-                'element': 'Family History - Substance Use',
+                'element': 'Substance use',
                 'paca_value': family_history['substance use'],
                 'options': ['Correct', 'Partially correct', 'Incorrect'],
                 'category': 'Subjective',
@@ -314,9 +340,9 @@ def get_scoring_options(construct_data):
     if 'Marriage_Relationship History' in construct_data:
         marriage = construct_data['Marriage_Relationship History']
         
-        if 'current family structure' in marriage:
+        if 'current family structure' in marriage and marriage['current family structure']:
             scoring_options['Subjective Information'].append({
-                'element': 'Marriage/Relationship History - Current Family Structure',
+                'element': 'Current family structure',
                 'paca_value': marriage['current family structure'],
                 'options': ['Correct', 'Partially correct', 'Incorrect'],
                 'category': 'Subjective',
@@ -331,9 +357,9 @@ def get_scoring_options(construct_data):
         impulsivity = construct_data['Impulsivity']
         
         # Suicidal ideation
-        if 'Suicidal ideation' in impulsivity:
+        if 'Suicidal ideation' in impulsivity and impulsivity['Suicidal ideation']:
             scoring_options['Impulsivity'].append({
-                'element': 'Suicidal Ideation',
+                'element': 'Suicidal ideation',
                 'paca_value': impulsivity['Suicidal ideation'],
                 'options': ['High', 'Moderate', 'Low'],
                 'category': 'Impulsivity',
@@ -341,9 +367,9 @@ def get_scoring_options(construct_data):
             })
         
         # Self mutilating behavior risk
-        if 'Self mutilating behavior risk' in impulsivity:
+        if 'Self mutilating behavior risk' in impulsivity and impulsivity['Self mutilating behavior risk']:
             scoring_options['Impulsivity'].append({
-                'element': 'Self Mutilating Behavior Risk',
+                'element': 'Self mutilating behavior risk',
                 'paca_value': impulsivity['Self mutilating behavior risk'],
                 'options': ['High', 'Moderate', 'Low'],
                 'category': 'Impulsivity',
@@ -351,9 +377,9 @@ def get_scoring_options(construct_data):
             })
         
         # Homicide risk
-        if 'Homicide risk' in impulsivity:
+        if 'Homicide risk' in impulsivity and impulsivity['Homicide risk']:
             scoring_options['Impulsivity'].append({
-                'element': 'Homicide Risk',
+                'element': 'Homicide risk',
                 'paca_value': impulsivity['Homicide risk'],
                 'options': ['High', 'Moderate', 'Low'],
                 'category': 'Impulsivity',
@@ -361,9 +387,9 @@ def get_scoring_options(construct_data):
             })
         
         # Suicidal plan
-        if 'Suicidal plan' in impulsivity:
+        if 'Suicidal plan' in impulsivity and impulsivity['Suicidal plan']:
             scoring_options['Impulsivity'].append({
-                'element': 'Suicidal Plan',
+                'element': 'Suicidal plan',
                 'paca_value': impulsivity['Suicidal plan'],
                 'options': ['Correct AND Evaluated properly', 'Incorrect OR NOT evaluated'],
                 'category': 'Impulsivity',
@@ -371,9 +397,9 @@ def get_scoring_options(construct_data):
             })
         
         # Suicidal attempt
-        if 'Suicidal attempt' in impulsivity:
+        if 'Suicidal attempt' in impulsivity and impulsivity['Suicidal attempt']:
             scoring_options['Impulsivity'].append({
-                'element': 'Suicidal Attempt',
+                'element': 'Suicidal attempt',
                 'paca_value': impulsivity['Suicidal attempt'],
                 'options': ['Correct AND Evaluated properly', 'Incorrect OR NOT evaluated'],
                 'category': 'Impulsivity',
@@ -388,9 +414,9 @@ def get_scoring_options(construct_data):
         mse = construct_data['Mental Status Examination']
         
         # Mood
-        if 'Mood' in mse:
+        if 'Mood' in mse and mse['Mood']:
             scoring_options['Behavior (Mental Status Examination)'].append({
-                'element': 'MSE - Mood',
+                'element': 'Mood',
                 'paca_value': mse['Mood'],
                 'options': ['Irritable', 'Euphoric', 'Elated', 'Euthymic', 'Dysphoric', 'Depressed'],
                 'category': 'Behavior',
@@ -398,9 +424,9 @@ def get_scoring_options(construct_data):
             })
         
         # Verbal productivity
-        if 'Verbal productivity' in mse:
+        if 'Verbal productivity' in mse and mse['Verbal productivity']:
             scoring_options['Behavior (Mental Status Examination)'].append({
-                'element': 'MSE - Verbal Productivity',
+                'element': 'Verbal productivity',
                 'paca_value': mse['Verbal productivity'],
                 'options': ['Increased', 'Moderate', 'Decreased'],
                 'category': 'Behavior',
@@ -408,9 +434,9 @@ def get_scoring_options(construct_data):
             })
         
         # Insight
-        if 'Insight' in mse:
+        if 'Insight' in mse and mse['Insight']:
             scoring_options['Behavior (Mental Status Examination)'].append({
-                'element': 'MSE - Insight',
+                'element': 'Insight',
                 'paca_value': mse['Insight'],
                 'options': [
                     'Complete denial of illness',
@@ -423,70 +449,70 @@ def get_scoring_options(construct_data):
                 'score_function': 'insight'
             })
         
-        # Affect
-        if 'Affect' in mse:
+        # Affect (G-Eval style - categorical)
+        if 'Affect' in mse and mse['Affect']:
             scoring_options['Behavior (Mental Status Examination)'].append({
-                'element': 'MSE - Affect',
+                'element': 'Affect',
                 'paca_value': mse['Affect'],
                 'options': ['Correct', 'Partially correct', 'Incorrect'],
                 'category': 'Behavior',
                 'score_function': calculate_categorical_score
             })
         
-        # Perception
-        if 'Perception' in mse:
+        # Perception (G-Eval style - categorical)
+        if 'Perception' in mse and mse['Perception']:
             scoring_options['Behavior (Mental Status Examination)'].append({
-                'element': 'MSE - Perception',
+                'element': 'Perception',
                 'paca_value': mse['Perception'],
                 'options': ['Correct', 'Partially correct', 'Incorrect'],
                 'category': 'Behavior',
                 'score_function': calculate_categorical_score
             })
         
-        # Thought process
-        if 'Thought process' in mse:
+        # Thought process (G-Eval style - categorical)
+        if 'Thought process' in mse and mse['Thought process']:
             scoring_options['Behavior (Mental Status Examination)'].append({
-                'element': 'MSE - Thought Process',
+                'element': 'Thought process',
                 'paca_value': mse['Thought process'],
                 'options': ['Correct', 'Partially correct', 'Incorrect'],
                 'category': 'Behavior',
                 'score_function': calculate_categorical_score
             })
         
-        # Thought content
-        if 'Thought content' in mse:
+        # Thought content (G-Eval style - categorical)
+        if 'Thought content' in mse and mse['Thought content']:
             scoring_options['Behavior (Mental Status Examination)'].append({
-                'element': 'MSE - Thought Content',
+                'element': 'Thought content',
                 'paca_value': mse['Thought content'],
                 'options': ['Correct', 'Partially correct', 'Incorrect'],
                 'category': 'Behavior',
                 'score_function': calculate_categorical_score
             })
         
-        # Spontaneity
-        if 'Spontaneity' in mse:
+        # Spontaneity (Binary)
+        if 'Spontaneity' in mse and mse['Spontaneity']:
             scoring_options['Behavior (Mental Status Examination)'].append({
-                'element': 'MSE - Spontaneity',
+                'element': 'Spontaneity',
                 'paca_value': mse['Spontaneity'],
                 'options': ['Correct', 'Incorrect'],
                 'category': 'Behavior',
                 'score_function': calculate_binary_score
             })
         
-        # Social judgement
-        if 'Social judgement' in mse:
+        # Social judgement (Binary)
+        if 'Social judgement' in mse and mse['Social judgement']:
             scoring_options['Behavior (Mental Status Examination)'].append({
-                'element': 'MSE - Social Judgement',
+                'element': 'Social judgement',
                 'paca_value': mse['Social judgement'],
                 'options': ['Correct', 'Incorrect'],
                 'category': 'Behavior',
                 'score_function': calculate_binary_score
             })
         
-        # Reliability
-        if 'Reliability' in mse:
+        # Reliability (Binary)
+        if 'Reliability' in mse and mse['Reliability']:
             scoring_options['Behavior (Mental Status Examination)'].append({
-                'element': 'MSE - Reliability',
+                'element': 'Reliability',
                 'paca_value': mse['Reliability'],
                 'options': ['Correct', 'Incorrect'],
                 'category': 'Behavior',
@@ -495,6 +521,18 @@ def get_scoring_options(construct_data):
     
     return scoring_options
 
+
+# ================================
+# Scoring Options Generator (Legacy - for compatibility)
+# ================================
+
+def get_scoring_options(construct_data):
+    """
+    Legacy function - now redirects to get_aggregated_scoring_options
+    Generate scoring options based on construct data
+    Returns a dictionary with categories and their scoring elements
+    """
+    return get_aggregated_scoring_options(construct_data)
 
 # ================================
 # Result Creation
@@ -511,12 +549,12 @@ def extract_score_from_option(option_text):
 
 def create_validation_result(construct_data, expert_responses, exp_item, is_partial=False):
     """
-    Create validation result JSON structure
-    Returns a dictionary with element-level scores and total expert score
+    Create validation result JSON structure (Psyche validation style)
+    Returns a dictionary with aggregated element-level scores and total psyche score
     
     Args:
         construct_data: PACA construct data
-        expert_responses: Expert's responses for each element
+        expert_responses: Expert's responses for each element (already aggregated)
         exp_item: Tuple of (client_number, exp_number)
         is_partial: Boolean indicating if this is a partial save (default: False)
     """
@@ -530,7 +568,8 @@ def create_validation_result(construct_data, expert_responses, exp_item, is_part
         'elements': {}
     }
     
-    scoring_options = get_scoring_options(construct_data)
+    # Get aggregated scoring options (already following PSYCHE RUBRIC structure)
+    scoring_options = get_aggregated_scoring_options(construct_data)
     
     total_weighted_score = 0
     
@@ -592,21 +631,16 @@ def create_validation_result(construct_data, expert_responses, exp_item, is_part
             weighted_score = score * weight
             total_weighted_score += weighted_score
             
-            # Sanitize element name for Firebase
-            sanitized_element_name = sanitize_firebase_key(element_name)
-            
-            # Store element result
-            result['elements'][sanitized_element_name] = {
-                'element_name_original': element_name,  # Keep original name for reference
-                'expert_choice': expert_choice,
+            # Store element result directly (no need for aggregation since already aggregated)
+            result['elements'][element_name] = {
                 'paca_content': str(paca_content),
                 'score': score,
                 'weight': weight,
                 'weighted_score': weighted_score
             }
     
-    # Add total expert score
-    result['expert_score'] = total_weighted_score
+    # Add total psyche score (matching psyche validation format)
+    result['psyche_score'] = total_weighted_score
     
     return result
 
