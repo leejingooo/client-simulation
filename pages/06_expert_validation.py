@@ -240,6 +240,11 @@ def show_validation_page():
                         original_name = element_data.get('element_name_original', element_name)
                         loaded_responses[original_name] = element_data['expert_choice']
                 st.session_state.validation_responses[exp_key] = loaded_responses
+                
+                # Also load quality assessment if exists
+                if 'quality_assessment' in existing_response:
+                    quality_key = f"{exp_key}_quality"
+                    st.session_state.validation_responses[quality_key] = existing_response['quality_assessment']
         
         st.session_state.firebase_loaded = True
         
@@ -345,6 +350,11 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
         
         current_responses = st.session_state.validation_responses[exp_key]
         
+        # Initialize quality assessment responses
+        quality_key = f"{exp_key}_quality"
+        if quality_key not in st.session_state.validation_responses:
+            st.session_state.validation_responses[quality_key] = {}
+        
         # Display scoring options by category
         scoring_options = get_scoring_options(construct_data)
         
@@ -395,6 +405,55 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
                 st.markdown("")
         
         st.session_state.validation_responses[exp_key] = current_responses
+        
+        # ================================
+        # PACA Quality Assessment (Likert Scale)
+        # ================================
+        st.markdown("---")
+        st.markdown("### 🎯 PACA 시뮬레이션 품질 평가")
+        st.info("아래 3가지 항목에 대해 1-5점 척도로 PACA의 전반적인 면담 품질을 평가해주세요.")
+        
+        from expert_validation_utils import PACA_QUALITY_CRITERIA
+        
+        quality_responses = st.session_state.validation_responses[quality_key]
+        
+        for criterion_name, criterion_data in PACA_QUALITY_CRITERIA.items():
+            st.markdown(f"#### {criterion_name}")
+            st.caption(criterion_data['description'])
+            
+            # Create expander for detailed criteria
+            with st.expander("📖 평가 기준 및 예시 보기"):
+                for score, details in criterion_data['scale'].items():
+                    st.markdown(f"**{details['label']}**")
+                    st.markdown(f"- {details['description']}")
+                    st.markdown(f"- *Example: {details['example']}*")
+                    st.markdown("")
+            
+            # Radio buttons for scoring
+            score_options = [f"{i}점" for i in range(1, 6)]
+            
+            # Get default value if already responded
+            default_idx = 0
+            if criterion_name in quality_responses:
+                try:
+                    saved_score = quality_responses[criterion_name]
+                    default_idx = int(saved_score) - 1  # Convert 1-5 to 0-4 index
+                except (ValueError, TypeError):
+                    default_idx = 0
+            
+            selected_score = st.radio(
+                f"{criterion_name} 점수 선택",
+                score_options,
+                index=default_idx,
+                key=f"{quality_key}_{criterion_name}",
+                horizontal=True
+            )
+            
+            # Store the numeric score (1-5)
+            quality_responses[criterion_name] = int(selected_score[0])  # Extract number from "X점"
+            st.markdown("")
+        
+        st.session_state.validation_responses[quality_key] = quality_responses
     
     # Save and navigation buttons
     st.markdown("---")
@@ -419,6 +478,8 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
                 exp_item,
                 is_partial=True  # Mark as partial save
             )
+            # Add quality assessment
+            validation_result['quality_assessment'] = st.session_state.validation_responses.get(quality_key, {})
             
             success = save_validation_to_firebase(
                 firebase_ref,
@@ -446,6 +507,8 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
                 current_responses,
                 exp_item  # Pass (client_number, exp_number) tuple
             )
+            # Add quality assessment
+            validation_result['quality_assessment'] = st.session_state.validation_responses.get(quality_key, {})
             
             # Save to Firebase
             success = save_validation_to_firebase(

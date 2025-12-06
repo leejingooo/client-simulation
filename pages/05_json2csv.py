@@ -308,13 +308,49 @@ def expert_validation_converter():
                             with st.expander("📋 Preview JSON Data"):
                                 st.json(expert_data)
                             
-                            # Show Expert score if available
-                            if 'expert_score' in expert_data:
-                                st.metric(
-                                    "Expert Score",
-                                    f"{expert_data['expert_score']:.2f}",
-                                    help="Sum of all weighted scores"
-                                )
+                            # Show scores if available
+                            col1, col2 = st.columns(2)
+                            
+                            with col1:
+                                # Show Expert score if available
+                                if 'expert_score' in expert_data:
+                                    st.metric(
+                                        "Expert Score",
+                                        f"{expert_data['expert_score']:.2f}",
+                                        help="Sum of all weighted scores from PSYCHE RUBRIC"
+                                    )
+                            
+                            with col2:
+                                # Show PIQSCA score if available
+                                quality_assessment = expert_data.get('quality_assessment', {})
+                                if quality_assessment:
+                                    piqsca_total = sum([
+                                        quality_assessment.get('Process of the Interview', 0),
+                                        quality_assessment.get('Techniques', 0),
+                                        quality_assessment.get('Information for Diagnosis', 0)
+                                    ])
+                                    st.metric(
+                                        "PIQSCA Score",
+                                        f"{piqsca_total}",
+                                        help="PACA Interview Quality SCore Assessment (Total: 3-15)"
+                                    )
+                            
+                            # Show individual quality scores if available
+                            if quality_assessment:
+                                st.markdown("**Quality Assessment Breakdown:**")
+                                qual_cols = st.columns(3)
+                                
+                                with qual_cols[0]:
+                                    st.caption("Process")
+                                    st.write(f"⭐ {quality_assessment.get('Process of the Interview', 'N/A')}/5")
+                                
+                                with qual_cols[1]:
+                                    st.caption("Techniques")
+                                    st.write(f"⭐ {quality_assessment.get('Techniques', 'N/A')}/5")
+                                
+                                with qual_cols[2]:
+                                    st.caption("Information")
+                                    st.write(f"⭐ {quality_assessment.get('Information for Diagnosis', 'N/A')}/5")
                             
                             # Convert to CSV and show preview
                             try:

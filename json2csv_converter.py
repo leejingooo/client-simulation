@@ -177,6 +177,57 @@ def expert_validation_json_to_csv(validation_data: Dict[str, Any]) -> str:
             'weighted_score': validation_data['expert_score']
         })
     
+    # Add quality assessment scores (PIQSCA - PACA Interview Quality SCore Assessment)
+    quality_assessment = validation_data.get('quality_assessment', {})
+    
+    if quality_assessment:
+        # Add each quality criterion
+        if 'Process of the Interview' in quality_assessment:
+            rows.append({
+                'element': 'PIQSCA - Process of the Interview',
+                'expert_choice': '',
+                'paca_content': '',
+                'score': quality_assessment['Process of the Interview'],
+                'weight': '',
+                'weighted_score': ''
+            })
+        
+        if 'Techniques' in quality_assessment:
+            rows.append({
+                'element': 'PIQSCA - Techniques',
+                'expert_choice': '',
+                'paca_content': '',
+                'score': quality_assessment['Techniques'],
+                'weight': '',
+                'weighted_score': ''
+            })
+        
+        if 'Information for Diagnosis' in quality_assessment:
+            rows.append({
+                'element': 'PIQSCA - Information for Diagnosis',
+                'expert_choice': '',
+                'paca_content': '',
+                'score': quality_assessment['Information for Diagnosis'],
+                'weight': '',
+                'weighted_score': ''
+            })
+        
+        # Calculate PIQSCA total score (sum of all three)
+        piqsca_total = sum([
+            quality_assessment.get('Process of the Interview', 0),
+            quality_assessment.get('Techniques', 0),
+            quality_assessment.get('Information for Diagnosis', 0)
+        ])
+        
+        rows.append({
+            'element': 'PIQSCA SCORE (Total)',
+            'expert_choice': '',
+            'paca_content': '',
+            'score': '',
+            'weight': '',
+            'weighted_score': piqsca_total
+        })
+    
     # Create DataFrame
     df = pd.DataFrame(rows)
     
@@ -227,6 +278,57 @@ def expert_validation_json_to_dataframe(validation_data: Dict[str, Any]) -> pd.D
             'score': '',
             'weight': '',
             'weighted_score': validation_data['expert_score']
+        })
+    
+    # Add quality assessment scores (PIQSCA - PACA Interview Quality SCore Assessment)
+    quality_assessment = validation_data.get('quality_assessment', {})
+    
+    if quality_assessment:
+        # Add each quality criterion
+        if 'Process of the Interview' in quality_assessment:
+            rows.append({
+                'element': 'PIQSCA - Process of the Interview',
+                'expert_choice': '',
+                'paca_content': '',
+                'score': quality_assessment['Process of the Interview'],
+                'weight': '',
+                'weighted_score': ''
+            })
+        
+        if 'Techniques' in quality_assessment:
+            rows.append({
+                'element': 'PIQSCA - Techniques',
+                'expert_choice': '',
+                'paca_content': '',
+                'score': quality_assessment['Techniques'],
+                'weight': '',
+                'weighted_score': ''
+            })
+        
+        if 'Information for Diagnosis' in quality_assessment:
+            rows.append({
+                'element': 'PIQSCA - Information for Diagnosis',
+                'expert_choice': '',
+                'paca_content': '',
+                'score': quality_assessment['Information for Diagnosis'],
+                'weight': '',
+                'weighted_score': ''
+            })
+        
+        # Calculate PIQSCA total score (sum of all three)
+        piqsca_total = sum([
+            quality_assessment.get('Process of the Interview', 0),
+            quality_assessment.get('Techniques', 0),
+            quality_assessment.get('Information for Diagnosis', 0)
+        ])
+        
+        rows.append({
+            'element': 'PIQSCA SCORE (Total)',
+            'expert_choice': '',
+            'paca_content': '',
+            'score': '',
+            'weight': '',
+            'weighted_score': piqsca_total
         })
     
     return pd.DataFrame(rows)
