@@ -35,7 +35,7 @@
         }
     },
     "Family history": {
-        "presence": "blank (data_type:boolean, range_candidate_guide: Randomize(50%) the presence or absence of family history. If 'false', then remove all children of 'Family history' except this 'presence' which has 'false' as a child.)",
+        "presence": "true",
         "diagnosis_n (INSTRUCTION: Replace with 'diagnosis_1', 'diagnosis_2', etc. as separate sibling keys if multiple family diagnoses exist.)": "blank (data_type:string, range_candidate_guide: Describe a psychiatric family history. Given the patient's current diagnosis, set a probable family history.)",
         "substance_use_n (INSTRUCTION: Replace with 'substance_use_1', 'substance_use_2', etc. as separate sibling keys if multiple substance use histories exist.)": "blank (data_type:string, range_candidate_guide: Describe a family history of substance use (alcohol, opioid, cannabinoid, hallucinogen, stimulant, narcotic, etc.).)"
     },
