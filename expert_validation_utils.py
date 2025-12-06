@@ -70,6 +70,20 @@ def calculate_length_score(selected_option):
         return 0
 
 
+def is_none_or_na(value):
+    """
+    Check if value is None, N/A, or similar
+    Returns True if the value should be treated as missing/invalid
+    """
+    if value is None:
+        return True
+    if isinstance(value, str):
+        normalized = value.strip().upper()
+        if normalized in ['N/A', 'NA', 'NONE', '', 'NULL']:
+            return True
+    return False
+
+
 def calculate_risk_score(delta):
     """
     Calculate score for risk assessment (Suicidal ideation, Self-mutilating behavior, Homicide risk)
@@ -90,7 +104,13 @@ def calculate_risk_score_from_values(expert_value, paca_value):
     Calculate score for risk assessment based on expert and PACA values
     expert_value, paca_value: 'high', 'moderate', or 'low' (case-insensitive)
     Delta = (PACA value) - (Expert value)
+    
+    Returns 0 if PACA value is None or N/A
     """
+    # Check if PACA value is missing
+    if is_none_or_na(paca_value):
+        return 0
+    
     # Normalize values
     expert_val = expert_value.lower() if expert_value else 'low'
     paca_val = paca_value.lower() if paca_value else 'low'
@@ -109,7 +129,13 @@ def calculate_ordinal_score_from_values(expert_value, paca_value, value_mapping)
     """
     Calculate score for ordinal variables based on expert and PACA values
     Delta = abs((PACA value) - (Expert value))
+    
+    Returns 0 if PACA value is None or N/A
     """
+    # Check if PACA value is missing
+    if is_none_or_na(paca_value):
+        return 0
+    
     # Normalize values
     expert_val = expert_value.lower() if expert_value else ''
     paca_val = paca_value.lower() if paca_value else ''
@@ -121,18 +147,6 @@ def calculate_ordinal_score_from_values(expert_value, paca_value, value_mapping)
     delta = paca_num - expert_num
     
     return calculate_ordinal_score(delta)
-    """
-    Calculate score for risk assessment (Suicidal ideation, Self-mutilating behavior, Homicide risk)
-    Delta = (PACA value) - (Expert value)
-    """
-    if delta < 0:
-        return 0
-    elif delta == 0:
-        return 1
-    elif delta == 1:
-        return 0.5
-    else:  # delta >= 2
-        return 0
 
 
 def calculate_plan_attempt_score(selected_option):
@@ -495,7 +509,7 @@ def extract_score_from_option(option_text):
     return 0
 
 
-def create_validation_result(construct_data, expert_responses, exp_item):
+def create_validation_result(construct_data, expert_responses, exp_item, is_partial=False):
     """
     Create validation result JSON structure
     Returns a dictionary with element-level scores and total expert score
@@ -504,6 +518,7 @@ def create_validation_result(construct_data, expert_responses, exp_item):
         construct_data: PACA construct data
         expert_responses: Expert's responses for each element
         exp_item: Tuple of (client_number, exp_number)
+        is_partial: Boolean indicating if this is a partial save (default: False)
     """
     client_number, exp_number = exp_item
     
@@ -511,6 +526,7 @@ def create_validation_result(construct_data, expert_responses, exp_item):
         'client_number': client_number,
         'experiment_number': exp_number,
         'timestamp': int(datetime.now().timestamp()),
+        'is_partial': is_partial,
         'elements': {}
     }
     
@@ -530,43 +546,48 @@ def create_validation_result(construct_data, expert_responses, exp_item):
             paca_content = item['paca_value']
             score_func_type = item.get('score_function', None)
             
-            # Determine category weight
-            if 'Subjective' in category:
-                weight = WEIGHTS['Subjective']
-            elif 'Impulsivity' in category:
-                weight = WEIGHTS['Impulsivity']
-            else:  # Behavior
-                weight = WEIGHTS['Behavior']
-            
-            # Calculate score based on function type
-            score = 0
-            
-            if score_func_type == 'risk':
-                # Risk assessment (Impulsivity)
-                score = calculate_risk_score_from_values(expert_choice, paca_content)
-            elif score_func_type == 'mood':
-                # Mood (ordinal)
-                score = calculate_ordinal_score_from_values(expert_choice, paca_content, MOOD_VALUES)
-            elif score_func_type == 'verbal_productivity':
-                # Verbal productivity (ordinal)
-                score = calculate_ordinal_score_from_values(expert_choice, paca_content, VERBAL_PRODUCTIVITY_VALUES)
-            elif score_func_type == 'insight':
-                # Insight (ordinal)
-                score = calculate_ordinal_score_from_values(expert_choice, paca_content, INSIGHT_VALUES)
-            elif callable(score_func_type):
-                # Callable function
-                score = score_func_type(expert_choice)
+            # Check if PACA content is None or N/A - automatic 0 score
+            if is_none_or_na(paca_content):
+                score = 0
+                weight = 0  # Set weight to 0 for missing data
             else:
-                # Default: extract from option text or use 0
-                score = extract_score_from_option(expert_choice)
-                if score == 0:
-                    # Try to use default scoring based on text
-                    if expert_choice == "Correct":
-                        score = 1
-                    elif expert_choice == "Partially correct":
-                        score = 0.5
-                    elif expert_choice == "Correct AND Evaluated properly":
-                        score = 1
+                # Determine category weight
+                if 'Subjective' in category:
+                    weight = WEIGHTS['Subjective']
+                elif 'Impulsivity' in category:
+                    weight = WEIGHTS['Impulsivity']
+                else:  # Behavior
+                    weight = WEIGHTS['Behavior']
+                
+                # Calculate score based on function type
+                score = 0
+                
+                if score_func_type == 'risk':
+                    # Risk assessment (Impulsivity)
+                    score = calculate_risk_score_from_values(expert_choice, paca_content)
+                elif score_func_type == 'mood':
+                    # Mood (ordinal)
+                    score = calculate_ordinal_score_from_values(expert_choice, paca_content, MOOD_VALUES)
+                elif score_func_type == 'verbal_productivity':
+                    # Verbal productivity (ordinal)
+                    score = calculate_ordinal_score_from_values(expert_choice, paca_content, VERBAL_PRODUCTIVITY_VALUES)
+                elif score_func_type == 'insight':
+                    # Insight (ordinal)
+                    score = calculate_ordinal_score_from_values(expert_choice, paca_content, INSIGHT_VALUES)
+                elif callable(score_func_type):
+                    # Callable function
+                    score = score_func_type(expert_choice)
+                else:
+                    # Default: extract from option text or use 0
+                    score = extract_score_from_option(expert_choice)
+                    if score == 0:
+                        # Try to use default scoring based on text
+                        if expert_choice == "Correct":
+                            score = 1
+                        elif expert_choice == "Partially correct":
+                            score = 0.5
+                        elif expert_choice == "Correct AND Evaluated properly":
+                            score = 1
             
             weighted_score = score * weight
             total_weighted_score += weighted_score

@@ -45,6 +45,8 @@ def init_session_state():
         st.session_state.validation_responses = {}
     if 'expert_name' not in st.session_state:
         st.session_state.expert_name = None
+    if 'firebase_loaded' not in st.session_state:
+        st.session_state.firebase_loaded = False
 
 # ================================
 # Authentication Check
@@ -168,7 +170,7 @@ def show_test_page():
         st.subheader("✅ 평가 예시")
         
         st.markdown("**Chief Complaint - Description**")
-        st.caption(f"PACA 값: 요즘 계속 너무 지치고, 뭐든 다 버겁고, 없어져 버리고 싶다는 생각이 자꾸 난다")
+        st.info(f"📌 PACA 값: **요즘 계속 너무 지치고, 뭐든 다 버겁고, 없어져 버리고 싶다는 생각이 자꾸 난다**")
         st.selectbox(
             "평가",
             ["Correct", "Partially correct", "Incorrect"],
@@ -178,7 +180,7 @@ def show_test_page():
         
         st.markdown("")
         st.markdown("**MSE - Mood**")
-        st.caption(f"PACA 값: depressed, dysphoric")
+        st.info(f"📌 PACA 값: **depressed, dysphoric**")
         st.selectbox(
             "Expert의 판단",
             ["Irritable", "Euphoric", "Elated", "Euthymic", "Dysphoric", "Depressed"],
@@ -187,6 +189,7 @@ def show_test_page():
             label_visibility="collapsed"
         )
         st.info("💡 Expert는 자신의 판단만 선택하면 됩니다. Score는 자동으로 계산됩니다.")
+        st.warning("⚠️ PACA 값이 None 또는 N/A인 경우 자동으로 0점 처리됩니다.")
     
     st.markdown("---")
     col1, col2, col3 = st.columns([1, 1, 1])
@@ -208,13 +211,38 @@ def show_validation_page():
         st.error("Firebase 연결에 실패했습니다. 설정을 확인해주세요.")
         st.stop()
     
-    # Load progress
+    # Load progress from Firebase (only once per session)
     expert_name = st.session_state.expert_name
-    progress_data = load_validation_progress(firebase_ref, expert_name)
     
-    if progress_data:
-        st.session_state.validation_responses = progress_data.get('responses', {})
-        st.session_state.current_experiment_index = progress_data.get('current_index', 0)
+    if not st.session_state.get('firebase_loaded', False):
+        with st.spinner(f'{expert_name}님의 저장된 검증 결과를 불러오는 중...'):
+            progress_data = load_validation_progress(firebase_ref, expert_name)
+        
+        if progress_data:
+            st.session_state.validation_responses = progress_data.get('responses', {})
+            st.session_state.current_experiment_index = progress_data.get('current_index', 0)
+        
+        # Also load individual validation results
+        for idx, (client_num, exp_num) in enumerate(EXPERIMENT_NUMBERS):
+            exp_key = f"{client_num}_{exp_num}"
+            firebase_key = f"expert_{expert_name}_{client_num}_{exp_num}"
+            
+            existing_response = firebase_ref.child(firebase_key).get()
+            if existing_response and 'elements' in existing_response:
+                # Convert elements to simple responses
+                loaded_responses = {}
+                for element_name, element_data in existing_response['elements'].items():
+                    if 'expert_choice' in element_data:
+                        loaded_responses[element_name] = element_data['expert_choice']
+                st.session_state.validation_responses[exp_key] = loaded_responses
+        
+        st.session_state.firebase_loaded = True
+        
+        # Show info about loaded data
+        if st.session_state.validation_responses:
+            loaded_count = len([k for k in st.session_state.validation_responses.keys() if st.session_state.validation_responses[k]])
+            if loaded_count > 0:
+                st.success(f"✅ 이전 검증 결과 {loaded_count}개를 불러왔습니다.")
     
     # Progress display
     current_idx = st.session_state.current_experiment_index
@@ -303,17 +331,10 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
             st.warning("대화 데이터 형식이 올바르지 않습니다.")
     
     with col2:
-        st.subheader("📊 PACA Construct")
-        st.markdown("---")
-        
-        # Display construct
-        with st.expander("📋 전체 Construct 보기", expanded=False):
-            st.json(construct_data)
-        
-        st.markdown("---")
         st.subheader("✅ 평가 항목")
+        st.markdown("---")
         
-        # Initialize response storage for this experiment
+        # Get current responses (already loaded from Firebase in show_validation_page)
         if exp_key not in st.session_state.validation_responses:
             st.session_state.validation_responses[exp_key] = {}
         
@@ -330,9 +351,9 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
                 options = item['options']
                 paca_value = item.get('paca_value', 'N/A')
                 
-                # Display PACA's value
+                # Display element name and PACA's value
                 st.markdown(f"**{element_name}**")
-                st.caption(f"PACA 값: {paca_value}")
+                st.info(f"📌 PACA 값: **{paca_value}**")
                 
                 # Create unique key for this element
                 key = f"{exp_key}_{element_name}"
@@ -367,11 +388,30 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
     
     with col1:
         if st.button("💾 중간 저장", use_container_width=True):
-            save_validation_progress(firebase_ref, st.session_state.expert_name, 
-                                   st.session_state.current_experiment_index,
-                                   st.session_state.validation_responses)
-            st.success("저장되었습니다!")
-            st.rerun()
+            # Save current responses to Firebase immediately
+            validation_result = create_validation_result(
+                construct_data,
+                current_responses,
+                exp_item,
+                is_partial=True  # Mark as partial save
+            )
+            
+            success = save_validation_to_firebase(
+                firebase_ref,
+                st.session_state.expert_name,
+                exp_item,
+                validation_result
+            )
+            
+            if success:
+                # Also save progress
+                save_validation_progress(firebase_ref, st.session_state.expert_name,
+                                       st.session_state.current_experiment_index,
+                                       st.session_state.validation_responses)
+                st.success("저장되었습니다!")
+                st.rerun()
+            else:
+                st.error("저장 실패. 다시 시도해주세요.")
     
     with col3:
         if st.button("✅ 완료 - 다음으로", use_container_width=True, type="primary"):
