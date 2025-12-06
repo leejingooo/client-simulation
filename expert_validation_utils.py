@@ -592,8 +592,12 @@ def create_validation_result(construct_data, expert_responses, exp_item, is_part
             weighted_score = score * weight
             total_weighted_score += weighted_score
             
+            # Sanitize element name for Firebase
+            sanitized_element_name = sanitize_firebase_key(element_name)
+            
             # Store element result
-            result['elements'][element_name] = {
+            result['elements'][sanitized_element_name] = {
+                'element_name_original': element_name,  # Keep original name for reference
                 'expert_choice': expert_choice,
                 'paca_content': str(paca_content),
                 'score': score,
@@ -611,6 +615,31 @@ def create_validation_result(construct_data, expert_responses, exp_item, is_part
 # Firebase Operations
 # ================================
 
+def sanitize_firebase_key(key):
+    """
+    Sanitize a string to be used as Firebase key or value
+    Firebase doesn't allow: . $ # [ ] /
+    """
+    if key is None:
+        return "None"
+    
+    key_str = str(key)
+    # Replace forbidden characters with underscores
+    replacements = {
+        '.': '_',
+        '$': '_',
+        '#': '_',
+        '[': '_',
+        ']': '_',
+        '/': '_'
+    }
+    
+    for char, replacement in replacements.items():
+        key_str = key_str.replace(char, replacement)
+    
+    return key_str
+
+
 def save_validation_to_firebase(firebase_ref, expert_name, exp_item, validation_result):
     """
     Save validation result to Firebase
@@ -623,7 +652,9 @@ def save_validation_to_firebase(firebase_ref, expert_name, exp_item, validation_
     """
     try:
         client_number, exp_number = exp_item
-        key = f"expert_{expert_name}_{client_number}_{exp_number}"
+        # Sanitize expert name to avoid Firebase key errors
+        sanitized_expert_name = sanitize_firebase_key(expert_name)
+        key = f"expert_{sanitized_expert_name}_{client_number}_{exp_number}"
         firebase_ref.child(key).set(validation_result)
         return True
     except Exception as e:
@@ -634,7 +665,9 @@ def save_validation_to_firebase(firebase_ref, expert_name, exp_item, validation_
 def load_validation_progress(firebase_ref, expert_name):
     """Load validation progress from Firebase"""
     try:
-        progress_key = f"expert_progress_{expert_name}"
+        # Sanitize expert name to match saved key
+        sanitized_expert_name = sanitize_firebase_key(expert_name)
+        progress_key = f"expert_progress_{sanitized_expert_name}"
         data = firebase_ref.child(progress_key).get()
         return data
     except Exception as e:

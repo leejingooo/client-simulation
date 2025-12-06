@@ -7,7 +7,8 @@ from expert_validation_utils import (
     create_validation_result,
     save_validation_to_firebase,
     load_validation_progress,
-    get_scoring_options
+    get_scoring_options,
+    sanitize_firebase_key
 )
 
 # ================================
@@ -225,7 +226,9 @@ def show_validation_page():
         # Also load individual validation results
         for idx, (client_num, exp_num) in enumerate(EXPERIMENT_NUMBERS):
             exp_key = f"{client_num}_{exp_num}"
-            firebase_key = f"expert_{expert_name}_{client_num}_{exp_num}"
+            # Sanitize expert name for Firebase key
+            sanitized_expert_name = sanitize_firebase_key(expert_name)
+            firebase_key = f"expert_{sanitized_expert_name}_{client_num}_{exp_num}"
             
             existing_response = firebase_ref.child(firebase_key).get()
             if existing_response and 'elements' in existing_response:
@@ -233,7 +236,9 @@ def show_validation_page():
                 loaded_responses = {}
                 for element_name, element_data in existing_response['elements'].items():
                     if 'expert_choice' in element_data:
-                        loaded_responses[element_name] = element_data['expert_choice']
+                        # Use original element name if available, otherwise use sanitized key
+                        original_name = element_data.get('element_name_original', element_name)
+                        loaded_responses[original_name] = element_data['expert_choice']
                 st.session_state.validation_responses[exp_key] = loaded_responses
         
         st.session_state.firebase_loaded = True
@@ -445,7 +450,9 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
 def save_validation_progress(firebase_ref, expert_name, current_index, responses):
     """Save validation progress to Firebase"""
     try:
-        progress_key = f"expert_progress_{expert_name}"
+        # Sanitize expert name for Firebase key
+        sanitized_expert_name = sanitize_firebase_key(expert_name)
+        progress_key = f"expert_progress_{sanitized_expert_name}"
         progress_data = {
             'current_index': current_index,
             'responses': responses,

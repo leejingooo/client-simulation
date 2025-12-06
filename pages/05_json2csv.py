@@ -1,6 +1,7 @@
 import streamlit as st
 from SP_utils import load_from_firebase, get_firebase_ref, check_client_exists
 from json2csv_converter import psyche_json_to_csv, expert_validation_json_to_csv
+from expert_validation_utils import sanitize_firebase_key
 import pandas as pd
 
 
@@ -222,16 +223,19 @@ def expert_validation_converter():
                 available_files = []
                 
                 try:
+                    # Sanitize expert name for Firebase key search
+                    sanitized_expert_name = sanitize_firebase_key(expert_name)
+                    
                     # Get all keys from Firebase
                     all_data = firebase_ref.get()
                     
                     if all_data:
                         # Search for expert_ files
                         for key in all_data.keys():
-                            # Keys are stored as: expert_{expert_name}_{client_number}_{exp_number}
-                            if key.startswith(f"expert_{expert_name}_"):
+                            # Keys are stored as: expert_{sanitized_expert_name}_{client_number}_{exp_number}
+                            if key.startswith(f"expert_{sanitized_expert_name}_"):
                                 # Extract the file info
-                                parts = key.replace(f"expert_{expert_name}_", "").split("_")
+                                parts = key.replace(f"expert_{sanitized_expert_name}_", "").split("_")
                                 
                                 if len(parts) >= 2:
                                     client_number = parts[0]
