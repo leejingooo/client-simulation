@@ -190,19 +190,37 @@ def create_sp_construct(client_number: str, profile_version: str, instruction_ve
     sp_construct["Present illness"]["stressor"] = stressor or ""
 
     # === Family History ===
-    # diagnosis_n can be string or list
-    diagnosis = get_nested_value(profile, "Family history.diagnosis_n")
-    if isinstance(diagnosis, list):
-        sp_construct["Family history"]["diagnosis"] = " ".join(str(d) for d in diagnosis) if diagnosis else ""
+    # Collect all diagnosis_1, diagnosis_2, etc.
+    family_history = get_nested_value(profile, "Family history")
+    if family_history and isinstance(family_history, dict):
+        # Collect diagnosis_n entries
+        diagnosis_values = []
+        for key in sorted(family_history.keys()):
+            if key.startswith("diagnosis_"):
+                val = family_history[key]
+                if val and str(val).strip() and str(val).lower() not in ['none', 'n/a', 'null']:
+                    diagnosis_values.append(str(val))
+        
+        if diagnosis_values:
+            sp_construct["Family history"]["diagnosis"] = " ".join(diagnosis_values)
+        else:
+            sp_construct["Family history"]["diagnosis"] = ""
+        
+        # Collect substance_use_n entries
+        substance_values = []
+        for key in sorted(family_history.keys()):
+            if key.startswith("substance_use_") or key.startswith("substance use_"):
+                val = family_history[key]
+                if val and str(val).strip() and str(val).lower() not in ['none', 'n/a', 'null']:
+                    substance_values.append(str(val))
+        
+        if substance_values:
+            sp_construct["Family history"]["substance use"] = " ".join(substance_values)
+        else:
+            sp_construct["Family history"]["substance use"] = ""
     else:
-        sp_construct["Family history"]["diagnosis"] = str(diagnosis) if diagnosis else ""
-
-    # substance_use_n can be string or list
-    substance = get_nested_value(profile, "Family history.substance_use_n")
-    if isinstance(substance, list):
-        sp_construct["Family history"]["substance use"] = " ".join(str(s) for s in substance) if substance else ""
-    else:
-        sp_construct["Family history"]["substance use"] = str(substance) if substance else ""
+        sp_construct["Family history"]["diagnosis"] = ""
+        sp_construct["Family history"]["substance use"] = ""
 
     # === Marriage/Relationship History ===
     family_struct = get_nested_value(profile, "Marriage_relationship history.current family structure")

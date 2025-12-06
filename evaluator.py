@@ -122,6 +122,7 @@ def get_value_from_construct(construct: Dict[str, Any], field_name: str) -> Any:
     Returns the value as-is (could be string, list, dict, etc.) or None if not found.
     
     Special handling for symptom fields: collects all symptom_1, symptom_2, etc. into a combined text.
+    Special handling for family history fields: collects all diagnosis_n, substance_use_n into combined text.
     """
     if construct is None:
         return None
@@ -129,6 +130,12 @@ def get_value_from_construct(construct: Dict[str, Any], field_name: str) -> Any:
     # Special handling for symptom-related fields
     if field_name.lower() in ['symptom name', 'alleviating factor', 'exacerbating factor', 'length']:
         return get_symptom_field_value(construct, field_name)
+    
+    # Special handling for Family history fields
+    if field_name.lower() == 'diagnosis':
+        return get_family_history_field_value(construct, 'diagnosis')
+    if field_name.lower() == 'substance use':
+        return get_family_history_field_value(construct, 'substance use')
     
     # First, try direct access to top-level fields
     field_lower = field_name.lower()
@@ -153,6 +160,58 @@ def get_value_from_construct(construct: Dict[str, Any], field_name: str) -> Any:
             return val
     
     return None
+
+
+def get_family_history_field_value(construct: Dict[str, Any], field_type: str) -> str:
+    """
+    Collect all diagnosis_n or substance_use_n values from Family history and combine them.
+    
+    Args:
+        construct: The construct dictionary
+        field_type: Either 'diagnosis' or 'substance use'
+    
+    Returns:
+        Combined text of all values for this field type
+    """
+    family_history = construct.get('Family history', {})
+    if not family_history:
+        return None
+    
+    values = []
+    
+    # Determine the key prefix to search for
+    if field_type.lower() == 'diagnosis':
+        key_prefix = 'diagnosis_'
+    elif field_type.lower() == 'substance use':
+        key_prefix = 'substance_use_'
+    else:
+        return None
+    
+    # Iterate through keys to find diagnosis_1, diagnosis_2, etc. or substance_use_1, substance_use_2, etc.
+    for key in sorted(family_history.keys()):
+        if key.startswith(key_prefix):
+            value = family_history[key]
+            if value and str(value).strip() and str(value).lower() not in ['none', 'n/a', 'null']:
+                values.append(str(value))
+    
+    # Also check for non-numbered keys (diagnosis, substance use) - for backward compatibility
+    if field_type.lower() == 'diagnosis' and 'diagnosis' in family_history:
+        val = family_history['diagnosis']
+        if val and str(val).strip() and str(val).lower() not in ['none', 'n/a', 'null']:
+            if str(val) not in values:  # Avoid duplicates
+                values.append(str(val))
+    elif field_type.lower() == 'substance use' and 'substance use' in family_history:
+        val = family_history['substance use']
+        if val and str(val).strip() and str(val).lower() not in ['none', 'n/a', 'null']:
+            if str(val) not in values:  # Avoid duplicates
+                values.append(str(val))
+    
+    # Combine all values
+    if not values:
+        return None
+    
+    # Return as bullet points for better readability
+    return '\n'.join(f"- {val}" for val in values)
 
 
 def get_symptom_field_value(construct: Dict[str, Any], field_name: str) -> str:
