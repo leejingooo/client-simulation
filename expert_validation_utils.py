@@ -56,28 +56,28 @@ PACA_QUALITY_CRITERIA = {
         'description': 'PACA가 면담 프로세스를 얼마나 잘 따랐는지 평가',
         'scale': {
             1: {
-                'label': '1점: 면담 프로세스의 구성 요소를 전혀 따르지 않음',
-                'description': '면담에 인식 가능한 구조가 없으며, 인사, 질문, 마무리와 같은 핵심 단계가 수행되지 않았습니다.',
+                'label': '1점',
+                'description': 'No components of the interview process were followed.',
                 'example': 'The interview lacked any recognizable structure, and key steps such as greeting, inquiry, or closing were not performed.'
             },
             2: {
-                'label': '2점: 면담 프로세스의 두 단계에서 중요한 구성 요소가 누락됨',
-                'description': '적절한 소개나 마무리와 같은 중요한 요소가 두 부분에서 빠졌습니다.',
+                'label': '2점',
+                'description': 'Vital components from two stages of the interview process (initial, near the end, or at the end) are missing.',
                 'example': 'Critical elements, such as a proper introduction or closure, were absent in two parts of the interview.'
             },
             3: {
-                'label': '3점: 면담 프로세스의 한 단계에서 중요한 구성 요소가 누락됨',
-                'description': '면담이 일반적으로 구조화되었지만, 환자를 따뜻하게 맞이하거나 세션을 적절히 마무리하는 것과 같은 하나의 핵심 구성 요소가 빠졌습니다.',
+                'label': '3점',
+                'description': 'A vital component from one stage of the interview process (initial, near the end, or at the end) is missing.',
                 'example': 'The interview was generally structured, but one key component, such as greeting the patient warmly or properly closing the session, was absent.'
             },
             4: {
-                'label': '4점: 면담 프로세스의 일부 측면이 불완전했지만 전반적인 구조는 유지됨',
-                'description': '몇 가지 사소한 단계가 생략되었지만, 소개부터 결론까지의 전반적인 흐름은 대부분 보존되었습니다.',
+                'label': '4점',
+                'description': 'Some aspects of the interview process were incomplete, but the overall structure of the interview was maintained.',
                 'example': 'While a few minor steps were skipped, the overall flow—from introduction to conclusion—was mostly preserved.'
             },
             5: {
-                'label': '5점: 면담 프로세스를 완전히 따름',
-                'description': '치료사가 환자를 따뜻하게 맞이하고 자신을 소개했으며, 개방형 질문으로 세션을 시작하고, 종료가 가까워졌음을 알렸고, 마지막에 진단 및 치료 옵션을 요약하거나 다음 세션에 대해 안내했습니다.',
+                'label': '5점',
+                'description': 'The interview process was fully followed. The therapist warmly greeted the patient and introduced themselves, began the session with an open-ended inquiry, informed the patient near the end that the interview was concluding soon, and, at the end, either summarized the diagnosis and treatment options or informed the patient about the next session.',
                 'example': 'The therapist demonstrated full adherence to the ideal interview structure, ensuring a smooth start, transition, and conclusion to the session.'
             }
         }
@@ -86,28 +86,28 @@ PACA_QUALITY_CRITERIA = {
         'description': 'PACA가 사용한 면담 기법의 질을 평가',
         'scale': {
             1: {
-                'label': '1점: 촉진적 개입이 전혀 사용되지 않음',
-                'description': '치료사가 환자의 의사소통을 장려하거나 지원하는 기법을 사용하지 않아 세션이 일방적이거나 비생산적이었습니다.',
+                'label': '1점',
+                'description': 'No facilitating interventions were used.',
                 'example': 'The therapist did not use any techniques to encourage or support the patient\'s communication, making the session purely one-sided or unproductive.'
             },
             2: {
-                'label': '2점: 촉진적 개입보다 방해적 개입이 더 많이 사용됨',
-                'description': '치료사의 개입이 도움이 되는 것보다 환자의 의사소통을 더 자주 방해했습니다 (예: 폐쇄형 질문, 복합 질문, 시기상조한 조언).',
+                'label': '2점',
+                'description': 'More obstructive interventions were used than facilitating ones.',
                 'example': 'The therapist\'s interventions hindered the patient\'s communication more often than they helped, such as closed-ended questions, compound questions, premature advice.'
             },
             3: {
-                'label': '3점: 촉진적 개입과 방해적 개입이 동등하게 사용됨',
-                'description': '치료사의 촉진적 개입(예: 강화, 반영, 감정 인정)이 방해적 행동(예: 폐쇄형 질문, 복합 질문, 시기상조한 조언)과 균형을 이뤘습니다.',
+                'label': '3점',
+                'description': 'An equal number of facilitating and obstructive interventions were used.',
                 'example': 'The therapist\'s facilitating interventions (e.g., reinforcement, reflection, and acknowledgment of emotion) were balanced by obstructive behaviors (e.g., closed-ended questions, compound questions, premature advice).'
             },
             4: {
-                'label': '4점: 일부 방해적 개입이 사용되었지만 촉진적 개입이 명백히 더 많음',
-                'description': '치료사가 때때로 방해적 기법을 사용했지만, 대부분의 개입은 환자가 자신을 표현하고 의미 있게 참여하도록 도왔습니다.',
+                'label': '4점',
+                'description': 'Some obstructive interventions were used, but there were clearly more facilitating interventions.',
                 'example': 'Although the therapist occasionally used obstructive techniques (e.g., closed-ended questions, compound questions, premature advice), the majority of their interventions helped the patient express themselves and engage meaningfully.'
             },
             5: {
-                'label': '5점: 모든 촉진적 개입이 적절히 사용되었으며 방해적 개입은 없음',
-                'description': '치료사가 일관되게 지지적 개입(예: 강화, 반영, 감정 인정)을 사용했으며 방해적 행동이 없어 원활하고 생산적인 세션을 만들었습니다.',
+                'label': '5점',
+                'description': 'All facilitating interventions were used appropriately, with no obstructive interventions.',
                 'example': 'The therapist consistently used supportive interventions, such as reinforcement, reflection, and acknowledgment of emotion, with no obstructive behaviors, creating a smooth and productive session.'
             }
         }
@@ -116,28 +116,28 @@ PACA_QUALITY_CRITERIA = {
         'description': 'PACA가 진단에 필요한 정보를 얼마나 충분히 수집했는지 평가',
         'scale': {
             1: {
-                'label': '1점: 정보가 없거나 중요한 정보가 누락됨',
-                'description': '면담에 진단적 인상을 형성하는 데 필요한 필수 세부 사항이 부족했습니다.',
+                'label': '1점',
+                'description': 'No information or vital information is missing',
                 'example': 'The interview lacked essential details needed to form any diagnostic impressions.'
             },
             2: {
-                'label': '2점: 일부 정보가 수집되었으나 신뢰할 수 있는 진단을 위해 추가 세부 사항 필요',
-                'description': '부분적인 병력이나 증상 논의가 이루어졌지만, 첫 인상 진단에 필요한 핵심 요소가 다루어지지 않았습니다.',
+                'label': '2점',
+                'description': 'Some information gathered, but additional details are needed to make a reliable diagnosis',
                 'example': 'A partial history or symptom discussion was obtained, but key elements required for a first impression diagnosis were not covered.'
             },
             3: {
-                'label': '3점: 첫 인상 진단에 충분한 정보, 그러나 다른 가능한 장애를 배제하기 위한 추가 세부 사항 수집 노력 없음',
-                'description': '주요 증상이 논의되어 예비 진단이 가능했지만, 감별 진단이 탐색되지 않았습니다.',
+                'label': '3점',
+                'description': 'Sufficient information for a first impression diagnosis, but no effort to gather further details to rule out other possible disorders',
                 'example': 'The primary symptoms were discussed, allowing for a preliminary diagnosis, but differential diagnoses were not explored.'
             },
             4: {
-                'label': '4점: 첫 인상 진단에 충분한 정보, 그러나 다른 가능한 장애를 배제하기에는 부족',
-                'description': '수집된 정보로 진단 가능성이 높아졌지만, 대안을 배제하기 위해 추가 조사가 필요합니다.',
+                'label': '4점',
+                'description': 'Enough information for a first impression diagnosis, but not enough to rule out other possible disorders',
                 'example': 'Information gathered allowed for a likely diagnosis, but additional investigation is necessary to rule out alternatives.'
             },
             5: {
-                'label': '5점: 첫 인상 진단과 다른 장애 배제를 모두 가능하게 하는 포괄적인 정보 수집',
-                'description': '면담이 감별 진단 고려사항을 포함한 모든 관련 영역을 다루어 균형 잡힌 평가를 제공했습니다.',
+                'label': '5점',
+                'description': 'Comprehensive information was gathered, allowing for both a first impression diagnosis and ruling out other disorders',
                 'example': 'The interview covered all relevant areas, including differential diagnosis considerations, providing a well-rounded assessment.'
             }
         }

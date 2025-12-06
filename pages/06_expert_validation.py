@@ -238,7 +238,7 @@ def show_test_page():
             )
             st.markdown("")
         
-        st.info("💡 **안내사항**\n- Expert는 자신의 판단만 선택하면 됩니다. Score는 자동으로 계산됩니다.\n- PACA 값이 None 또는 N/A인 경우 자동으로 0점 처리됩니다.\n- '[선택 안 함]'을 선택하면 해당 항목은 평가에서 제외됩니다.")
+        st.info("💡 **안내사항**\n- Expert는 자신의 판단만 선택하면 됩니다. Score는 자동으로 계산됩니다.\n- PACA 값이 None 또는 N/A인 경우 자동으로 0점 처리됩니다.\n- '[선택 안 함]'으로 선택된 항목이 남아있으면 안 됩니다.")
     
     st.markdown("---")
     col1, col2, col3 = st.columns([1, 1, 1])
