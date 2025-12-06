@@ -166,15 +166,15 @@ def expert_validation_json_to_csv(validation_data: Dict[str, Any]) -> str:
         }
         rows.append(row)
     
-    # Add PSYCHE score (primary score from weighted sum)
-    if 'psyche_score' in validation_data:
+    # Add Expert score as the last row
+    if 'expert_score' in validation_data:
         rows.append({
-            'element': 'PSYCHE SCORE (Total)',
+            'element': 'EXPERT SCORE (Total)',
             'expert_choice': '',
             'paca_content': '',
             'score': '',
             'weight': '',
-            'weighted_score': validation_data['psyche_score']
+            'weighted_score': validation_data['expert_score']
         })
     
     # Add quality assessment scores (PIQSCA - PACA Interview Quality SCore Assessment)
@@ -269,15 +269,15 @@ def expert_validation_json_to_dataframe(validation_data: Dict[str, Any]) -> pd.D
         }
         rows.append(row)
     
-    # Add PSYCHE score (primary score from weighted sum)
-    if 'psyche_score' in validation_data:
+    # Add Expert score as the last row
+    if 'expert_score' in validation_data:
         rows.append({
-            'element': 'PSYCHE SCORE (Total)',
+            'element': 'EXPERT SCORE (Total)',
             'expert_choice': '',
             'paca_content': '',
             'score': '',
             'weight': '',
-            'weighted_score': validation_data['psyche_score']
+            'weighted_score': validation_data['expert_score']
         })
     
     # Add quality assessment scores (PIQSCA - PACA Interview Quality SCore Assessment)
