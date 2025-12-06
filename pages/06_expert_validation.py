@@ -363,25 +363,34 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
                 # Create unique key for this element
                 key = f"{exp_key}_{element_name}"
                 
+                # Add "선택 안 함" option at the beginning
+                options_with_none = ["[선택 안 함]"] + options
+                
                 # Get default value if already responded
-                default_idx = 0
+                default_idx = 0  # Default to "선택 안 함"
                 if element_name in current_responses:
                     try:
-                        default_idx = options.index(current_responses[element_name])
+                        # Find index in the new options list (offset by 1)
+                        default_idx = options.index(current_responses[element_name]) + 1
                     except ValueError:
                         default_idx = 0
                 
-                # Display selectbox
-                selected = st.selectbox(
+                # Display radio buttons (horizontal layout for better UX)
+                selected = st.radio(
                     "평가",
-                    options,
+                    options_with_none,
                     index=default_idx,
                     key=key,
-                    label_visibility="collapsed"
+                    label_visibility="collapsed",
+                    horizontal=True
                 )
                 
-                # Store response
-                current_responses[element_name] = selected
+                # Store response only if not "선택 안 함"
+                if selected != "[선택 안 함]":
+                    current_responses[element_name] = selected
+                elif element_name in current_responses:
+                    # Remove from responses if user deselected
+                    del current_responses[element_name]
                 
                 st.markdown("")
         
@@ -420,6 +429,14 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
     
     with col3:
         if st.button("✅ 완료 - 다음으로", use_container_width=True, type="primary"):
+            # Check if all elements have been evaluated
+            total_elements = sum(len(items) for items in scoring_options.values())
+            evaluated_elements = len(current_responses)
+            
+            if evaluated_elements < total_elements:
+                st.error(f"⚠️ 모든 항목을 평가해주세요! ({evaluated_elements}/{total_elements} 완료)")
+                st.stop()
+            
             # Calculate and save final validation result
             validation_result = create_validation_result(
                 construct_data,
