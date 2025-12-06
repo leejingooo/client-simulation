@@ -373,7 +373,7 @@ def show_validation_page():
             
             # Display element with SP content
             with st.expander(f"**{element}**", expanded=False):
-                st.markdown(f"**SP 지시 내용:**\n {sp_content}")
+                st.markdown(f"**가상환자에게 지시된 내용:**\n {sp_content}")
                 
                 # Special help text for specific elements
                 if element == "Triggering factor":
@@ -387,7 +387,7 @@ def show_validation_page():
                     current_value = "선택 안함"
                 
                 choice = st.radio(
-                    "평가",
+                    "가상 환자는 위 내용을 적절히 시뮬레이션 하였습니까?",
                     options=["선택 안함", "적절함", "적절하지 않음"],
                     key=f"validation_{response_key}_{element}",
                     index=["선택 안함", "적절함", "적절하지 않음"].index(current_value),
