@@ -416,7 +416,13 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
                 
                 # Display element name and PACA's value
                 st.markdown(f"**{element_name}**")
-                st.info(f"📌 PACA 값: **{paca_value}**")
+                
+                # Handle multiline PACA values properly (e.g., symptom lists)
+                if '\n' in str(paca_value):
+                    # Display with proper line breaks
+                    st.info(f"📌 PACA 값:\n\n{paca_value}")
+                else:
+                    st.info(f"📌 PACA 값: **{paca_value}**")
                 
                 # Create unique key for this element
                 key = f"{exp_key}_{element_name}"
