@@ -633,6 +633,7 @@ def create_validation_result(construct_data, expert_responses, exp_item, is_part
             
             # Store element result directly (no need for aggregation since already aggregated)
             result['elements'][element_name] = {
+                'expert_choice': expert_choice,  # Store expert's choice for reference
                 'paca_content': str(paca_content),
                 'score': score,
                 'weight': weight,

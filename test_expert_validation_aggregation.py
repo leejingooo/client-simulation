@@ -143,7 +143,7 @@ print("\nElement structure check:")
 for element_name, element_data in list(validation_result['elements'].items())[:3]:
     print(f"\n{element_name}:")
     print(f"  Keys: {list(element_data.keys())}")
-    expected_element_keys = ['paca_content', 'score', 'weight', 'weighted_score']
+    expected_element_keys = ['expert_choice', 'paca_content', 'score', 'weight', 'weighted_score']
     print(f"  Expected: {expected_element_keys}")
     print(f"  Match: {set(expected_element_keys) == set(element_data.keys())}")
 
