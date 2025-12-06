@@ -173,7 +173,7 @@ def show_test_page():
         st.markdown("")
         
         st.markdown("**Symptom name**")
-        st.info(f"📌 PACA 값: **- Insomnia\n- Anxiety**")
+        st.info("📌 PACA 값:\n\n- Insomnia\n- Anxiety")
         st.radio(
             "평가",
             ["[선택 안 함]", "Correct", "Partially correct", "Incorrect"],
