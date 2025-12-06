@@ -133,21 +133,13 @@ def show_test_page():
     
     # Example data (hardcoded for demonstration)
     example_conversation = [
-        {"speaker": "PACA", "message": "안녕하세요, 저는 정신과 의사 김민수입니다. 이름이 어떻게 되시나요?"},
-        {"speaker": "SP", "message": "김... 김지은이요."},
-        {"speaker": "PACA", "message": "지은님, 만나서 반가워요. 오늘 여기 오시게 된 가장 큰 이유가 뭐였는지 얘기해 주실 수 있을까요?"},
-        {"speaker": "SP", "message": "그냥... 요즘 계속 너무 지쳐서요. 뭐든 다 버겁고, 없어져 버리고 싶다는 생각이 자꾸 나요."},
+        {"speaker": "PACA", "message": "안녕하세요, 저는 정신과 의사입니다. 오늘 어떻게 오시게 되셨나요?"},
+        {"speaker": "SP", "message": "요즘... 잠을 잘 못 자서요. 계속 걱정이 되고..."},
+        {"speaker": "PACA", "message": "잠을 못 주무신다고 하셨는데, 구체적으로 어떤 상황인지 말씀해 주시겠어요?"},
+        {"speaker": "SP", "message": "밤에 자려고 누우면 머릿속이 복잡해져요. 일 생각도 나고, 가족 걱정도 되고..."},
+        {"speaker": "PACA", "message": "그런 증상이 얼마나 지속되셨나요?"},
+        {"speaker": "SP", "message": "한 두 달 정도 된 것 같아요."},
     ]
-    
-    example_construct = {
-        "Chief complaint": {
-            "description": "요즘 계속 너무 지치고, 뭐든 다 버겁고, 없어져 버리고 싶다는 생각이 자꾸 난다"
-        },
-        "Mental Status Examination": {
-            "Mood": "depressed, dysphoric",
-            "Affect": "anxious, tense, restricted"
-        }
-    }
     
     # 2-column layout
     col1, col2 = st.columns([1, 1])
@@ -163,34 +155,90 @@ def show_test_page():
             st.markdown("")
     
     with col2:
-        st.subheader("📊 PACA Construct")
+        st.subheader("✅ 평가 항목")
         st.markdown("---")
-        st.json(example_construct)
         
-        st.markdown("---")
-        st.subheader("✅ 평가 예시")
+        # Example evaluation items
+        st.markdown("#### Subjective Information")
         
-        st.markdown("**Chief Complaint - Description**")
-        st.info(f"📌 PACA 값: **요즘 계속 너무 지치고, 뭐든 다 버겁고, 없어져 버리고 싶다는 생각이 자꾸 난다**")
-        st.selectbox(
+        st.markdown("**Chief complaint**")
+        st.info(f"📌 PACA 값: **불면증과 지속적인 걱정**")
+        st.radio(
             "평가",
-            ["Correct", "Partially correct", "Incorrect"],
+            ["[선택 안 함]", "Correct", "Partially correct", "Incorrect"],
             key="test_chief_complaint",
-            label_visibility="collapsed"
+            label_visibility="collapsed",
+            horizontal=True
+        )
+        st.markdown("")
+        
+        st.markdown("**Symptom name**")
+        st.info(f"📌 PACA 값: **- Insomnia\n- Anxiety**")
+        st.radio(
+            "평가",
+            ["[선택 안 함]", "Correct", "Partially correct", "Incorrect"],
+            key="test_symptom",
+            label_visibility="collapsed",
+            horizontal=True
+        )
+        st.markdown("")
+        
+        st.markdown("#### Behavior (Mental Status Examination)")
+        
+        st.markdown("**Mood**")
+        st.info(f"📌 PACA 값: **anxious, dysphoric**")
+        st.radio(
+            "Expert의 판단",
+            ["[선택 안 함]", "Irritable", "Euphoric", "Elated", "Euthymic", "Dysphoric", "Depressed"],
+            key="test_mood",
+            label_visibility="collapsed",
+            horizontal=True
+        )
+        st.markdown("")
+        
+        st.markdown("**Verbal productivity**")
+        st.info(f"📌 PACA 값: **moderate**")
+        st.radio(
+            "Expert의 판단",
+            ["[선택 안 함]", "Increased", "Moderate", "Decreased"],
+            index=2,  # Default to "Moderate"
+            key="test_verbal",
+            label_visibility="collapsed",
+            horizontal=True
         )
         
-        st.markdown("")
-        st.markdown("**MSE - Mood**")
-        st.info(f"📌 PACA 값: **depressed, dysphoric**")
-        st.selectbox(
-            "Expert의 판단",
-            ["Irritable", "Euphoric", "Elated", "Euthymic", "Dysphoric", "Depressed"],
-            index=5,  # Default to "Depressed"
-            key="test_mood",
-            label_visibility="collapsed"
-        )
-        st.info("💡 Expert는 자신의 판단만 선택하면 됩니다. Score는 자동으로 계산됩니다.")
-        st.warning("⚠️ PACA 값이 None 또는 N/A인 경우 자동으로 0점 처리됩니다.")
+        # PACA Quality Assessment
+        st.markdown("---")
+        st.markdown("### 🎯 PACA 시뮬레이션 품질 평가")
+        st.info("아래 3가지 항목에 대해 1-5점 척도로 PACA의 전반적인 면담 품질을 평가해주세요.")
+        
+        from expert_validation_utils import PACA_QUALITY_CRITERIA
+        
+        for idx, (criterion_name, criterion_data) in enumerate(PACA_QUALITY_CRITERIA.items()):
+            st.markdown(f"#### {criterion_name}")
+            st.caption(criterion_data['description'])
+            
+            # Create expander for detailed criteria
+            with st.expander("📖 평가 기준 및 예시 보기"):
+                for score, details in criterion_data['scale'].items():
+                    st.markdown(f"**{details['label']}**")
+                    st.markdown(f"- {details['description']}")
+                    st.markdown(f"- *Example: {details['example']}*")
+                    st.markdown("")
+            
+            # Radio buttons for scoring
+            score_options = [f"{i}점" for i in range(1, 6)]
+            
+            st.radio(
+                f"{criterion_name} 점수 선택",
+                score_options,
+                index=2,  # Default to 3점
+                key=f"test_quality_{idx}",
+                horizontal=True
+            )
+            st.markdown("")
+        
+        st.info("💡 **안내사항**\n- Expert는 자신의 판단만 선택하면 됩니다. Score는 자동으로 계산됩니다.\n- PACA 값이 None 또는 N/A인 경우 자동으로 0점 처리됩니다.\n- '[선택 안 함]'을 선택하면 해당 항목은 평가에서 제외됩니다.")
     
     st.markdown("---")
     col1, col2, col3 = st.columns([1, 1, 1])
