@@ -197,24 +197,24 @@ def main():
     #         else:
     #             st.warning(f"⏳ 가상환자 {page_num} (Client {client_num}) - 미완료")
     
-    st.markdown("---")
+    # st.markdown("---")
     
-    # Quick Links
-    st.header("🔗 바로가기")
+    # # Quick Links
+    # st.header("🔗 바로가기")
     
-    col1, col2 = st.columns(2)
+    # col1, col2 = st.columns(2)
     
-    with col1:
-        if expert_progress < 1.0:
-            st.page_link("pages/06_expert_validation.py", label="📋 Expert Validation 페이지로 이동", icon="📋")
-        else:
-            st.success("✅ Expert Validation 완료")
+    # with col1:
+    #     if expert_progress < 1.0:
+    #         st.page_link("pages/06_expert_validation.py", label="📋 Expert Validation 페이지로 이동", icon="📋")
+    #     else:
+    #         st.success("✅ Expert Validation 완료")
     
-    with col2:
-        if sp_progress < 1.0:
-            st.page_link("pages/07_sp_validation.py", label="👥 SP Validation 페이지로 이동", icon="👥")
-        else:
-            st.success("✅ SP Validation 완료")
+    # with col2:
+    #     if sp_progress < 1.0:
+    #         st.page_link("pages/07_sp_validation.py", label="👥 SP Validation 페이지로 이동", icon="👥")
+    #     else:
+    #         st.success("✅ SP Validation 완료")
 
 
 if __name__ == "__main__":
