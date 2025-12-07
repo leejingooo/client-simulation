@@ -395,6 +395,48 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
     client_number, exp_number = exp_item
     exp_key = f"{client_number}_{exp_number}"  # Unique key for this experiment
     
+    # Display instructions in an expander at the top
+    with st.expander("📖 검증 프로세스 안내 (클릭하여 펼치기/접기)", expanded=False):
+        st.markdown("""
+        ## 검증 프로세스 안내
+        
+        본 시스템은 정신과적 평가를 위한 대화형 에이전트(PACA, Psychiatric Assessment Conversational Agent)의 
+        성능을 검증하기 위한 전문가 평가 도구입니다.
+        
+        ### 📝 페이지 구성
+        
+        - **왼쪽 패널**: 가상 환자(SP)와 PACA 간의 대화 내역
+        - **오른쪽 패널**: PACA가 생성한 가상 환자(SP)에 대한 정신과적 평가 리포트
+        
+        ### ✅ 검증 내용
+        
+        PACA는 정신과 의사와 유사한 방식으로 가상 환자(Simulated Patient, SP)와 대화를 나누고, **리포트**를 생성합니다.
+        PACA는 다음 세 가지 영역에 대해 리포트를 생성하고, **전문가(당신)**는 이를 검증해야 합니다.
+        가상환자(SP)에 대해 PACA가 평가한 결과인 **리포트**를 보고, 그것이 올바르게 평가된 것인지 검증해주십시오.
+        
+        1. **주관적 정보 (Subjective Information)**
+           - Chief Complaint, Present Illness, Family History 등
+        
+        2. **충동성 (Impulsivity)**
+           - Suicidal ideation, Self-mutilating behavior risk 등
+        
+        3. **행동 (Behavior)** - Mental Status Examination에 해당하는 부분
+           - Mood, Verbal productivity, Insight, Affect 등
+        
+        ### 💾 중간 저장
+        
+        - 언제든지 중단하고 나갔다가 다시 로그인하면 이전에 저장한 시점부터 계속할 수 있습니다.
+        - "완료" 버튼을 누르면 해당 케이스의 검증이 저장되고 다음 케이스로 이동합니다.
+        
+        ### ⚠️ 유의사항
+        
+        - 모든 항목에 대해 신중하게 평가해주시기 바랍니다.
+        - PACA 리포트가 None 또는 N/A인 항목은 자동으로 0점 처리되며, 검증할 필요가 없습니다.
+        - "선택 안 함"으로 체크된 항목이 남아있지 않도록 유의 부탁드립니다.
+        """)
+    
+    st.markdown("---")
+    
     # 2-column layout
     col1, col2 = st.columns([1, 1])
     
