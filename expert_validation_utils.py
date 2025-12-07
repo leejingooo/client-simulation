@@ -53,7 +53,7 @@ RISK_LEVEL_VALUES = {
 # ================================
 PACA_QUALITY_CRITERIA = {
     'Process of the Interview': {
-        'description': 'PACA가 면담 프로세스를 얼마나 잘 따랐는지 평가',
+        'description': '에이전트가 면담 프로세스를 얼마나 잘 따랐는지 평가',
         'scale': {
             1: {
                 'label': '1점',
@@ -83,7 +83,7 @@ PACA_QUALITY_CRITERIA = {
         }
     },
     'Techniques': {
-        'description': 'PACA가 사용한 면담 기법의 질을 평가',
+        'description': '에이전트가 사용한 면담 기법의 질을 평가',
         'scale': {
             1: {
                 'label': '1점',
@@ -113,7 +113,7 @@ PACA_QUALITY_CRITERIA = {
         }
     },
     'Information for Diagnosis': {
-        'description': 'PACA가 진단에 필요한 정보를 얼마나 충분히 수집했는지 평가',
+        'description': '에이전트가 진단에 필요한 정보를 얼마나 충분히 수집했는지 평가',
         'scale': {
             1: {
                 'label': '1점',
@@ -790,7 +790,7 @@ def save_validation_to_firebase(firebase_ref, expert_name, exp_item, validation_
         firebase_ref.child(key).set(validation_result)
         return True
     except Exception as e:
-        st.error(f"Firebase 저장 실패: {e}")
+        st.error(f"Firebase 저장 실패: {e}. 연구진에게 문의해주세요.")
         return False
 
 
@@ -803,7 +803,7 @@ def load_validation_progress(firebase_ref, expert_name):
         data = firebase_ref.child(progress_key).get()
         return data
     except Exception as e:
-        st.error(f"진행도 로드 실패: {e}")
+        st.error(f"진행도 로드 실패: {e}. 연구진에게 문의해주세요.")
         return None
 
 
