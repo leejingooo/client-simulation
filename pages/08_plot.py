@@ -1,8 +1,11 @@
 import streamlit as st
-import plotly.graph_objects as go
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 from firebase_config import get_firebase_ref
 from SP_utils import sanitize_key
 from Home import check_participant
+import numpy as np
 
 # ================================
 # Configuration
@@ -87,14 +90,22 @@ def load_psyche_scores(firebase_ref, expert_name):
 # ================================
 
 def create_psyche_plot(scores_data):
-    """Create a plotly scatter plot on a single axis (PSYCHE score)"""
+    """Create a matplotlib scatter plot on a single axis (PSYCHE score)"""
     
-    fig = go.Figure()
+    fig, ax = plt.subplots(figsize=(14, 8))
     
-    # Add traces for each disorder-model combination
+    # Marker mapping
+    marker_map = {
+        'gpt_basic': 'o',      # circle
+        'gpt_guided': '*',     # star
+        'claude_basic': '^',   # triangle
+        'claude_guided': 'D',  # diamond
+    }
+    
+    # Plot each disorder-model combination
     for disorder in ['MDD', 'BD', 'OCD']:
         for model_type in ['gpt_basic', 'gpt_guided', 'claude_basic', 'claude_guided']:
-            # Filter data for this combination
+            # Filter data
             filtered = [s for s in scores_data 
                        if s['disorder'] == disorder and s['model'] == model_type]
             
@@ -104,70 +115,52 @@ def create_psyche_plot(scores_data):
             # Extract scores
             scores = [s['psyche_score'] for s in filtered]
             
-            # Y-axis is constant (we want a single line)
-            # Add small random jitter to avoid perfect overlap
-            import random
-            y_values = [0 + random.uniform(-0.1, 0.1) for _ in scores]
+            # Y-axis with small jitter to avoid overlap
+            y_values = [0 + np.random.uniform(-0.15, 0.15) for _ in scores]
             
-            # Hover text
-            hover_texts = [
-                f"Disorder: {disorder}<br>"
-                f"Model: {MODEL_NAMES[model_type]}<br>"
-                f"Client: {s['client_num']}<br>"
-                f"Exp: {s['exp_num']}<br>"
-                f"PSYCHE Score: {s['psyche_score']:.2f}"
-                for s in filtered
-            ]
-            
-            # Add trace
-            fig.add_trace(go.Scatter(
-                x=scores,
-                y=y_values,
-                mode='markers',
-                name=f"{disorder} - {MODEL_NAMES[model_type]}",
-                marker=dict(
-                    symbol=MARKER_SHAPES[model_type],
-                    size=15,
-                    color=DISORDER_COLORS[disorder],
-                    line=dict(width=1, color='white')
-                ),
-                text=hover_texts,
-                hovertemplate='%{text}<extra></extra>'
-            ))
+            # Plot
+            ax.scatter(
+                scores,
+                y_values,
+                c=DISORDER_COLORS[disorder],
+                marker=marker_map[model_type],
+                s=200,  # size
+                alpha=0.7,
+                edgecolors='white',
+                linewidths=1.5,
+                label=f"{disorder} - {MODEL_NAMES[model_type]}"
+            )
     
-    # Update layout
-    fig.update_layout(
-        title={
-            'text': 'PACA Performance: PSYCHE Scores by Disorder and Model',
-            'x': 0.5,
-            'xanchor': 'center',
-            'font': {'size': 20}
-        },
-        xaxis=dict(
-            title='PSYCHE Score',
-            titlefont=dict(size=16),
-            showgrid=True,
-            gridcolor='lightgray',
-            range=[0, max([s['psyche_score'] for s in scores_data]) * 1.1] if scores_data else [0, 100]
-        ),
-        yaxis=dict(
-            showticklabels=False,
-            showgrid=False,
-            range=[-0.5, 0.5]
-        ),
-        height=600,
-        hovermode='closest',
-        plot_bgcolor='white',
-        legend=dict(
-            orientation="v",
-            yanchor="top",
-            y=1,
-            xanchor="left",
-            x=1.02,
-            font=dict(size=10)
-        ),
-        margin=dict(r=200)  # Make room for legend
-    )
+    # Styling
+    ax.set_xlabel('PSYCHE Score', fontsize=14, fontweight='bold')
+    ax.set_title('PACA Performance: PSYCHE Scores by Disorder and Model', 
+                 fontsize=16, fontweight='bold', pad=20)
+    
+    # Remove y-axis
+    ax.set_yticks([])
+    ax.set_ylabel('')
+    
+    # Grid
+    ax.grid(True, axis='x', alpha=0.3, linestyle='--')
+    ax.set_ylim(-0.5, 0.5)
+    
+    # Set x-axis range
+    if scores_data:
+        max_score = max([s['psyche_score'] for s in scores_data])
+        ax.set_xlim(0, max_score * 1.1)
+    else:
+        ax.set_xlim(0, 100)
+    
+    # Legend
+    ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', 
+             frameon=True, fontsize=9, ncol=1)
+    
+    # Remove top and right spines
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    
+    plt.tight_layout()
     
     return fig
 
@@ -257,13 +250,11 @@ def main():
     
     # Create and display plot
     fig = create_psyche_plot(scores_data)
-    st.plotly_chart(fig, use_container_width=True)
+    st.pyplot(fig)
     
     # Detailed data table
     st.markdown("---")
     st.markdown("### 📋 상세 데이터")
-    
-    import pandas as pd
     
     df = pd.DataFrame(scores_data)
     df['model_name'] = df['model'].map(MODEL_NAMES)
