@@ -633,7 +633,7 @@ def show_completion_page():
 # ================================
 def main():
     st.set_page_config(
-        page_title="SP Validation",
+        page_title="가상환자에 대한 전문가 검증",
         page_icon="📋",
         layout="wide"
     )

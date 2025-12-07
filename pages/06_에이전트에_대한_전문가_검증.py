@@ -91,7 +91,7 @@ def check_expert_login():
 # ================================
 def show_intro_page():
     """Display introduction page with instructions"""
-    st.title("📋 전문가 검증 시스템")
+    st.title("📋 에이전트에 대한 전문가 검증")
     st.markdown("---")
     
     st.markdown("""
