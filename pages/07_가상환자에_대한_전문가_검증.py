@@ -177,29 +177,51 @@ def show_practice_page():
     
     st.info("이 페이지는 연습용입니다. 실제 검증과 동일한 방식으로 진행되지만 저장되지 않습니다.")
     
-    # 간단한 연습 예시
-    st.markdown("### 검증 방법 연습")
+    # 2-Column Layout for practice
+    col_left, col_right = st.columns([1, 1])
     
-    st.markdown("**예시: Chief complaint - 요즘 계속 우울하고 불안해요**")
+    # ===== LEFT COLUMN: Practice Conversation (Frozen) =====
+    with col_left:
+        st.markdown("### 💬 면담 (연습용 - 비활성화)")
+        st.caption("안녕하세요, 저는 정신과 의사 000입니다. 로 면담을 시작해주세요.")
+        
+        # Display example conversation (frozen)
+        example_messages = [
+            ("user", "안녕하세요, 저는 정신과 의사 김철수입니다. 오늘 어떻게 오시게 되셨나요?"),
+            ("assistant", "요즘... 잠을 잘 못 자서요. 계속 걱정이 되고...")
+        ]
+        
+        for role, content in example_messages:
+            with st.chat_message(role):
+                st.markdown(content)
+        
+        # Disabled chat input
+        st.text_input("면담 내용 (연습용 - 비활성화)", disabled=True, placeholder="실제 검증 페이지에서 활성화됩니다")
     
-    practice_choice = st.radio(
-        "가상환자가 이 증상을 적절하게 표현했습니까?",
-        options=["적절함", "적절하지 않음"],
-        key="practice_1",
-        horizontal=True
-    )
-    
-    st.markdown("**예시: Mood - Depressed**")
-    
-    practice_choice2 = st.radio(
-        "가상환자가 우울한 기분을 적절하게 시뮬레이션 했습니까?",
-        options=["적절함", "적절하지 않음"],
-        key="practice_2",
-        horizontal=True
-    )
-    
-    st.markdown("---")
-    st.success("✅ 이런 방식으로 각 항목을 평가하시면 됩니다!")
+    # ===== RIGHT COLUMN: Practice Validation =====
+    with col_right:
+        st.markdown("### 검증 방법 연습")
+        
+        st.markdown("**예시: Chief complaint - 요즘 계속 우울하고 불안해요**")
+        
+        practice_choice = st.radio(
+            "가상환자가 이 증상을 적절하게 표현했습니까?",
+            options=["적절함", "적절하지 않음"],
+            key="practice_1",
+            horizontal=True
+        )
+        
+        st.markdown("**예시: Mood - Depressed**")
+        
+        practice_choice2 = st.radio(
+            "가상환자가 우울한 기분을 적절하게 시뮬레이션 했습니까?",
+            options=["적절함", "적절하지 않음"],
+            key="practice_2",
+            horizontal=True
+        )
+        
+        st.markdown("---")
+        st.success("✅ 이런 방식으로 각 항목을 평가하시면 됩니다!")
     
     col1, col2 = st.columns(2)
     with col1:
@@ -350,6 +372,7 @@ def show_validation_page():
     # ===== LEFT COLUMN: Conversation =====
     with col_left:
         st.markdown("### 💬 면담")
+        st.caption("안녕하세요, 저는 정신과 의사 000입니다. 로 면담을 시작해주세요.")
         
         # Display conversation history
         chat_container = st.container()
