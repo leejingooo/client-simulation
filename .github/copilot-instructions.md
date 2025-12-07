@@ -78,21 +78,31 @@ PSYCHE_RUBRIC = {
 ### Running the Application
 
 **Dev Container Setup** (`.devcontainer/devcontainer.json`):
-- Auto-installs dependencies from `requirements.txt` and `packages.txt` on container creation
-- Auto-runs `streamlit run Home.py --server.enableCORS false --server.enableXsrfProtection false` on attach
-- Exposes port 8501 with auto-preview
+- **Base image**: `mcr.microsoft.com/devcontainers/python:1-3.11-bullseye`
+- **Auto-installs** on container creation via `updateContentCommand`:
+  - System packages from `packages.txt` (apt install)
+  - Python packages from `requirements.txt` + streamlit (pip3 install --user)
+- **Auto-runs** on attach via `postAttachCommand`:
+  - `streamlit run Home.py --server.enableCORS false --server.enableXsrfProtection false`
+- **Port 8501**: Auto-forwarded with preview on auto-forward
+- **Extensions**: `ms-python.python`, `ms-python.vscode-pylance`
 
-**Manual start**:
+**Manual start** (if needed):
 ```bash
 streamlit run Home.py --server.enableCORS false --server.enableXsrfProtection false
 ```
+
+**Critical**: Port 8501 must be accessible for Streamlit UI. Dev container auto-handles this.
 
 ### Running Experiments
 
 **Critical Setup Pattern** - Each experiment page (`pages/01_experiment(BD|MDD|OCD)_<model>_<type>.py`):
 
 1. **Import base experiment logic**: `from Experiment_claude_basic import experiment_page`
-2. **Set client number**: `client_number = 6002` (BD=6002, MDD=6101, OCD=6006)
+2. **Set client number** - **Disorder mapping**:
+   - `client_number = 6002` → Bipolar Disorder (BD)
+   - `client_number = 6101` → Major Depressive Disorder (MDD)
+   - `client_number = 6006` → Obsessive-Compulsive Disorder (OCD)
 3. **Session state reset** on page change to prevent memory leakage:
    ```python
    if st.session_state.current_page != current_page:
@@ -278,13 +288,33 @@ sanitize_key("clients/6101/profile.version6.0")
 
 ## Configuration & Secrets
 
-`st.secrets` (Streamlit secrets.toml):
-- `firebase`: Service account JSON for Firebase Admin SDK
-- `firebase_database_url`: Realtime Database URL
-- `participant`: List of allowed expert names
-- API keys: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` (via environment/secrets)
+**Streamlit Secrets** (`st.secrets` or `.streamlit/secrets.toml`):
+- `firebase`: Service account JSON for Firebase Admin SDK (must include: `type`, `project_id`, `private_key_id`, `private_key`, `client_email`)
+- `firebase_database_url`: Realtime Database URL (e.g., `https://project-id.firebaseio.com`)
+- `participant`: List of allowed expert names for authentication (checked in `Home.py`)
+
+**Environment/API Keys** (loaded automatically):
+- `OPENAI_API_KEY`: For GPT models (default SP model: `gpt-5.1`)
+- `ANTHROPIC_API_KEY`: For Claude models (PACA variants)
+
+**Firebase Initialization** (`firebase_config.py`):
+```python
+# Success message indicates proper setup
+firebase_ref = get_firebase_ref()
+# Shows: "시스템 준비가 완료되었습니다."
+```
 
 ## Testing & Debugging
+
+**Testing Pattern** (no standard test framework):
+- Test files are standalone Python scripts (not pytest/unittest)
+- Run directly: `python test_expert_validation_aggregation.py`
+- Tests validate data transformations and Firebase structure matching
+- Key test files:
+  - `test_expert_validation_aggregation.py`: Symptom aggregation logic
+  - `test_comprehensive_field_mapping.py`: PSYCHE RUBRIC field mapping
+  - `test_firebase_sanitized_structure.py`: Firebase key sanitization
+  - `test_marriage_key_consistency.py`: Slash vs underscore handling
 
 **Check memory persistence**:
 ```python
@@ -301,6 +331,14 @@ sanitize_key("my/path.name") == "my_path_name"
 ```python
 check_experiment_number_exists(firebase_ref, client_number, exp_number)
 # Prevents overwriting existing experiments
+```
+
+**Debug agent state** (common Streamlit issue):
+```python
+# Check if agent is properly cached
+if 'paca_agent' in st.session_state:
+    st.write("PACA agent exists in session")
+    st.write(f"Memory: {len(st.session_state.paca_memory.messages)} messages")
 ```
 
 ## Known Gotchas
@@ -336,6 +374,18 @@ check_experiment_number_exists(firebase_ref, client_number, exp_number)
 python test_expert_validation_aggregation.py
 ```
 This verifies that symptom aggregation and scoring options match expected format.
+
+**Test field mapping** (critical for PSYCHE RUBRIC):
+```bash
+python test_comprehensive_field_mapping.py
+```
+Validates all 59 PSYCHE elements map correctly between SP/PACA constructs.
+
+**Test Firebase structure**:
+```bash
+python test_firebase_sanitized_structure.py
+```
+Ensures key sanitization matches actual Firebase data structure.
 
 **Check Firebase connection**:
 ```python

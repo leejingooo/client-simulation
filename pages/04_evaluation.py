@@ -16,7 +16,7 @@ def evaluation_page():
     constructs using the PSYCHE RUBRIC scoring system.
     
     **How to use:**
-    1. Enter the Client Number (e.g., 6101)
+    1. Enter the Client Number (e.g., 6201)
     2. Select an available experiment from the list
     3. Enter Diagnosis and Model Name (used for saving file names)
     4. Click "Start Evaluation" to compare SP and PACA constructs
