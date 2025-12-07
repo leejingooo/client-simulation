@@ -101,12 +101,34 @@ def split_multiple_values(value: str) -> List[str]:
     """
     Split comma-separated or multi-line values into list.
     Returns list of normalized individual values.
+    
+    Special handling: Only split if there are multiple distinct values,
+    not if commas are part of a single long description.
     """
     if not value:
         return []
     
-    # Split by comma or newline
-    parts = re.split(r'[,\n]', value)
+    # First, try to return as single value if it's likely one complete phrase
+    # Check if value contains newlines (clear separator)
+    if '\n' in value:
+        parts = value.split('\n')
+    # Check if value has bullet points (clear separator)
+    elif value.strip().startswith('-'):
+        parts = [line.strip('- ').strip() for line in value.split('\n')]
+    # For comma-separated values, be more conservative
+    # Only split if it looks like a list (short phrases)
+    elif ',' in value:
+        # If the value is very long (>50 chars) and has only 1-2 commas,
+        # it's likely a single phrase with commas in it (like Insight descriptions)
+        comma_count = value.count(',')
+        if len(value) > 50 and comma_count <= 2:
+            # Treat as single value
+            parts = [value]
+        else:
+            # Split by comma
+            parts = value.split(',')
+    else:
+        parts = [value]
     
     # Clean and normalize each part
     normalized = []
