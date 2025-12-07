@@ -435,6 +435,9 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
         # Display scoring options by category
         scoring_options = get_scoring_options(construct_data)
         
+        # Import is_none_or_na function to check for N/A values
+        from expert_validation_utils import is_none_or_na
+        
         for category, items in scoring_options.items():
             st.markdown(f"#### {category}")
             
@@ -443,47 +446,58 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
                 options = item['options']
                 paca_value = item.get('paca_value', 'N/A')
                 
-                # Display element name and PACA's value
+                # Display element name
                 st.markdown(f"**{element_name}**")
                 
-                # Handle multiline PACA values properly (e.g., symptom lists)
-                if '\n' in str(paca_value):
-                    # Display with proper line breaks
-                    st.info(f"📌 PACA의 리포트:\n\n{paca_value}")
+                # Check if PACA value is None or N/A
+                if is_none_or_na(paca_value):
+                    # Display N/A notice and skip radio buttons
+                    st.warning(f"⚠️ PACA의 리포트: **N/A** (자동으로 0점 처리됩니다)")
+                    # Automatically mark as N/A in responses for tracking
+                    current_responses[element_name] = "N/A (auto-scored 0)"
                 else:
-                    st.info(f"📌 PACA의 리포트: **{paca_value}**")
-                
-                # Create unique key for this element
-                key = f"{exp_key}_{element_name}"
-                
-                # Add "선택 안 함" option at the beginning
-                options_with_none = ["[선택 안 함]"] + options
-                
-                # Get default value if already responded
-                default_idx = 0  # Default to "선택 안 함"
-                if element_name in current_responses:
-                    try:
-                        # Find index in the new options list (offset by 1)
-                        default_idx = options.index(current_responses[element_name]) + 1
-                    except ValueError:
-                        default_idx = 0
-                
-                # Display radio buttons (horizontal layout for better UX)
-                selected = st.radio(
-                    "평가",
-                    options_with_none,
-                    index=default_idx,
-                    key=key,
-                    label_visibility="collapsed",
-                    horizontal=True
-                )
-                
-                # Store response only if not "선택 안 함"
-                if selected != "[선택 안 함]":
-                    current_responses[element_name] = selected
-                elif element_name in current_responses:
-                    # Remove from responses if user deselected
-                    del current_responses[element_name]
+                    # Handle multiline PACA values properly (e.g., symptom lists)
+                    if '\n' in str(paca_value):
+                        # Display with proper line breaks
+                        st.info(f"📌 PACA의 리포트:\n\n{paca_value}")
+                    else:
+                        st.info(f"📌 PACA의 리포트: **{paca_value}**")
+                    
+                    # Create unique key for this element
+                    key = f"{exp_key}_{element_name}"
+                    
+                    # Add "선택 안 함" option at the beginning
+                    options_with_none = ["[선택 안 함]"] + options
+                    
+                    # Get default value if already responded
+                    default_idx = 0  # Default to "선택 안 함"
+                    if element_name in current_responses:
+                        # Skip if it was auto-scored as N/A
+                        if current_responses[element_name] == "N/A (auto-scored 0)":
+                            default_idx = 0
+                        else:
+                            try:
+                                # Find index in the new options list (offset by 1)
+                                default_idx = options.index(current_responses[element_name]) + 1
+                            except ValueError:
+                                default_idx = 0
+                    
+                    # Display radio buttons (horizontal layout for better UX)
+                    selected = st.radio(
+                        "평가",
+                        options_with_none,
+                        index=default_idx,
+                        key=key,
+                        label_visibility="collapsed",
+                        horizontal=True
+                    )
+                    
+                    # Store response only if not "선택 안 함"
+                    if selected != "[선택 안 함]":
+                        current_responses[element_name] = selected
+                    elif element_name in current_responses and current_responses[element_name] != "N/A (auto-scored 0)":
+                        # Remove from responses if user deselected (but keep N/A auto-score)
+                        del current_responses[element_name]
                 
                 st.markdown("")
         
@@ -537,6 +551,9 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
             st.markdown("")
         
         st.session_state.validation_responses[quality_key] = quality_responses
+        
+        # Display general notice about N/A handling
+        st.info("💡 **안내사항**\n- PACA 리포트가 None 또는 N/A인 항목은 자동으로 0점 처리되며, 검증할 필요가 없습니다.\n- '[선택 안 함]'으로 선택된 항목이 남아있지 않도록 유의해주십시오.")
     
     # Save and navigation buttons
     st.markdown("---")
