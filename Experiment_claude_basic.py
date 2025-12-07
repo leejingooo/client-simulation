@@ -231,9 +231,8 @@ def experiment_page(client_number):
 
         # Display constructs if they have been generated
         if st.session_state.constructs:
-            st.subheader("Construct Generator Output")
-            for construct, value in st.session_state.constructs.items():
-                st.write(f"{construct}: {value}")
+            st.subheader("PACA Construct Output")
+            st.json(st.session_state.constructs)
 
         # Save conversation button
         if st.button("Save Conversation and Constructs"):
