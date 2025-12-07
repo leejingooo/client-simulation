@@ -165,11 +165,11 @@ def create_paca_construct(paca_agent) -> Dict[str, Any]:
     paca_construct["Family history"] = {
         "diagnosis": generate_field(
             paca_agent, "Family history diagnosis",
-            "Describe a psychiatric family history"
+            "Describe a psychiatric family history in detail. Include which family member(s) had what psychiatric condition(s) and when they experienced it, if known. Provide as much detail as you gathered during the interview."
         ),
         "substance use": generate_field(
             paca_agent, "Family history substance use",
-            "Describe a family history of substance use (alcohol, opioid, cannabinoid, etc.)"
+            "Describe a family history of substance use in detail. Include which family member(s) used what substance(s) (alcohol, opioid, cannabinoid, etc.) and when they used it, if known. Provide as much detail as you gathered during the interview."
         )
     }
     
