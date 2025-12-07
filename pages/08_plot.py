@@ -1,11 +1,10 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
+import numpy as np
 from firebase_config import get_firebase_ref
 from SP_utils import sanitize_key
 from Home import check_participant
-import numpy as np
 
 # ================================
 # Configuration
@@ -42,10 +41,10 @@ DISORDER_COLORS = {
 
 # Marker shapes for models
 MARKER_SHAPES = {
-    'gpt_basic': 'circle',           # 동그라미
-    'gpt_guided': 'star',            # 별
-    'claude_basic': 'triangle-up',   # 세모
-    'claude_guided': 'diamond',      # 마름모
+    'gpt_basic': 'o',      # Circle
+    'gpt_guided': '*',     # Star
+    'claude_basic': '^',   # Triangle
+    'claude_guided': 'D',  # Diamond
 }
 
 # Model display names
