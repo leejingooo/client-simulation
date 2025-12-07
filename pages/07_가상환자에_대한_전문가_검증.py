@@ -235,6 +235,45 @@ def show_validation_page():
     st.title(f"가상환자 {page_number}")
     st.caption(f"Client Number: {client_number} (내부 번호)")
     
+    # Display instructions in an expander at the top
+    with st.expander("📖 검증 안내사항 (클릭하여 펼치기/접기)", expanded=False):
+        st.markdown("""
+        ## 검증 방법
+        
+        평가 항목들은 가상환자에게 그렇게 시뮬레이션 하도록 지시된 것들입니다. 
+        가상환자가 각 항목을 잘 시뮬레이션 하는지 평가해주세요.
+        
+        ### 예시:
+        
+        **Mood : Depressed**
+        
+        ☑︎ 적절함 = "가상환자가 Depressed Mood를 적절히 시뮬레이션 하고 있음"
+        
+        ◻︎ 적절하지 않음 = "그렇지 못함"
+        
+        **Affect : Restricted**
+        
+        ☑︎ 적절함 = "가상환자가 Restricted Affect를 적절히 시뮬레이션 하고 있음"
+        
+        ◻︎ 적절하지 않음 = "그렇지 못함"
+        
+        ### ⚠️ 유의사항
+        
+        **유의사항 1**: 위 평가 항목을 모두 평가할 수 있도록 면담을 진행하셔야 합니다.
+        
+        **유의사항 2**: 실제 환자를 외래에서 보시는 것처럼 면담을 진행해주세요. 
+        진행하신 면담 내역을 바탕으로 본 연구가 제시하는 방법론을 기반으로 환자 만족도 평가 (친절함 등)를 진행할 예정입니다. 
+        환자 만족도 평가를 진행하는 이유는 면담이 잘 진행되었는지 판단하기 위함이 아니며, 
+        본 연구가 제시하는 평가 방법론을 검증하기 위함입니다.
+        
+        모든 항목에 대해 평가가 완료되었고 면담이 종료되었다면, 다음으로 버튼을 눌러주세요.
+        
+        ### 진단명 정보
+        """)
+        st.info(DIAGNOSES_INFO)
+    
+    st.markdown("---")
+    
     # Load SP data
     profile_version = 6.0
     beh_dir_version = 6.0
