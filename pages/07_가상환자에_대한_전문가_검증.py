@@ -114,7 +114,7 @@ def show_intro_page():
     st.markdown("""
     ## 연구에 참여해주셔서 진심으로 감사드립니다.
     
-    본 연구의 목적은 **"시뮬레이션 환자"가 얼마나 "실제 환자"와 비슷한지 평가하는 것**입니다.
+    본 연구의 목적은 **"가상환자"가 얼마나 "실제 환자"와 비슷한지 평가하는 것**입니다.
     
     ### 📌 절차
     
@@ -124,35 +124,35 @@ def show_intro_page():
     
     ### 📝 검증 방법
     
-    평가 항목들은 시뮬레이션 환자에게 그렇게 시뮬레이션 하도록 지시된 것들입니다. 
-    시뮬레이션 환자가 각 항목을 잘 시뮬레이션 하는지 평가해주세요.
+    평가 항목들은 가상환자에게 그렇게 시뮬레이션 하도록 지시된 것들입니다. 
+    가상환자가 각 항목을 잘 시뮬레이션 하는지 평가해주세요.
     
     **예시:**
     
     **Mood : Depressed**
     
-    ☑︎ 적절함 = "시뮬레이션 환자가 Depressed Mood를 적절히 시뮬레이션 하고 있음"
+    ☑︎ 적절함 = "가상환자가 Depressed Mood를 적절히 시뮬레이션 하고 있음"
     
     ◻︎ 적절하지 않음 = "그렇지 못함"
     
     **Affect : Restricted**
     
-    ☑︎ 적절함 = "시뮬레이션 환자가 Restricted Affect를 적절히 시뮬레이션 하고 있음"
+    ☑︎ 적절함 = "가상환자가 Restricted Affect를 적절히 시뮬레이션 하고 있음"
     
     ◻︎ 적절하지 않음 = "그렇지 못함"
     
     ### ⚠️ 유의사항
     
-    **(유의사항 1)** 위 평가 항목을 모두 평가할 수 있도록 면담을 진행하셔야 합니다.
+    **유의사항 1**: 위 평가 항목을 모두 평가할 수 있도록 면담을 진행하셔야 합니다.
     
-    **(유의사항 2)** 실제 환자를 외래에서 보시는 것처럼 면담을 진행해주세요. 
+    **유의사항 2**: 실제 환자를 외래에서 보시는 것처럼 면담을 진행해주세요. 
     진행하신 면담 내역을 바탕으로 본 연구가 제시하는 방법론을 기반으로 환자 만족도 평가 (친절함 등)를 진행할 예정입니다. 
     환자 만족도 평가를 진행하는 이유는 면담이 잘 진행되었는지 판단하기 위함이 아니며, 
     본 연구가 제시하는 평가 방법론을 검증하기 위함입니다.
     
     모든 항목에 대해 평가가 완료되었고 면담이 종료되었다면, 다음으로 버튼을 눌러주세요.
     
-    위 과정을 모든 가상환자 (1-14) 에 대하여 진행해주시면 됩니다.
+    위 과정을 모든 가상환자 (1-14, 총 14명) 에 대하여 진행해주시면 됩니다.
     """)
     
     st.markdown("---")
@@ -180,7 +180,7 @@ def show_practice_page():
     st.markdown("**예시: Chief complaint - 요즘 계속 우울하고 불안해요**")
     
     practice_choice = st.radio(
-        "시뮬레이션 환자가 이 증상을 적절하게 표현했습니까?",
+        "가상환자가 이 증상을 적절하게 표현했습니까?",
         options=["적절함", "적절하지 않음"],
         key="practice_1",
         horizontal=True
@@ -189,7 +189,7 @@ def show_practice_page():
     st.markdown("**예시: Mood - Depressed**")
     
     practice_choice2 = st.radio(
-        "시뮬레이션 환자가 우울한 기분을 적절하게 시뮬레이션 했습니까?",
+        "가상환자가 우울한 기분을 적절하게 시뮬레이션 했습니까?",
         options=["적절함", "적절하지 않음"],
         key="practice_2",
         horizontal=True
@@ -218,7 +218,7 @@ def show_validation_page():
     """Display actual validation page with 2-column layout"""
     firebase_ref = get_firebase_ref()
     if firebase_ref is None:
-        st.error("Firebase 초기화 실패")
+        st.error("Firebase 초기화 실패. 연구진에게 문의해주세요.")
         st.stop()
     
     # Get current SP info
@@ -246,7 +246,7 @@ def show_validation_page():
     given_information = load_from_firebase(firebase_ref, client_number, "given_information")
     
     if not all([profile, history, beh_dir, given_information]):
-        st.error(f"Client {client_number} 데이터를 불러올 수 없습니다.")
+        st.error(f"Client {client_number} 데이터를 불러올 수 없습니다. 연구진에게 문의해주세요.")
         return
     
     # Get SP construct
@@ -321,7 +321,7 @@ def show_validation_page():
             st.rerun()
         
         # New conversation button
-        if st.button("🔄 대화 초기화 (Start New Conversation)", use_container_width=True):
+        if st.button("🔄 대화 초기화 (면담 처음부터 다시 시작)", use_container_width=True):
             # Reset memory
             from SP_utils import reset_agent_memory
             st.session_state[session_key] = reset_agent_memory((agent, memory))
@@ -366,7 +366,7 @@ def show_validation_page():
             return get_value_from_construct(construct, element_name)
         
         # Display validation items
-        st.markdown("#### 각 항목에 대해 SP가 적절하게 시뮬레이션 했는지 평가해주세요")
+        st.markdown("#### 각 항목에 대해 가상환자가 적절하게 시뮬레이션 했는지 평가해주세요")
         
         for element in VALIDATION_ELEMENTS:
             sp_content = get_sp_value(sp_construct, element)
@@ -409,7 +409,7 @@ def show_validation_page():
                         current_value = "선택 안함"
                     
                     choice = st.radio(
-                        "가상 환자는 위 내용을 적절히 시뮬레이션 하였습니까?",
+                        "가상환자는 위 내용을 적절히 시뮬레이션 하였습니까?",
                         options=["선택 안함", "적절함", "적절하지 않음"],
                         key=f"validation_{response_key}_{element}",
                         index=["선택 안함", "적절함", "적절하지 않음"].index(current_value),
@@ -549,10 +549,10 @@ def show_completion_page():
     모든 데이터가 안전하게 저장되었습니다.
     """)
     
-    if st.button("처음으로 돌아가기"):
-        st.session_state.sp_validation_stage = 'intro'
-        st.session_state.current_sp_index = 0
-        st.rerun()
+    # if st.button("처음으로 돌아가기"):
+    #     st.session_state.sp_validation_stage = 'intro'
+    #     st.session_state.current_sp_index = 0
+    #     st.rerun()
 
 
 # ================================
