@@ -140,11 +140,20 @@ if 'paca_agent' not in st.session_state or st.session_state.get('force_paca_upda
     st.session_state.force_paca_update = False
 ```
 
-**Conversation flow**:
+**Conversation flow** (uses generator pattern):
 ```python
 # Start simulation - yields ("PACA", msg) or ("SP", msg) tuples
-for speaker, message in simulate_conversation(paca_agent, sp_agent):
+# Store generator in session state to preserve across reruns
+if 'conversation_generator' not in st.session_state:
+    st.session_state.conversation_generator = simulate_conversation(
+        st.session_state.paca_agent, 
+        sp_agent,
+        max_turns=300  # Default limit
+    )
+
+for speaker, message in st.session_state.conversation_generator:
     st.write(f"**{speaker}**: {message}")
+    st.session_state.conversation.append((speaker, message))
 ```
 
 **Construct generation** (post-conversation):
@@ -179,11 +188,32 @@ if 'sp_memory' not in st.session_state:
     st.session_state.sp_memory = sp_memory  # Persist memory
 ```
 
+**Conversation generator pattern** - Critical for preserving conversation state:
+```python
+# Generator must be stored in session_state to survive reruns
+if 'conversation_generator' not in st.session_state:
+    st.session_state.conversation_generator = simulate_conversation(
+        st.session_state.paca_agent,
+        sp_agent,
+        max_turns=300
+    )
+
+# Iterate WITHOUT reassigning - generator maintains state internally
+for speaker, message in st.session_state.conversation_generator:
+    # Process messages...
+```
+
+**Critical**: Do NOT recreate the generator on each rerun - it will reset the conversation!
+
 ### Streamlit Page Structure
 
 - `Home.py`: Authentication (checks `st.secrets["participant"]`), Playwright setup
 - `pages/01_experiment(BD|MDD|OCD)_<model>_<type>.py`: Experiment runners per disorder/model
+  - Each page imports base logic: `from Experiment_<model>_<type> import experiment_page`
+  - Pages set `client_number` and tracking vars, then call `experiment_page(client_number)`
+  - **Page cleanup pattern**: On page change, delete all agent/memory session state + set `force_paca_update=True`
 - `pages/06_expert_validation.py`: Multi-stage wizard (intro → test → validation loop)
+- `pages/01_unified_<model>_<type>.py`: Flexible experiment pages allowing client selection via dropdown
 
 **Navigation pattern**:
 ```python
@@ -198,9 +228,11 @@ st.rerun()  # Trigger page refresh
 1. **PRESET Configuration** (top of file):
    ```python
    EXPERIMENT_NUMBERS = [
-       (6101, 101),  # (client_number, experiment_number)
-       (6101, 102),
-       # Add all 24 experiments to validate
+       (6201, 11),   # (client_number, experiment_number)
+       (6201, 12),   # MDD patient, experiment 12
+       (6202, 211),  # BD patient, experiment 211
+       (6206, 611),  # OCD patient, experiment 611
+       # Total 24 experiments across 3 disorders × 2 models × 2 variants × 2 reps
    ]
    ```
 

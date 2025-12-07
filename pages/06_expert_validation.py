@@ -18,23 +18,35 @@ from expert_validation_utils import (
 # client_number: 4자리 숫자 (예: 6101, 6102)
 # experiment_number: 실험 번호 (예: 101, 102)
 EXPERIMENT_NUMBERS = [
-    (6201, 11),
-    (6201, 12),
-    (6201, 121),
-    (6201, 122),
+    # 6201 MDD
+    (6201, 1111),  # gptbasic
+    (6201, 1112),  # gptbasic
+    (6201, 1121),  # gptguided
+    (6201, 1122),  # gptguided
+    (6201, 1131),  # claudebasic
+    (6201, 1132),  # claudebasic
+    (6201, 1141),  # claudeguided
+    (6201, 1142),  # claudeguided
 
-    (6202, 211),
-    (6202, 212),
-    (6202, 221),
-    (6202, 222),
+    # 6202 BD
+    (6202, 1211),  # gptbasic
+    (6202, 1212),  # gptbasic
+    (6202, 1221),  # gptguided
+    (6202, 1222),  # gptguided
+    (6202, 1231),  # claudebasic
+    (6202, 1232),  # claudebasic
+    (6202, 1241),  # claudeguided
+    (6202, 1242),  # claudeguided
 
-    (6206, 611),
-    (6206, 612),
-    (6206, 621),
-    (6206, 622),
-
-    # 여기에 총 24개의 (client_number, experiment_number) 쌍을 추가하세요
-    # 예: (6101, 103), (6102, 101), ...
+    # 6206 OCD
+    (6206, 1611),  # gptbasic
+    (6206, 1612),  # gptbasic
+    (6206, 1621),  # gptguided
+    (6206, 1622),  # gptguided
+    (6206, 1631),  # claudebasic
+    (6206, 1632),  # claudebasic
+    (6206, 1641),  # claudeguided
+    (6206, 1642),  # claudeguided
 ]
 
 # ================================
