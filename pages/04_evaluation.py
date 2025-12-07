@@ -66,13 +66,14 @@ def evaluation_page():
                                 # Format: clients_CLIENTNUM_construct_paca_CLIENTNUM_EXPNUM
                                 if len(parts) >= 5:
                                     try:
-                                        exp_num = int(parts[-1])
+                                        # Keep as string to preserve leading zeros (001, 002, etc.)
+                                        exp_num = parts[-1]
                                         exp_numbers.add(exp_num)
                                     except (ValueError, IndexError):
                                         continue
                         
-                        # Check each experiment number
-                        for num in sorted(exp_numbers):
+                        # Check each experiment number (sort numerically but keep string format)
+                        for num in sorted(exp_numbers, key=lambda x: int(x) if x.isdigit() else 0):
                             sp_key = f"construct_sp_{client_number}_{num}"
                             paca_key = f"construct_paca_{client_number}_{num}"
                             
@@ -124,7 +125,8 @@ def evaluation_page():
                         key="exp_radio"
                     )
                     if selected:
-                        st.session_state.selected_exp_number = int(selected.split("#")[1])
+                        # Keep as string to preserve leading zeros
+                        st.session_state.selected_exp_number = selected.split("#")[1]
                         st.info(f"Selected: **Experiment #{st.session_state.selected_exp_number}**")
                 else:
                     st.warning("No complete experiment sets found (both SP and PACA constructs required)")
