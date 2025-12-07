@@ -242,6 +242,7 @@ def experiment_page(client_number):
                     'paca_version': actual_paca_version,
                     'sp_version': actual_con_agent_version,
                     'timestamp': int(__import__('time').time()),
+                    'total_turns': len(st.session_state.conversation),
                     'data': conversation_data
                 }
                 

@@ -83,7 +83,7 @@ def create_paca_agent(paca_version):
     return paca_agent, memory, paca_version
 
 
-def simulate_conversation(paca_agent, sp_agent, max_turns=100):
+def simulate_conversation(paca_agent, sp_agent, max_turns=300):
     initial_prompt = "안녕하세요, 저는 정신과 의사 김민수입니다. 이름이 어떻게 되시나요?"
 
     # Don't call is_initial_prompt here - just add the message to memory directly

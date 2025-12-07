@@ -90,7 +90,7 @@ def create_paca_agent(paca_version):
     return paca_agent, memory, paca_version
 
 
-def simulate_conversation(paca_agent, sp_agent, max_turns=100):
+def simulate_conversation(paca_agent, sp_agent, max_turns=300):
     initial_prompt = "Hello, I'm Dr. Kim Min-soo, a psychiatrist. What is your name?"
 
     current_speaker = "SP"
