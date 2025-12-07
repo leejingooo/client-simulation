@@ -98,11 +98,12 @@ streamlit run Home.py --server.enableCORS false --server.enableXsrfProtection fa
 
 **Critical Setup Pattern** - Each experiment page (`pages/01_experiment(BD|MDD|OCD)_<model>_<type>.py`):
 
-1. **Import base experiment logic**: `from Experiment_claude_basic import experiment_page`
-2. **Set client number** - **Disorder mapping**:
-   - `client_number = 6002` → Bipolar Disorder (BD)
-   - `client_number = 6101` → Major Depressive Disorder (MDD)
-   - `client_number = 6006` → Obsessive-Compulsive Disorder (OCD)
+1. **Import base experiment logic**: `from Experiment_<model>_<type> import experiment_page` (e.g., `Experiment_gpt_basic`, `Experiment_claude_guided`)
+2. **Set client number** - **Disorder mapping** (research cohort):
+   - `client_number = 6201` → Major Depressive Disorder (MDD)
+   - `client_number = 6202` → Bipolar Disorder (BD)
+   - `client_number = 6206` → Obsessive-Compulsive Disorder (OCD)
+   - **Legacy numbers**: 6101-6107 (older patient profiles, still in use on some pages)
 3. **Session state reset** on page change to prevent memory leakage:
    ```python
    if st.session_state.current_page != current_page:
@@ -258,6 +259,33 @@ st.rerun()  # Trigger page refresh
 
 ## Common Patterns & Conventions
 
+### Creating New Experiment Pages
+
+To add a new experiment page (e.g., for a new PACA variant or client):
+
+1. **Copy an existing page**: `pages/01_experiment(<disorder>)_<model>_<type>.py`
+2. **Update imports**: Change `from Experiment_X import` to match your base experiment file
+3. **Set client number**: Use appropriate number from disorder mapping
+4. **Update page tracking**: Change `current_page` and `current_agent_type` strings
+5. **Key pattern**: Pages import base logic, only override `client_number` and tracking vars
+
+Example structure:
+```python
+from Experiment_gpt_basic import experiment_page
+client_number = 6201  # MDD
+current_page = "mdd)_gpt_basic.py"
+current_agent_type = "GPT Basic"
+
+if st.session_state.current_page != current_page:
+    # Clear state and force agent recreation
+    if 'paca_agent' in st.session_state:
+        del st.session_state.paca_agent
+    st.session_state.force_paca_update = True
+
+if __name__ == "__main__":
+    experiment_page(client_number)
+```
+
 ### Version Formatting
 ```python
 # Display: 6.0, Firebase: version6_0
@@ -315,6 +343,21 @@ firebase_ref = get_firebase_ref()
   - `test_comprehensive_field_mapping.py`: PSYCHE RUBRIC field mapping
   - `test_firebase_sanitized_structure.py`: Firebase key sanitization
   - `test_marriage_key_consistency.py`: Slash vs underscore handling
+
+**Common Debugging Commands**:
+```bash
+# Check Python environment (dev container auto-configures)
+python --version  # Should be 3.11
+
+# Test Firebase connection
+python -c "from firebase_config import get_firebase_ref; get_firebase_ref()"
+
+# Run test suite
+python test_comprehensive_field_mapping.py
+
+# Manual Streamlit start (if auto-start fails)
+streamlit run Home.py --server.enableCORS false --server.enableXsrfProtection false
+```
 
 **Check memory persistence**:
 ```python
