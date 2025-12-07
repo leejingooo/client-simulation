@@ -97,6 +97,27 @@ def normalize_value(value: str) -> str:
     return value
 
 
+def split_multiple_values(value: str) -> List[str]:
+    """
+    Split comma-separated or multi-line values into list.
+    Returns list of normalized individual values.
+    """
+    if not value:
+        return []
+    
+    # Split by comma or newline
+    parts = re.split(r'[,\n]', value)
+    
+    # Clean and normalize each part
+    normalized = []
+    for part in parts:
+        part = part.strip()
+        if part and part.lower() not in ['n/a', 'na', '', 'none', 'unknown', 'null']:
+            normalized.append(part.lower())
+    
+    return normalized if normalized else []
+
+
 def flatten_construct(construct: Dict[str, Any], parent_key='') -> Dict[str, Any]:
     """
     Flatten nested construct into key-value pairs.
@@ -322,25 +343,72 @@ def score_impulsivity(sp_value: str, paca_value: str, values_map: Dict[str, int]
     Score impulsivity fields using delta scoring.
     Δ = (PACA value) - (SP value)
     Score = 1 if Δ=0, 0.5 if Δ=1, 0 if Δ<0 or Δ≥2
+    
+    Handles multiple PACA values by averaging individual scores.
     """
-    sp_val = values_map.get(sp_value)
-    paca_val = values_map.get(paca_value)
+    # Normalize to lowercase for case-insensitive matching
+    sp_value_lower = sp_value.lower() if sp_value else sp_value
+    paca_value_lower = paca_value.lower() if paca_value else paca_value
     
-    if sp_val is None or paca_val is None:
-        return 0.0, f"Invalid: SP={sp_value}, PACA={paca_value}"
+    # Normalize values_map keys to lowercase
+    values_map_lower = {k.lower(): v for k, v in values_map.items()}
     
-    delta = paca_val - sp_val
+    sp_val = values_map_lower.get(sp_value_lower)
     
-    if delta < 0:
-        score = 0.0
-    elif delta == 0:
-        score = 1.0
-    elif delta == 1:
-        score = 0.5
-    else:  # delta >= 2
-        score = 0.0
+    if sp_val is None:
+        return 0.0, f"Invalid SP: {sp_value}"
     
-    return score, f"Δ={delta:+d}"
+    # Check if PACA has multiple values
+    paca_values = split_multiple_values(paca_value_lower)
+    
+    if not paca_values:
+        return 0.0, f"Invalid PACA: {paca_value}"
+    
+    # If single value, use original logic
+    if len(paca_values) == 1:
+        paca_val = values_map_lower.get(paca_values[0])
+        if paca_val is None:
+            return 0.0, f"Invalid PACA: {paca_value}"
+        
+        delta = paca_val - sp_val
+        
+        if delta < 0:
+            score = 0.0
+        elif delta == 0:
+            score = 1.0
+        elif delta == 1:
+            score = 0.5
+        else:  # delta >= 2
+            score = 0.0
+        
+        return score, f"Δ={delta:+d}"
+    
+    # Multiple PACA values: calculate average score
+    scores = []
+    deltas = []
+    
+    for paca_v in paca_values:
+        paca_val = values_map_lower.get(paca_v)
+        if paca_val is not None:
+            delta = paca_val - sp_val
+            deltas.append(delta)
+            
+            if delta < 0:
+                scores.append(0.0)
+            elif delta == 0:
+                scores.append(1.0)
+            elif delta == 1:
+                scores.append(0.5)
+            else:  # delta >= 2
+                scores.append(0.0)
+    
+    if not scores:
+        return 0.0, f"No valid PACA values"
+    
+    avg_score = sum(scores) / len(scores)
+    delta_str = ','.join([f"{d:+d}" for d in deltas])
+    
+    return avg_score, f"Multi-Δ=[{delta_str}], Avg={avg_score:.2f}"
 
 
 def score_behavior(sp_value: str, paca_value: str, values_map: Dict[str, int]) -> Tuple[float, str]:
@@ -348,32 +416,79 @@ def score_behavior(sp_value: str, paca_value: str, values_map: Dict[str, int]) -
     Score behavior fields (Mood, Verbal productivity, Insight).
     Δ = (PACA value) - (SP value)
     Score = 1 if |Δ|=0, 0.5 if |Δ|=1, 0 if |Δ|>1
+    
+    Handles multiple PACA values by averaging individual scores.
     """
-    sp_val = values_map.get(sp_value)
-    paca_val = values_map.get(paca_value)
+    # Normalize to lowercase for case-insensitive matching
+    sp_value_lower = sp_value.lower() if sp_value else sp_value
+    paca_value_lower = paca_value.lower() if paca_value else paca_value
     
-    if sp_val is None or paca_val is None:
-        return 0.0, f"Invalid: SP={sp_value}, PACA={paca_value}"
+    # Normalize values_map keys to lowercase
+    values_map_lower = {k.lower(): v for k, v in values_map.items()}
     
-    delta = abs(paca_val - sp_val)
+    sp_val = values_map_lower.get(sp_value_lower)
     
-    if delta == 0:
-        score = 1.0
-    elif delta == 1:
-        score = 0.5
-    else:  # delta > 1
-        score = 0.0
+    if sp_val is None:
+        return 0.0, f"Invalid SP: {sp_value}"
     
-    return score, f"|Δ|={delta}"
+    # Check if PACA has multiple values
+    paca_values = split_multiple_values(paca_value_lower)
+    
+    if not paca_values:
+        return 0.0, f"Invalid PACA: {paca_value}"
+    
+    # If single value, use original logic
+    if len(paca_values) == 1:
+        paca_val = values_map_lower.get(paca_values[0])
+        if paca_val is None:
+            return 0.0, f"Invalid PACA: {paca_value}"
+        
+        delta = abs(paca_val - sp_val)
+        
+        if delta == 0:
+            score = 1.0
+        elif delta == 1:
+            score = 0.5
+        else:  # delta > 1
+            score = 0.0
+        
+        return score, f"|Δ|={delta}"
+    
+    # Multiple PACA values: calculate average score
+    scores = []
+    deltas = []
+    
+    for paca_v in paca_values:
+        paca_val = values_map_lower.get(paca_v)
+        if paca_val is not None:
+            delta = abs(paca_val - sp_val)
+            deltas.append(delta)
+            
+            if delta == 0:
+                scores.append(1.0)
+            elif delta == 1:
+                scores.append(0.5)
+            else:  # delta > 1
+                scores.append(0.0)
+    
+    if not scores:
+        return 0.0, f"No valid PACA values"
+    
+    avg_score = sum(scores) / len(scores)
+    delta_str = ','.join([f"{d}" for d in deltas])
+    
+    return avg_score, f"Multi-|Δ|=[{delta_str}], Avg={avg_score:.2f}"
 
 
 def score_binary(sp_value: str, paca_value: str) -> Tuple[float, str]:
     """
     Binary scoring: exact match = 1, else = 0.
     Handles presence/absence, yes/no normalization.
+    Case-insensitive comparison.
     """
-    sp_norm = sp_value.lower()
-    paca_norm = paca_value.lower()
+    # Normalize to lowercase
+    sp_norm = sp_value.lower() if sp_value else ""
+    paca_norm = paca_value.lower() if paca_value else ""
     
     # Normalize presence/absence
     presence_aliases = ['true', 'yes', 'presence', '+', '(+)']
@@ -424,16 +539,12 @@ def evaluate_construct(field_name: str, sp_value: str, paca_value: str) -> Tuple
     
     elif scoring_type == "impulsivity":
         values_map = rubric_entry.get("values", {})
-        sp_norm = sp_value  # Already normalized
-        paca_norm = paca_value  # Already normalized
-        score, desc = score_impulsivity(sp_norm, paca_norm, values_map)
+        score, desc = score_impulsivity(sp_value, paca_value, values_map)
         return score, f"Impulsivity({desc})", weight
     
     elif scoring_type == "behavior":
         values_map = rubric_entry.get("values", {})
-        sp_norm = sp_value  # Already normalized
-        paca_norm = paca_value  # Already normalized
-        score, desc = score_behavior(sp_norm, paca_norm, values_map)
+        score, desc = score_behavior(sp_value, paca_value, values_map)
         return score, f"Behavior({desc})", weight
     
     elif scoring_type == "g-eval":
