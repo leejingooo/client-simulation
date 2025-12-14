@@ -15,7 +15,7 @@ EXPERIMENTS = {
     'MDD': {
         'gptsmall_basic': [(6201, 1111), (6201, 1112)],
         'gptsmall_guided': [(6201, 2111), (6201, 2112)],
-        'gptsmaller_guided': [(6201, 3111), (6201, 3113)],
+        'gptsmaller_guided': [(6201, 3111), (6201, 3114)],
         'gptlarge_guided': [(6201, 1121), (6201, 1122)],
         'claudesmall_basic': [(6201, 1131), (6201, 1132)],
         'claudesmall_guided': [(6201, 2131), (6201, 2132)],
