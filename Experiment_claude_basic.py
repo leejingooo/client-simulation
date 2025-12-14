@@ -162,14 +162,17 @@ def experiment_page(client_number):
         if 'conversation' not in st.session_state:
             st.session_state.conversation = []
         if 'conversation_generator' not in st.session_state:
-            # Create a fresh generator for the conversation
+            # Add the initial greeting to memories BEFORE creating the generator
+            # Check if message already exists to avoid duplicates
+            initial_greeting = "안녕하세요, 저는 정신과 의사 김민수입니다. 이름이 어떻게 되시나요?"
+            if len(paca_memory.messages) == 0 or paca_memory.messages[-1].content != initial_greeting:
+                paca_memory.add_ai_message(initial_greeting)
+            if len(st.session_state.sp_memory.messages) == 0 or st.session_state.sp_memory.messages[-1].content != initial_greeting:
+                st.session_state.sp_memory.add_user_message(initial_greeting)
+            
+            # Now create the generator - it will yield the greeting but not add to memory again
             st.session_state.conversation_generator = simulate_conversation(
                 paca_agent, sp_agent)
-            # Add the initial greeting to PACA's memory
-            paca_memory.add_ai_message("안녕하세요, 저는 정신과 의사 김민수입니다. 이름이 어떻게 되시나요?")
-            # SP needs to understand the initial message from PACA
-            # Add PACA's greeting to SP's memory so SP knows what was said
-            st.session_state.sp_memory.add_user_message("안녕하세요, 저는 정신과 의사 김민수입니다. 이름이 어떻게 되시나요?")
         if 'constructs' not in st.session_state:
             st.session_state.constructs = None
         if 'sp_construct' not in st.session_state:

@@ -185,12 +185,21 @@ if 'sp_memory' not in st.session_state:
 if 'paca_agent' not in st.session_state or st.session_state.get('force_paca_update', False):
     st.session_state.paca_agent, st.session_state.paca_memory, version = create_paca_agent(paca_version)
     st.session_state.force_paca_update = False
+
+# Initial greeting setup - CRITICAL for memory consistency
+# Add BEFORE creating conversation_generator to avoid duplicates
+initial_greeting = "안녕하세요, 저는 정신과 의사 김민수입니다. 이름이 어떻게 되시나요?"
+if len(paca_memory.messages) == 0 or paca_memory.messages[-1].content != initial_greeting:
+    paca_memory.add_ai_message(initial_greeting)
+if len(sp_memory.messages) == 0 or sp_memory.messages[-1].content != initial_greeting:
+    sp_memory.add_user_message(initial_greeting)
 ```
 
 **Conversation flow** (uses generator pattern):
 ```python
 # Start simulation - yields ("PACA", msg) or ("SP", msg) tuples
 # Store generator in session state to preserve across reruns
+# NOTE: Initial greeting must be added to memories BEFORE creating generator
 if 'conversation_generator' not in st.session_state:
     st.session_state.conversation_generator = simulate_conversation(
         st.session_state.paca_agent, 
@@ -497,6 +506,7 @@ if 'paca_agent' in st.session_state:
 10. **Field name normalization**: `get_value_from_construct()` normalizes spaces to underscores (e.g., "Triggering factor" matches "triggering_factor") - see CODE_REVIEW_REPORT.txt
 11. **Marriage/Relationship History key**: In-memory constructs use `"Marriage/Relationship History"` (slash), but Firebase sanitizes to `"Marriage_Relationship History"` (underscore) via `sanitize_dict()` - code must handle both
 12. **Firebase sanitization**: `sanitize_dict()` converts `/$#[].` to `_` before saving - all slashes become underscores in stored data
+13. **Initial greeting memory timing**: The hardcoded initial greeting "안녕하세요, 저는 정신과 의사 김민수입니다..." must be added to PACA and SP memories BEFORE creating `conversation_generator` - check for duplicates using `if len(memory.messages) == 0 or memory.messages[-1].content != greeting`
 
 ## Key Files Reference
 
