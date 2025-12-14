@@ -53,14 +53,14 @@ DISORDER_COLORS = {
 
 # Marker shapes and fill styles for models
 MARKER_CONFIG = {
-    'gptsmall_basic': {'marker': 'o', 'fill': 'empty'},      # Empty circle
-    'gptsmall_guided': {'marker': 'o', 'fill': 'filled'},    # Filled circle
-    'gptsmaller_guided': {'marker': 'D', 'fill': 'filled'},  # Filled diamond
-    'gptlarge_guided': {'marker': 'o', 'fill': 'hatched'},   # Hatched circle
-    'claudesmall_basic': {'marker': 's', 'fill': 'empty'},   # Empty square
-    'claudesmall_guided': {'marker': 's', 'fill': 'filled'}, # Filled square
-    'claudesmaller_guided': {'marker': 'D', 'fill': 'empty'}, # Empty diamond
-    'claudelarge_guided': {'marker': 's', 'fill': 'hatched'}, # Hatched square
+    'gptsmall_basic': {'marker': 'o', 'fill': 'empty'},           # Empty circle
+    'gptsmall_guided': {'marker': 'o', 'fill': 'filled'},         # Filled circle
+    'gptsmaller_guided': {'marker': 'o', 'fill': 'empty_hatched'}, # Empty circle with hatch
+    'gptlarge_guided': {'marker': 'o', 'fill': 'filled_hatched'}, # Filled circle with hatch
+    'claudesmall_basic': {'marker': 's', 'fill': 'empty'},        # Empty square
+    'claudesmall_guided': {'marker': 's', 'fill': 'filled'},      # Filled square
+    'claudesmaller_guided': {'marker': 's', 'fill': 'empty_hatched'}, # Empty square with hatch
+    'claudelarge_guided': {'marker': 's', 'fill': 'filled_hatched'}, # Filled square with hatch
 }
 
 # Model display names
@@ -205,8 +205,14 @@ def create_psyche_plot(scores_data):
                 edgecolor = 'white'
                 hatch = None
                 alpha = 0.9
-            else:  # hatched
-                # Hatched marker
+            elif fill_style == 'empty_hatched':
+                # Empty marker with hatch
+                facecolor = 'none'
+                edgecolor = DISORDER_COLORS[disorder]
+                hatch = '///'
+                alpha = 1.0
+            else:  # filled_hatched
+                # Filled marker with hatch
                 facecolor = DISORDER_COLORS[disorder]
                 edgecolor = 'white'
                 hatch = '///'
@@ -331,13 +337,13 @@ def main():
         - **동그라미 (GPT 계열)**:
           - ○ 빈 동그라미: GPT-Small + Basic
           - ● 색칠된 동그라미: GPT-Small + Guided
-          - ◆ 색칠된 다이아몬드: GPT-Smaller + Guided
-          - ◐ 빗선 동그라미: GPT-Large + Guided
+          - ◍ 빈 동그라미 + 빗금: GPT-Smaller + Guided
+          - ◉ 색칠된 동그라미 + 빗금: GPT-Large + Guided
         - **네모 (Claude 계열)**:
           - □ 빈 네모: Claude-Small + Basic
           - ■ 색칠된 네모: Claude-Small + Guided
-          - ◇ 빈 다이아몬드: Claude-Smaller + Guided
-          - ▦ 빗선 네모: Claude-Large + Guided
+          - ▨ 빈 네모 + 빗금: Claude-Smaller + Guided
+          - ▩ 색칠된 네모 + 빗금: Claude-Large + Guided
         
         ### PSYCHE Score:
         - X축은 PSYCHE Score (0-55점)를 나타냅니다
