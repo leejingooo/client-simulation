@@ -45,24 +45,24 @@ DISORDER_COLORS = {
     'OCD': '#FFB703',  # Dark Orange/Yellow
 }
 
-# Marker shapes for models
-MARKER_SHAPES = {
-    'gptsmall_basic': 'o',       # Circle
-    'gptsmall_guided': '*',      # Star
-    'gptlarge_guided': 's',      # Square
-    'claudesmall_basic': '^',    # Triangle up
-    'claudesmall_guided': 'v',   # Triangle down
-    'claudelarge_guided': 'D',   # Diamond
+# Marker shapes and fill styles for models
+MARKER_CONFIG = {
+    'gptsmall_basic': {'marker': 'o', 'fill': 'empty'},      # Empty circle
+    'gptsmall_guided': {'marker': 'o', 'fill': 'filled'},    # Filled circle
+    'gptlarge_guided': {'marker': 'o', 'fill': 'hatched'},   # Hatched circle
+    'claudesmall_basic': {'marker': 's', 'fill': 'empty'},   # Empty square
+    'claudesmall_guided': {'marker': 's', 'fill': 'filled'}, # Filled square
+    'claudelarge_guided': {'marker': 's', 'fill': 'hatched'}, # Hatched square
 }
 
 # Model display names
 MODEL_NAMES = {
-    'gptsmall_basic': 'GPT-Small Basic',
-    'gptsmall_guided': 'GPT-Small Guided',
-    'gptlarge_guided': 'GPT-Large Guided',
-    'claudesmall_basic': 'Claude-Small Basic',
-    'claudesmall_guided': 'Claude-Small Guided',
-    'claudelarge_guided': 'Claude-Large Guided',
+    'gptsmall_basic': 'GPT-Small + Basic',
+    'gptsmall_guided': 'GPT-Small + Guided',
+    'gptlarge_guided': 'GPT-Large + Guided',
+    'claudesmall_basic': 'Claude-Small + Basic',
+    'claudesmall_guided': 'Claude-Small + Guided',
+    'claudelarge_guided': 'Claude-Large + Guided',
 }
 
 
@@ -137,16 +137,6 @@ def create_psyche_plot(scores_data):
     fig, ax = plt.subplots(figsize=(14, 8), facecolor='black')
     ax.set_facecolor('black')
     
-    # Marker mapping
-    marker_map = {
-        'gptsmall_basic': 'o',       # circle
-        'gptsmall_guided': '*',      # star
-        'gptlarge_guided': 's',      # square
-        'claudesmall_basic': '^',    # triangle up
-        'claudesmall_guided': 'v',   # triangle down
-        'claudelarge_guided': 'D',   # diamond
-    }
-    
     # Track which models have been added to legend
     added_models = set()
     
@@ -172,16 +162,42 @@ def create_psyche_plot(scores_data):
             if label:
                 added_models.add(model_type)
             
+            # Get marker configuration
+            config = MARKER_CONFIG[model_type]
+            marker = config['marker']
+            fill_style = config['fill']
+            
+            # Set fill properties based on style
+            if fill_style == 'empty':
+                # Empty marker - no fill, just edge
+                facecolor = 'none'
+                edgecolor = DISORDER_COLORS[disorder]
+                hatch = None
+                alpha = 1.0
+            elif fill_style == 'filled':
+                # Filled marker
+                facecolor = DISORDER_COLORS[disorder]
+                edgecolor = 'white'
+                hatch = None
+                alpha = 0.9
+            else:  # hatched
+                # Hatched marker
+                facecolor = DISORDER_COLORS[disorder]
+                edgecolor = 'white'
+                hatch = '///'
+                alpha = 0.7
+            
             # Plot
             ax.scatter(
                 scores,
                 y_values,
-                c=DISORDER_COLORS[disorder],
-                marker=marker_map[model_type],
-                s=250,  # size - slightly larger
-                alpha=0.9,  # more opaque
-                edgecolors='white',
-                linewidths=2,
+                marker=marker,
+                s=300,  # size
+                facecolors=facecolor,
+                edgecolors=edgecolor,
+                linewidths=2.5,
+                hatch=hatch,
+                alpha=alpha,
                 label=label
             )
     
@@ -275,13 +291,15 @@ def main():
         - 🔵 **청록색**: Bipolar Disorder (BD)
         - 🟡 **노랑**: Obsessive-Compulsive Disorder (OCD)
         
-        **모양 (모델)**:
-        - ⭕ **동그라미**: GPT-Small Basic
-        - ⭐ **별**: GPT-Small Guided
-        - ◼️ **네모**: GPT-Large Guided
-        - 🔺 **세모(위)**: Claude-Small Basic
-        - 🔻 **세모(아래)**: Claude-Small Guided
-        - 💎 **마름모**: Claude-Large Guided
+        **모양 및 패턴 (모델)**:
+        - **동그라미 (GPT 계열)**:
+          - ○ 빈 동그라미: GPT-Small + Basic
+          - ● 색칠된 동그라미: GPT-Small + Guided
+          - ◐ 빗선 동그라미: GPT-Large + Guided
+        - **네모 (Claude 계열)**:
+          - □ 빈 네모: Claude-Small + Basic
+          - ■ 색칠된 네모: Claude-Small + Guided
+          - ▦ 빗선 네모: Claude-Large + Guided
         
         ### PSYCHE Score:
         - X축은 PSYCHE Score (0-55점)를 나타냅니다
