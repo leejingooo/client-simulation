@@ -40,7 +40,8 @@ def generate_symptoms_from_paca(paca_agent) -> Dict[str, Dict[str, Any]]:
         # Get symptom name
         prompt_name = f"""Based on the patient interview, what is symptom #{symptom_num}? 
         Please provide ONLY the symptom name in SHORT form (e.g., "Depressed mood", "Insomnia", etc.).
-        If you did not assess this symptom or if there are fewer than {symptom_num} symptoms, state "N/A"."""
+        If you did not assess this symptom or if there are fewer than {symptom_num} symptoms, state "N/A".
+        Respond in English."""
         
         response = paca_agent(prompt_name)
         symptom['name'] = response.strip()
@@ -63,14 +64,16 @@ def generate_symptoms_from_paca(paca_agent) -> Dict[str, Dict[str, Any]]:
         
         # Get alleviating factors
         prompt_alleviating = f"""For the patient's symptom "{symptom['name']}", what makes it better or improves it?
-        Please provide a concise answer. If you did not assess this aspect or if there are none, state "None"."""
+        Please provide a concise answer. If you did not assess this aspect or if there are none, state "None".
+        Respond in English."""
         
         response = paca_agent(prompt_alleviating)
         symptom['alleviating factor'] = response.strip()
         
         # Get exacerbating factors
         prompt_exacerbating = f"""For the patient's symptom "{symptom['name']}", what makes it worse or triggers it?
-        Please provide a concise answer. If you did not assess this aspect or if there are none, state "None"."""
+        Please provide a concise answer. If you did not assess this aspect or if there are none, state "None".
+        Respond in English."""
         
         response = paca_agent(prompt_exacerbating)
         symptom['exacerbating factor'] = response.strip()
@@ -88,7 +91,8 @@ def generate_field(paca_agent, field_name: str, guide: str = "") -> str:
     Please provide a concise answer{f', referencing the following guideline: {guide}' if guide else ''}.
     For example, if the mood is depressed, DO NOT say "The patient's mood is depressed", but just answer "depressed" as if it were a given candidate.
     Except for unavoidable cases like "Chief complaint", DO NOT answer in sentence form, but in SHORT-ANSWER form.
-    If you did not assess this aspect during the interview or do not know, simply state "N/A"."""
+    If you did not assess this aspect during the interview or do not know, simply state "N/A".
+    Respond in English."""
     
     response = paca_agent(question)
     
