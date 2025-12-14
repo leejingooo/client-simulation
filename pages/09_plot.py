@@ -15,25 +15,31 @@ EXPERIMENTS = {
     'MDD': {
         'gptsmall_basic': [(6201, 1111), (6201, 1112)],
         'gptsmall_guided': [(6201, 2111), (6201, 2112)],
+        'gptsmaller_guided': [(6201, 3111), (6201, 3112)],
         'gptlarge_guided': [(6201, 1121), (6201, 1122)],
         'claudesmall_basic': [(6201, 1131), (6201, 1132)],
         'claudesmall_guided': [(6201, 2131), (6201, 2132)],
+        'claudesmaller_guided': [(6201, 3131), (6201, 3132)],
         'claudelarge_guided': [(6201, 1141), (6201, 1142)],
     },
     'BD': {
         'gptsmall_basic': [(6202, 1211), (6202, 1212)],
         'gptsmall_guided': [(6202, 2211), (6202, 2212)],
+        'gptsmaller_guided': [(6202, 3211), (6202, 3212)],
         'gptlarge_guided': [(6202, 1221), (6202, 1222)],
         'claudesmall_basic': [(6202, 1231), (6202, 1232)],
         'claudesmall_guided': [(6202, 2231), (6202, 2232)],
+        'claudesmaller_guided': [(6202, 3231), (6202, 3232)],
         'claudelarge_guided': [(6202, 1241), (6202, 1242)],
     },
     'OCD': {
         'gptsmall_basic': [(6206, 1611), (6206, 1612)],
         'gptsmall_guided': [(6206, 2611), (6206, 2612)],
+        'gptsmaller_guided': [(6206, 3611), (6206, 3612)],
         'gptlarge_guided': [(6206, 1621), (6206, 1622)],
         'claudesmall_basic': [(6206, 1631), (6206, 1632)],
         'claudesmall_guided': [(6206, 2631), (6206, 2632)],
+        'claudesmaller_guided': [(6206, 3631), (6206, 3632)],
         'claudelarge_guided': [(6206, 1641), (6206, 1642)],
     }
 }
@@ -49,9 +55,11 @@ DISORDER_COLORS = {
 MARKER_CONFIG = {
     'gptsmall_basic': {'marker': 'o', 'fill': 'empty'},      # Empty circle
     'gptsmall_guided': {'marker': 'o', 'fill': 'filled'},    # Filled circle
+    'gptsmaller_guided': {'marker': 'D', 'fill': 'filled'},  # Filled diamond
     'gptlarge_guided': {'marker': 'o', 'fill': 'hatched'},   # Hatched circle
     'claudesmall_basic': {'marker': 's', 'fill': 'empty'},   # Empty square
     'claudesmall_guided': {'marker': 's', 'fill': 'filled'}, # Filled square
+    'claudesmaller_guided': {'marker': 'D', 'fill': 'empty'}, # Empty diamond
     'claudelarge_guided': {'marker': 's', 'fill': 'hatched'}, # Hatched square
 }
 
@@ -59,9 +67,11 @@ MARKER_CONFIG = {
 MODEL_NAMES = {
     'gptsmall_basic': 'GPT-Small + Basic',
     'gptsmall_guided': 'GPT-Small + Guided',
+    'gptsmaller_guided': 'GPT-Smaller + Guided',
     'gptlarge_guided': 'GPT-Large + Guided',
     'claudesmall_basic': 'Claude-Small + Basic',
     'claudesmall_guided': 'Claude-Small + Guided',
+    'claudesmaller_guided': 'Claude-Smaller + Guided',
     'claudelarge_guided': 'Claude-Large + Guided',
 }
 
@@ -152,8 +162,8 @@ def create_psyche_plot(scores_data):
     
     # Plot each disorder-model combination
     for disorder in ['MDD', 'BD', 'OCD']:
-        for model_type in ['gptsmall_basic', 'gptsmall_guided', 'gptlarge_guided', 
-                           'claudesmall_basic', 'claudesmall_guided', 'claudelarge_guided']:
+        for model_type in ['gptsmall_basic', 'gptsmall_guided', 'gptsmaller_guided', 'gptlarge_guided', 
+                           'claudesmall_basic', 'claudesmall_guided', 'claudesmaller_guided', 'claudelarge_guided']:
             # Filter data
             filtered = [s for s in scores_data 
                        if s['disorder'] == disorder and s['model'] == model_type]
@@ -321,10 +331,12 @@ def main():
         - **동그라미 (GPT 계열)**:
           - ○ 빈 동그라미: GPT-Small + Basic
           - ● 색칠된 동그라미: GPT-Small + Guided
+          - ◆ 색칠된 다이아몬드: GPT-Smaller + Guided
           - ◐ 빗선 동그라미: GPT-Large + Guided
         - **네모 (Claude 계열)**:
           - □ 빈 네모: Claude-Small + Basic
           - ■ 색칠된 네모: Claude-Small + Guided
+          - ◇ 빈 다이아몬드: Claude-Smaller + Guided
           - ▦ 빗선 네모: Claude-Large + Guided
         
         ### PSYCHE Score:
@@ -371,7 +383,7 @@ def main():
     all_scores = [s['psyche_score'] for s in scores_data]
     
     with col1:
-        st.metric("검증 완료", f"{len(scores_data)}/36")
+        st.metric("검증 완료", f"{len(scores_data)}/48")
     with col2:
         st.metric("평균 점수", f"{sum(all_scores)/len(all_scores):.2f}")
     with col3:
