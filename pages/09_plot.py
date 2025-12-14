@@ -53,14 +53,14 @@ DISORDER_COLORS = {
 
 # Marker shapes and fill styles for models
 MARKER_CONFIG = {
-    'gptsmall_basic': {'marker': 'o', 'fill': 'empty', 'fillstyle': 'full'},      # Empty circle
-    'gptsmall_guided': {'marker': 'o', 'fill': 'filled', 'fillstyle': 'full'},    # Filled circle
-    'gptsmaller_guided': {'marker': 'o', 'fill': 'half', 'fillstyle': 'left'},    # Half-filled circle
-    'gptlarge_guided': {'marker': 'o', 'fill': 'hatched', 'fillstyle': 'full'},   # Hatched circle
-    'claudesmall_basic': {'marker': 's', 'fill': 'empty', 'fillstyle': 'full'},   # Empty square
-    'claudesmall_guided': {'marker': 's', 'fill': 'filled', 'fillstyle': 'full'}, # Filled square
-    'claudesmaller_guided': {'marker': 's', 'fill': 'half', 'fillstyle': 'left'}, # Half-filled square
-    'claudelarge_guided': {'marker': 's', 'fill': 'hatched', 'fillstyle': 'full'}, # Hatched square
+    'gptsmall_basic': {'marker': 'o', 'fill': 'empty'},      # Empty circle
+    'gptsmall_guided': {'marker': 'o', 'fill': 'filled'},    # Filled circle
+    'gptsmaller_guided': {'marker': 'D', 'fill': 'filled'},  # Filled diamond
+    'gptlarge_guided': {'marker': 'o', 'fill': 'hatched'},   # Hatched circle
+    'claudesmall_basic': {'marker': 's', 'fill': 'empty'},   # Empty square
+    'claudesmall_guided': {'marker': 's', 'fill': 'filled'}, # Filled square
+    'claudesmaller_guided': {'marker': 'D', 'fill': 'empty'}, # Empty diamond
+    'claudelarge_guided': {'marker': 's', 'fill': 'hatched'}, # Hatched square
 }
 
 # Model display names
@@ -191,66 +191,40 @@ def create_psyche_plot(scores_data):
             config = MARKER_CONFIG[model_type]
             marker = config['marker']
             fill_style = config['fill']
-            fillstyle = config.get('fillstyle', 'full')
             
-            # Set color and style properties
+            # Set fill properties based on style
             if fill_style == 'empty':
                 # Empty marker - no fill, just edge
-                color = DISORDER_COLORS[disorder]
-                markerfacecolor = 'none'
-                markeredgecolor = DISORDER_COLORS[disorder]
+                facecolor = 'none'
+                edgecolor = DISORDER_COLORS[disorder]
+                hatch = None
                 alpha = 1.0
             elif fill_style == 'filled':
                 # Filled marker
-                color = DISORDER_COLORS[disorder]
-                markerfacecolor = DISORDER_COLORS[disorder]
-                markeredgecolor = 'white'
+                facecolor = DISORDER_COLORS[disorder]
+                edgecolor = 'white'
+                hatch = None
                 alpha = 0.9
-            elif fill_style == 'half':
-                # Half-filled marker (use fillstyle)
-                color = DISORDER_COLORS[disorder]
-                markerfacecolor = DISORDER_COLORS[disorder]
-                markeredgecolor = DISORDER_COLORS[disorder]
-                alpha = 1.0
             else:  # hatched
-                # For hatched, we need to use scatter with hatch
-                color = DISORDER_COLORS[disorder]
-                markerfacecolor = DISORDER_COLORS[disorder]
-                markeredgecolor = 'white'
+                # Hatched marker
+                facecolor = DISORDER_COLORS[disorder]
+                edgecolor = 'white'
+                hatch = '///'
                 alpha = 0.7
             
-            # Plot using plot() to support fillstyle for half-filled markers
-            if fill_style == 'hatched':
-                # Use scatter for hatched markers
-                ax.scatter(
-                    scores,
-                    y_values,
-                    marker=marker,
-                    s=150,
-                    facecolors=markerfacecolor,
-                    edgecolors=markeredgecolor,
-                    linewidths=1.5,
-                    hatch='///',
-                    alpha=alpha,
-                    label=label
-                )
-            else:
-                # Use plot for other markers (supports fillstyle)
-                for score, y in zip(scores, y_values):
-                    ax.plot(
-                        score,
-                        y,
-                        marker=marker,
-                        markersize=10,
-                        markerfacecolor=markerfacecolor,
-                        markeredgecolor=markeredgecolor,
-                        markeredgewidth=1.5,
-                        fillstyle=fillstyle,
-                        alpha=alpha,
-                        label=label if score == scores[0] else None,  # Only label first point
-                        linestyle=''
-                    )
-                    label = None  # Reset label after first point
+            # Plot
+            ax.scatter(
+                scores,
+                y_values,
+                marker=marker,
+                s=150,  # size - reduced for better visibility
+                facecolors=facecolor,
+                edgecolors=edgecolor,
+                linewidths=1.5,
+                hatch=hatch,
+                alpha=alpha,
+                label=label
+            )
     
     # Styling
     ax.set_xlabel('PSYCHE Score', fontsize=14, fontweight='bold', color='white')
@@ -357,12 +331,12 @@ def main():
         - **동그라미 (GPT 계열)**:
           - ○ 빈 동그라미: GPT-Small + Basic
           - ● 색칠된 동그라미: GPT-Small + Guided
-          - ◐ 절반 칠한 동그라미: GPT-Smaller + Guided
+          - ◆ 색칠된 다이아몬드: GPT-Smaller + Guided
           - ◉ 빗금 동그라미: GPT-Large + Guided
         - **네모 (Claude 계열)**:
           - □ 빈 네모: Claude-Small + Basic
           - ■ 색칠된 네모: Claude-Small + Guided
-          - ◧ 절반 칠한 네모: Claude-Smaller + Guided
+          - ◇ 빈 다이아몬드: Claude-Smaller + Guided
           - ▩ 빗금 네모: Claude-Large + Guided
         
         ### PSYCHE Score:
