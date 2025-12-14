@@ -31,7 +31,8 @@ The system generates conversations, produces structured psychiatric assessments 
    - Each has initial greeting prompt hardcoded (e.g., "안녕하세요, 저는 정신과 의사...")
    - Generates psychiatric constructs by querying itself post-conversation
    - **Critical**: Must be cached in `st.session_state.paca_agent` and `st.session_state.paca_memory`
-   - Created via `create_paca_agent(version)` which returns `(agent, memory, version)` tuple
+   - Created via `create_paca_agent(version, page_id)` which returns `(agent, memory, version)` tuple
+   - **Memory isolation**: `page_id` parameter ensures separate memory for each experiment page when multiple pages are open simultaneously
 
 3. **Evaluator** (`evaluator.py`, `expert_validation_utils.py`)
    - Compares PACA construct vs SP construct (ground truth)
@@ -182,8 +183,10 @@ if 'sp_memory' not in st.session_state:
     st.session_state.sp_memory = sp_memory
 
 # PACA Agent - check for forced update
+# CRITICAL: page_id ensures memory isolation when multiple experiment pages are open
+page_id = f"{model_type}_client{client_number}"  # e.g., "gpt_basic_client6201"
 if 'paca_agent' not in st.session_state or st.session_state.get('force_paca_update', False):
-    st.session_state.paca_agent, st.session_state.paca_memory, version = create_paca_agent(paca_version)
+    st.session_state.paca_agent, st.session_state.paca_memory, version = create_paca_agent(paca_version, page_id=page_id)
     st.session_state.force_paca_update = False
 
 # Initial greeting setup - CRITICAL for memory consistency

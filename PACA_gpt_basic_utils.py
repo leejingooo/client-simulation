@@ -80,8 +80,15 @@ After the interview with the patient is complete, someone will come to ask you a
 
 
 @st.cache_resource
-def create_paca_agent(paca_version):
-
+def create_paca_agent(paca_version, page_id="default"):
+    """
+    Create PACA agent with page-specific memory isolation.
+    
+    Args:
+        paca_version: Version of the PACA agent
+        page_id: Unique identifier for the page (e.g., "mdd_gpt_basic", "bd_gpt_basic")
+                 This ensures each page has its own memory to prevent cross-contamination
+    """
     system_prompt = basic_prompt
 
     chat_prompt = ChatPromptTemplate.from_messages([
@@ -92,6 +99,7 @@ def create_paca_agent(paca_version):
 
     # Use langchain_core InMemoryChatMessageHistory instead of ConversationBufferMemory
     # This memory object will persist across Streamlit reruns because of @st.cache_resource
+    # page_id ensures each page/experiment has isolated memory
     memory = InMemoryChatMessageHistory()
 
     def paca_agent(human_input, is_initial_prompt=False):

@@ -110,9 +110,11 @@ def experiment_page(client_number):
             st.stop()
 
         # Create PACA agent
+        # Use page_id to isolate memory when multiple experiment pages are open
+        page_id = f"gpt_basic_client{client_number}"
         if 'paca_agent' not in st.session_state or st.session_state.get('force_paca_update', False):
             st.session_state.paca_agent, st.session_state.paca_memory, actual_paca_version = create_paca_agent(
-                paca_version)
+                paca_version, page_id=page_id)
         else:
             actual_paca_version = paca_version
 

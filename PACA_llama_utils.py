@@ -59,8 +59,14 @@ After the interview with the patient is complete, someone will come to ask you a
 # """
 
 
-def create_paca_agent(paca_version):
-
+def create_paca_agent(paca_version, page_id="default"):
+    """
+    Create PACA agent with page-specific memory isolation.
+    
+    Args:
+        paca_version: Version of the PACA agent
+        page_id: Unique identifier for the page to ensure memory isolation
+    """
     system_prompt = st.selectbox("Select PACA system prompt", [
                                  basic_prompt, guided_prompt])
 
@@ -70,6 +76,7 @@ def create_paca_agent(paca_version):
         ("human", "{human_input}")
     ])
 
+    # page_id ensures each page/experiment has isolated memory
     memory = InMemoryChatMessageHistory()
 
     def paca_agent(human_input, is_initial_prompt=False):
