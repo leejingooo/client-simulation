@@ -115,12 +115,13 @@ PSYCHE_RUBRIC = {
 **Dev Container Setup** (`.devcontainer/devcontainer.json`):
 - **Base image**: `mcr.microsoft.com/devcontainers/python:1-3.11-bullseye`
 - **Auto-installs** on container creation via `updateContentCommand`:
-  - System packages from `packages.txt` (apt install)
+  - System packages from `packages.txt` (apt install - includes chromium)
   - Python packages from `requirements.txt` + streamlit (pip3 install --user)
 - **Auto-runs** on attach via `postAttachCommand`:
   - `streamlit run Home.py --server.enableCORS false --server.enableXsrfProtection false`
 - **Port 8501**: Auto-forwarded with preview on auto-forward
 - **Extensions**: `ms-python.python`, `ms-python.vscode-pylance`
+- **Auto-opens**: `README.md` and `Home.py` on container start
 
 **Manual start** (if needed):
 ```bash
