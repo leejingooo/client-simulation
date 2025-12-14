@@ -140,6 +140,13 @@ def create_psyche_plot(scores_data):
     # Track which models have been added to legend
     added_models = set()
     
+    # Y-axis offset for each disorder (to separate them slightly)
+    disorder_offsets = {
+        'MDD': 0.25,
+        'BD': 0,
+        'OCD': -0.25,
+    }
+    
     # Plot each disorder-model combination
     for disorder in ['MDD', 'BD', 'OCD']:
         for model_type in ['gptsmall_basic', 'gptsmall_guided', 'gptlarge_guided', 
@@ -154,8 +161,9 @@ def create_psyche_plot(scores_data):
             # Extract scores
             scores = [s['psyche_score'] for s in filtered]
             
-            # Y-axis with small jitter to avoid overlap
-            y_values = [0 + np.random.uniform(-0.15, 0.15) for _ in scores]
+            # Y-axis position with disorder offset and small jitter
+            base_y = disorder_offsets[disorder]
+            y_values = [base_y + np.random.uniform(-0.06, 0.06) for _ in scores]
             
             # Only add to legend once per model (first disorder)
             label = MODEL_NAMES[model_type] if model_type not in added_models else None
@@ -206,13 +214,16 @@ def create_psyche_plot(scores_data):
     ax.set_title('PACA Performance: PSYCHE Scores by Disorder and Model', 
                  fontsize=16, fontweight='bold', pad=20, color='white')
     
-    # Remove y-axis
-    ax.set_yticks([])
+    # Y-axis with disorder labels
+    y_ticks = [0.25, 0, -0.25]
+    y_labels = ['MDD', 'BD', 'OCD']
+    ax.set_yticks(y_ticks)
+    ax.set_yticklabels(y_labels, fontsize=11, color='white', fontweight='bold')
     ax.set_ylabel('')
     
     # Grid
     ax.grid(True, axis='x', alpha=0.2, linestyle='--', color='gray')
-    ax.set_ylim(-0.5, 0.5)
+    ax.set_ylim(-0.6, 0.6)
     
     # Set x-axis range and styling
     if scores_data:
