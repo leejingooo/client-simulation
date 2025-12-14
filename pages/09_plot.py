@@ -140,11 +140,14 @@ def create_psyche_plot(scores_data):
     # Track which models have been added to legend
     added_models = set()
     
-    # Y-axis offset for each disorder (to separate them slightly)
-    disorder_offsets = {
-        'MDD': 0.25,
-        'BD': 0,
-        'OCD': -0.25,
+    # Y-axis positions for disorder + model family combinations
+    y_positions = {
+        ('MDD', 'gpt'): 2.5,
+        ('MDD', 'claude'): 1.7,
+        ('BD', 'gpt'): 0.7,
+        ('BD', 'claude'): -0.1,
+        ('OCD', 'gpt'): -1.1,
+        ('OCD', 'claude'): -1.9,
     }
     
     # Plot each disorder-model combination
@@ -161,9 +164,13 @@ def create_psyche_plot(scores_data):
             # Extract scores
             scores = [s['psyche_score'] for s in filtered]
             
-            # Y-axis position with disorder offset and small jitter
-            base_y = disorder_offsets[disorder]
-            y_values = [base_y + np.random.uniform(-0.06, 0.06) for _ in scores]
+            # Determine model family (gpt or claude)
+            model_family = 'gpt' if 'gpt' in model_type else 'claude'
+            
+            # Y-axis position for this disorder+model_family combination
+            # All models in same family on same line with minimal jitter
+            base_y = y_positions[(disorder, model_family)]
+            y_values = [base_y + np.random.uniform(-0.02, 0.02) for _ in scores]
             
             # Only add to legend once per model (first disorder)
             label = MODEL_NAMES[model_type] if model_type not in added_models else None
@@ -214,16 +221,24 @@ def create_psyche_plot(scores_data):
     ax.set_title('PACA Performance: PSYCHE Scores by Disorder and Model', 
                  fontsize=16, fontweight='bold', pad=20, color='white')
     
-    # Y-axis with disorder labels
-    y_ticks = [0.25, 0, -0.25]
-    y_labels = ['MDD', 'BD', 'OCD']
+    # Y-axis with disorder + model family labels
+    y_ticks = [2.5, 1.7, 0.7, -0.1, -1.1, -1.9]
+    y_labels = [
+        'MDD × GPT',
+        'MDD × Claude',
+        'BD × GPT',
+        'BD × Claude',
+        'OCD × GPT',
+        'OCD × Claude'
+    ]
     ax.set_yticks(y_ticks)
-    ax.set_yticklabels(y_labels, fontsize=11, color='white', fontweight='bold')
+    ax.set_yticklabels(y_labels, fontsize=10, color='white')
     ax.set_ylabel('')
     
     # Grid
     ax.grid(True, axis='x', alpha=0.2, linestyle='--', color='gray')
-    ax.set_ylim(-0.6, 0.6)
+    ax.grid(True, axis='y', alpha=0.1, linestyle='-', color='gray')
+    ax.set_ylim(-2.4, 3.0)
     
     # Set x-axis range and styling
     if scores_data:
