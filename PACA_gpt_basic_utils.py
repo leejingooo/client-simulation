@@ -22,6 +22,13 @@ paca_llm_gpt = ChatOpenAI(
     callbacks=[StreamingStdOutCallbackHandler()]
 )
 
+# paca_llm_gpt = ChatOpenAI(
+#     temperature=0.7,
+#     model="gpt-5-nano-2025-08-07",
+#     streaming=True,
+#     callbacks=[StreamingStdOutCallbackHandler()]
+# )
+
 
 firebase_ref = get_firebase_ref()
 
