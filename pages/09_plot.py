@@ -53,14 +53,14 @@ DISORDER_COLORS = {
 
 # Marker shapes and fill styles for models
 MARKER_CONFIG = {
-    'gptsmall_basic': {'marker': 'o', 'fill': 'empty'},           # Empty circle
-    'gptsmall_guided': {'marker': 'o', 'fill': 'filled'},         # Filled circle
-    'gptsmaller_guided': {'marker': 'o', 'fill': 'empty_hatched'}, # Empty circle with hatch
-    'gptlarge_guided': {'marker': 'o', 'fill': 'filled_hatched'}, # Filled circle with hatch
-    'claudesmall_basic': {'marker': 's', 'fill': 'empty'},        # Empty square
-    'claudesmall_guided': {'marker': 's', 'fill': 'filled'},      # Filled square
-    'claudesmaller_guided': {'marker': 's', 'fill': 'empty_hatched'}, # Empty square with hatch
-    'claudelarge_guided': {'marker': 's', 'fill': 'filled_hatched'}, # Filled square with hatch
+    'gptsmall_basic': {'marker': 'o', 'fill': 'empty', 'fillstyle': 'full'},      # Empty circle
+    'gptsmall_guided': {'marker': 'o', 'fill': 'filled', 'fillstyle': 'full'},    # Filled circle
+    'gptsmaller_guided': {'marker': 'o', 'fill': 'half', 'fillstyle': 'left'},    # Half-filled circle
+    'gptlarge_guided': {'marker': 'o', 'fill': 'hatched', 'fillstyle': 'full'},   # Hatched circle
+    'claudesmall_basic': {'marker': 's', 'fill': 'empty', 'fillstyle': 'full'},   # Empty square
+    'claudesmall_guided': {'marker': 's', 'fill': 'filled', 'fillstyle': 'full'}, # Filled square
+    'claudesmaller_guided': {'marker': 's', 'fill': 'half', 'fillstyle': 'left'}, # Half-filled square
+    'claudelarge_guided': {'marker': 's', 'fill': 'hatched', 'fillstyle': 'full'}, # Hatched square
 }
 
 # Model display names
@@ -191,46 +191,66 @@ def create_psyche_plot(scores_data):
             config = MARKER_CONFIG[model_type]
             marker = config['marker']
             fill_style = config['fill']
+            fillstyle = config.get('fillstyle', 'full')
             
-            # Set fill properties based on style
+            # Set color and style properties
             if fill_style == 'empty':
                 # Empty marker - no fill, just edge
-                facecolor = 'none'
-                edgecolor = DISORDER_COLORS[disorder]
-                hatch = None
+                color = DISORDER_COLORS[disorder]
+                markerfacecolor = 'none'
+                markeredgecolor = DISORDER_COLORS[disorder]
                 alpha = 1.0
             elif fill_style == 'filled':
                 # Filled marker
-                facecolor = DISORDER_COLORS[disorder]
-                edgecolor = 'white'
-                hatch = None
+                color = DISORDER_COLORS[disorder]
+                markerfacecolor = DISORDER_COLORS[disorder]
+                markeredgecolor = 'white'
                 alpha = 0.9
-            elif fill_style == 'empty_hatched':
-                # Empty marker with hatch
-                facecolor = 'none'
-                edgecolor = DISORDER_COLORS[disorder]
-                hatch = '///'
+            elif fill_style == 'half':
+                # Half-filled marker (use fillstyle)
+                color = DISORDER_COLORS[disorder]
+                markerfacecolor = DISORDER_COLORS[disorder]
+                markeredgecolor = DISORDER_COLORS[disorder]
                 alpha = 1.0
-            else:  # filled_hatched
-                # Filled marker with hatch
-                facecolor = DISORDER_COLORS[disorder]
-                edgecolor = 'white'
-                hatch = '///'
+            else:  # hatched
+                # For hatched, we need to use scatter with hatch
+                color = DISORDER_COLORS[disorder]
+                markerfacecolor = DISORDER_COLORS[disorder]
+                markeredgecolor = 'white'
                 alpha = 0.7
             
-            # Plot
-            ax.scatter(
-                scores,
-                y_values,
-                marker=marker,
-                s=150,  # size - reduced for better visibility
-                facecolors=facecolor,
-                edgecolors=edgecolor,
-                linewidths=1.5,
-                hatch=hatch,
-                alpha=alpha,
-                label=label
-            )
+            # Plot using plot() to support fillstyle for half-filled markers
+            if fill_style == 'hatched':
+                # Use scatter for hatched markers
+                ax.scatter(
+                    scores,
+                    y_values,
+                    marker=marker,
+                    s=150,
+                    facecolors=markerfacecolor,
+                    edgecolors=markeredgecolor,
+                    linewidths=1.5,
+                    hatch='///',
+                    alpha=alpha,
+                    label=label
+                )
+            else:
+                # Use plot for other markers (supports fillstyle)
+                for score, y in zip(scores, y_values):
+                    ax.plot(
+                        score,
+                        y,
+                        marker=marker,
+                        markersize=10,
+                        markerfacecolor=markerfacecolor,
+                        markeredgecolor=markeredgecolor,
+                        markeredgewidth=1.5,
+                        fillstyle=fillstyle,
+                        alpha=alpha,
+                        label=label if score == scores[0] else None,  # Only label first point
+                        linestyle=''
+                    )
+                    label = None  # Reset label after first point
     
     # Styling
     ax.set_xlabel('PSYCHE Score', fontsize=14, fontweight='bold', color='white')
@@ -337,13 +357,13 @@ def main():
         - **동그라미 (GPT 계열)**:
           - ○ 빈 동그라미: GPT-Small + Basic
           - ● 색칠된 동그라미: GPT-Small + Guided
-          - ◍ 빈 동그라미 + 빗금: GPT-Smaller + Guided
-          - ◉ 색칠된 동그라미 + 빗금: GPT-Large + Guided
+          - ◐ 절반 칠한 동그라미: GPT-Smaller + Guided
+          - ◉ 빗금 동그라미: GPT-Large + Guided
         - **네모 (Claude 계열)**:
           - □ 빈 네모: Claude-Small + Basic
           - ■ 색칠된 네모: Claude-Small + Guided
-          - ▨ 빈 네모 + 빗금: Claude-Smaller + Guided
-          - ▩ 색칠된 네모 + 빗금: Claude-Large + Guided
+          - ◧ 절반 칠한 네모: Claude-Smaller + Guided
+          - ▩ 빗금 네모: Claude-Large + Guided
         
         ### PSYCHE Score:
         - X축은 PSYCHE Score (0-55점)를 나타냅니다
