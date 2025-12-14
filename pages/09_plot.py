@@ -94,39 +94,20 @@ def load_psyche_scores(firebase_ref):
                 # Expected: ['clients', '{client_num}', 'psyche', '{diagnosis}', '{model}', '{exp_num}']
                 if len(parts) >= 6 and parts[2] == "psyche":
                     client_num = int(parts[1])
-                    diagnosis = parts[3].upper()  # mdd -> MDD
-                    model = parts[4]  # gptbasic, gptguided, claudebasic, claudeguided
                     exp_num = int(parts[5])
                     
-                    # Map back to our EXPERIMENTS structure
-                    # Normalize model name: gptsmallbasic -> gptsmall_basic
-                    if "gpt" in model:
-                        if "small" in model:
-                            if "guided" in model:
-                                model_type = "gptsmall_guided"
-                            else:
-                                model_type = "gptsmall_basic"
-                        elif "large" in model:
-                            model_type = "gptlarge_guided"  # Only guided variant exists
-                        else:
-                            continue  # Unknown gpt variant
-                    elif "claude" in model:
-                        if "small" in model:
-                            if "guided" in model:
-                                model_type = "claudesmall_guided"
-                            else:
-                                model_type = "claudesmall_basic"
-                        elif "large" in model:
-                            model_type = "claudelarge_guided"  # Only guided variant exists
-                        else:
-                            continue  # Unknown claude variant
-                    else:
-                        continue  # Unknown model
+                    # Find which disorder and model_type this exp_num belongs to
+                    # exp_num is unique, so we can just search for it
+                    found = False
+                    for diagnosis, models in EXPERIMENTS.items():
+                        for model_type, exp_list in models.items():
+                            if (client_num, exp_num) in exp_list:
+                                found = True
+                                break
+                        if found:
+                            break
                     
-                    # Check if this experiment is in our EXPERIMENTS list
-                    if diagnosis in EXPERIMENTS and model_type in EXPERIMENTS[diagnosis]:
-                        exp_list = EXPERIMENTS[diagnosis][model_type]
-                        if (client_num, exp_num) in exp_list:
+                    if found:
                             # Load the data
                             data = firebase_ref.child(key).get()
                             if data and 'psyche_score' in data:
