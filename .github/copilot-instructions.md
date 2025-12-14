@@ -24,6 +24,10 @@ The system generates conversations, produces structured psychiatric assessments 
 
 2. **PACA Agent** (`PACA_*_utils.py`, `paca_construct_generator.py`)
    - Multiple variants: `claude_basic`, `claude_guided`, `gpt_basic`, `gpt_guided`, `llama`
+   - **Model configuration by variant**:
+     - `gpt_basic`: `gpt-5-nano` (temperature=0.7, streaming)
+     - `gpt_guided`: `gpt-5.1` (temperature=0.7, streaming)
+     - `claude_basic/guided`: `claude-3-5-sonnet-20240620` (temperature=0.7)
    - Each has initial greeting prompt hardcoded (e.g., "안녕하세요, 저는 정신과 의사...")
    - Generates psychiatric constructs by querying itself post-conversation
    - **Critical**: Must be cached in `st.session_state.paca_agent` and `st.session_state.paca_memory`
@@ -123,6 +127,19 @@ streamlit run Home.py --server.enableCORS false --server.enableXsrfProtection fa
 ```
 
 **Critical**: Port 8501 must be accessible for Streamlit UI. Dev container auto-handles this.
+
+**Local Development** (outside dev container):
+```bash
+# Install dependencies
+pip3 install -r requirements.txt
+
+# Set environment variables (create .env file)
+export OPENAI_API_KEY="your-key"
+export ANTHROPIC_API_KEY="your-key"
+
+# Run Streamlit
+streamlit run Home.py --server.enableCORS false --server.enableXsrfProtection false
+```
 
 ### Running Experiments
 
@@ -235,6 +252,12 @@ for speaker, message in st.session_state.conversation_generator:
 
 **Critical**: Do NOT recreate the generator on each rerun - it will reset the conversation!
 
+**Why generators for conversations**:
+- Streamlit reruns on every interaction - normal functions would restart the conversation
+- Generators yield one turn at a time and maintain their internal state
+- Stored in `st.session_state`, they survive reruns and continue from where they left off
+- Conversation flow: PACA speaks → SP responds → PACA speaks → ... (alternating via `yield`)
+
 ### Streamlit Page Structure
 
 - `Home.py`: Authentication (checks `st.secrets["participant"]`), Playwright setup
@@ -242,9 +265,13 @@ for speaker, message in st.session_state.conversation_generator:
   - Each page imports base logic: `from Experiment_<model>_<type> import experiment_page`
   - Pages set `client_number` and tracking vars, then call `experiment_page(client_number)`
   - **Page cleanup pattern**: On page change, delete all agent/memory session state + set `force_paca_update=True`
-- `pages/06_expert_validation.py`: Multi-stage wizard (intro → test → validation loop)
-- `pages/07_가상환자에_대한_전문가_검증.py`: SP authenticity validation by experts
-- `pages/08_plot.py`: PSYCHE score visualization (matplotlib scatter plot)
+
+- `pages/00_진행상태_확인.py`: Experiment progress monitoring dashboard
+- `pages/01_에이전트에_대한_전문가_검증.py`: Expert validation interface for PACA agents
+- `pages/02_가상환자에_대한_전문가_검증.py`: SP authenticity validation by experts
+- `pages/05_json2csv.py`: Utility for converting Firebase JSON exports to CSV
+- `pages/08_sp_validation_viewer.py`: View SP validation results
+- `pages/09_plot.py`: PSYCHE score visualization (matplotlib scatter plot)
   - **Data source**: Loads from `clients_{client_num}/psyche_{diagnosis}_{model}_{exp_num}`
   - **NOT from expert validation data** - uses automated evaluation results
   - **Score range**: 0-55 (max possible PSYCHE score)
@@ -252,7 +279,8 @@ for speaker, message in st.session_state.conversation_generator:
   - **Critical**: These pages are hidden in normal mode but contain essential evaluation logic
   - **Must review**: When updating copilot instructions, ALWAYS review pages in this folder
   - `04_evaluation.py`: Automated PACA evaluation (generates PSYCHE scores)
-- `pages/01_unified_<model>_<type>.py`: Flexible experiment pages allowing client selection via dropdown
+  - Contains all disorder-specific experiment pages (MDD, BD, OCD)
+  - Contains unified experiment pages allowing client selection via dropdown
 
 **Navigation pattern**:
 ```python
@@ -262,7 +290,7 @@ st.rerun()  # Trigger page refresh
 
 ### Expert Validation Workflow
 
-`pages/06_expert_validation.py` - **Multi-stage wizard** for psychiatric expert review:
+`pages/01_에이전트에_대한_전문가_검증.py` - **Multi-stage wizard** for psychiatric expert review:
 
 1. **PRESET Configuration** (top of file):
    ```python
@@ -500,6 +528,11 @@ Validates all 59 PSYCHE elements map correctly between SP/PACA constructs.
 python test_firebase_sanitized_structure.py
 ```
 Ensures key sanitization matches actual Firebase data structure.
+
+**Test Marriage/Relationship key handling** (critical for slash vs underscore):
+```bash
+python test_marriage_key_consistency.py
+```
 
 **Check Firebase connection**:
 ```python
