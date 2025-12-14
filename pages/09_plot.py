@@ -40,9 +40,9 @@ EXPERIMENTS = {
 
 # Color mapping for disorders
 DISORDER_COLORS = {
-    'MDD': '#FF6B6B',  # Red
-    'BD': '#4ECDC4',   # Teal
-    'OCD': '#FFE66D',  # Yellow
+    'MDD': '#E63946',  # Dark Red
+    'BD': '#06D6A0',   # Dark Teal
+    'OCD': '#FFB703',  # Dark Orange/Yellow
 }
 
 # Marker shapes for models
@@ -134,7 +134,8 @@ def load_psyche_scores(firebase_ref):
 def create_psyche_plot(scores_data):
     """Create a matplotlib scatter plot on a single axis (PSYCHE score)"""
     
-    fig, ax = plt.subplots(figsize=(14, 8))
+    fig, ax = plt.subplots(figsize=(14, 8), facecolor='black')
+    ax.set_facecolor('black')
     
     # Marker mapping
     marker_map = {
@@ -145,6 +146,9 @@ def create_psyche_plot(scores_data):
         'claudesmall_guided': 'v',   # triangle down
         'claudelarge_guided': 'D',   # diamond
     }
+    
+    # Track which models have been added to legend
+    added_models = set()
     
     # Plot each disorder-model combination
     for disorder in ['MDD', 'BD', 'OCD']:
@@ -163,47 +167,70 @@ def create_psyche_plot(scores_data):
             # Y-axis with small jitter to avoid overlap
             y_values = [0 + np.random.uniform(-0.15, 0.15) for _ in scores]
             
+            # Only add to legend once per model (first disorder)
+            label = MODEL_NAMES[model_type] if model_type not in added_models else None
+            if label:
+                added_models.add(model_type)
+            
             # Plot
             ax.scatter(
                 scores,
                 y_values,
                 c=DISORDER_COLORS[disorder],
                 marker=marker_map[model_type],
-                s=200,  # size
-                alpha=0.7,
+                s=250,  # size - slightly larger
+                alpha=0.9,  # more opaque
                 edgecolors='white',
-                linewidths=1.5,
-                label=f"{disorder} - {MODEL_NAMES[model_type]}"
+                linewidths=2,
+                label=label
             )
     
     # Styling
-    ax.set_xlabel('PSYCHE Score', fontsize=14, fontweight='bold')
+    ax.set_xlabel('PSYCHE Score', fontsize=14, fontweight='bold', color='white')
     ax.set_title('PACA Performance: PSYCHE Scores by Disorder and Model', 
-                 fontsize=16, fontweight='bold', pad=20)
+                 fontsize=16, fontweight='bold', pad=20, color='white')
     
     # Remove y-axis
     ax.set_yticks([])
     ax.set_ylabel('')
     
     # Grid
-    ax.grid(True, axis='x', alpha=0.3, linestyle='--')
+    ax.grid(True, axis='x', alpha=0.2, linestyle='--', color='gray')
     ax.set_ylim(-0.5, 0.5)
     
-    # Set x-axis range
+    # Set x-axis range and styling
     if scores_data:
         max_score = max([s['psyche_score'] for s in scores_data])
         ax.set_xlim(0, max(max_score * 1.1, 55))  # At least show full range to max possible (55)
     else:
         ax.set_xlim(0, 55)  # Max possible PSYCHE score
     
-    # Legend
-    ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', 
-             frameon=True, fontsize=9, ncol=1)
+    ax.tick_params(colors='white', labelsize=11)
     
-    # Remove top and right spines
+    # Simplified legend for models
+    legend1 = ax.legend(title='Models', title_fontsize=11, fontsize=10,
+                       loc='upper left', frameon=True, facecolor='#1a1a1a',
+                       edgecolor='white', labelcolor='white')
+    legend1.get_title().set_color('white')
+    
+    # Add color legend for disorders manually
+    from matplotlib.patches import Patch
+    disorder_patches = [Patch(facecolor=DISORDER_COLORS['MDD'], label='MDD'),
+                       Patch(facecolor=DISORDER_COLORS['BD'], label='BD'),
+                       Patch(facecolor=DISORDER_COLORS['OCD'], label='OCD')]
+    legend2 = ax.legend(handles=disorder_patches, title='Disorders', title_fontsize=11, fontsize=10,
+                       loc='lower left', frameon=True, facecolor='#1a1a1a',
+                       edgecolor='white', labelcolor='white')
+    legend2.get_title().set_color('white')
+    
+    # Add first legend back (matplotlib removes previous legend when adding new one)
+    ax.add_artist(legend1)
+    
+    # Remove spines
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.spines['left'].set_visible(False)
+    ax.spines['bottom'].set_color('white')
     
     plt.tight_layout()
     
