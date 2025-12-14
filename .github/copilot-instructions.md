@@ -117,11 +117,13 @@ PSYCHE_RUBRIC = {
 - **Auto-installs** on container creation via `updateContentCommand`:
   - System packages from `packages.txt` (apt install - includes chromium)
   - Python packages from `requirements.txt` + streamlit (pip3 install --user)
+  - Prints: `✅ Packages installed and Requirements met`
 - **Auto-runs** on attach via `postAttachCommand`:
   - `streamlit run Home.py --server.enableCORS false --server.enableXsrfProtection false`
 - **Port 8501**: Auto-forwarded with preview on auto-forward
 - **Extensions**: `ms-python.python`, `ms-python.vscode-pylance`
 - **Auto-opens**: `README.md` and `Home.py` on container start
+- **Ready state**: Container is fully operational when Streamlit shows `You can now view your Streamlit app in your browser.`
 
 **Manual start** (if needed):
 ```bash
@@ -452,11 +454,13 @@ firebase_ref = get_firebase_ref()
 - Test files are standalone Python scripts (not pytest/unittest)
 - Run directly: `python test_expert_validation_aggregation.py`
 - Tests validate data transformations and Firebase structure matching
+- All tests print clear pass/fail messages with detailed output
 - Key test files:
   - `test_expert_validation_aggregation.py`: Symptom aggregation logic
-  - `test_comprehensive_field_mapping.py`: PSYCHE RUBRIC field mapping
+  - `test_comprehensive_field_mapping.py`: PSYCHE RUBRIC field mapping (59 elements)
   - `test_firebase_sanitized_structure.py`: Firebase key sanitization
   - `test_marriage_key_consistency.py`: Slash vs underscore handling
+  - `test_evaluator_issue.py`: Specific evaluator edge cases
 
 **Common Debugging Commands**:
 ```bash
@@ -586,3 +590,35 @@ ref = get_firebase_ref()
 2. Firebase Realtime Database URL in `st.secrets["firebase_database_url"]`
 3. Participant list in `st.secrets["participant"]` for authentication
 4. `OPENAI_API_KEY` and `ANTHROPIC_API_KEY` environment variables
+
+## Quick Reference: Common Tasks
+
+**Add a new experiment page**:
+1. Copy existing page: `pages/01_experiment(disorder)_model_type.py`
+2. Update import to match base experiment file
+3. Set client number (6201=MDD, 6202=BD, 6206=OCD)
+4. Update `current_page` and `current_agent_type` tracking strings
+
+**Debug memory issues**:
+```python
+# Check agent caching
+st.write(f"Agent in session: {'paca_agent' in st.session_state}")
+st.write(f"Memory messages: {len(st.session_state.paca_memory.messages)}")
+
+# Verify generator state
+st.write(f"Generator exists: {'conversation_generator' in st.session_state}")
+```
+
+**Add new PSYCHE RUBRIC element**:
+1. Add to `PSYCHE_RUBRIC` dict in `evaluator.py` with type, weight, values
+2. Update `get_aggregated_scoring_options()` in `expert_validation_utils.py` if needed
+3. Run `python test_comprehensive_field_mapping.py` to verify mapping
+
+**Change agent models**:
+- SP: Edit model name in `SP_utils.py` (default: `gpt-5.1`)
+- PACA: Edit model in specific `PACA_*_utils.py` file (e.g., `PACA_gpt_basic_utils.py`)
+
+**Firebase data structure**:
+- All data under `clients/<client_num>/` or `expert_<name>_<client>_<exp>`
+- Keys auto-sanitized: dots→underscores, slashes→underscores
+- Test with: `python test_firebase_sanitized_structure.py`
