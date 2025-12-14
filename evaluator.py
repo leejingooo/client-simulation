@@ -85,10 +85,14 @@ PSYCHE_RUBRIC = {
 # ============================================================================
 
 def normalize_value(value: str) -> str:
-    """Normalize values: lower case, strip whitespace."""
+    """Normalize values: lower case, strip whitespace and trailing punctuation."""
     if not isinstance(value, str):
         value = str(value)
     value = value.lower().strip()
+    
+    # Remove trailing punctuation (., !, ?, etc.)
+    value = value.rstrip('.!?,;:')
+    value = value.strip()  # Strip again after removing punctuation
     
     # Handle 'N/A' or empty as missing
     if value in ['n/a', 'na', '', 'none', 'unknown', 'null']:
@@ -130,12 +134,12 @@ def split_multiple_values(value: str) -> List[str]:
     else:
         parts = [value]
     
-    # Clean and normalize each part
+    # Clean and normalize each part using normalize_value
     normalized = []
     for part in parts:
-        part = part.strip()
-        if part and part.lower() not in ['n/a', 'na', '', 'none', 'unknown', 'null']:
-            normalized.append(part.lower())
+        normalized_part = normalize_value(part)
+        if normalized_part:  # normalize_value returns None for invalid values
+            normalized.append(normalized_part)
     
     return normalized if normalized else []
 
@@ -368,12 +372,12 @@ def score_impulsivity(sp_value: str, paca_value: str, values_map: Dict[str, int]
     
     Handles multiple PACA values by averaging individual scores.
     """
-    # Normalize to lowercase for case-insensitive matching
-    sp_value_lower = sp_value.lower() if sp_value else sp_value
-    paca_value_lower = paca_value.lower() if paca_value else paca_value
+    # Normalize using normalize_value for consistent handling
+    sp_value_lower = normalize_value(sp_value) if sp_value else sp_value
+    paca_value_lower = normalize_value(paca_value) if paca_value else paca_value
     
-    # Normalize values_map keys to lowercase
-    values_map_lower = {k.lower(): v for k, v in values_map.items()}
+    # Normalize values_map keys using normalize_value (filter out None keys)
+    values_map_lower = {normalize_value(k): v for k, v in values_map.items() if normalize_value(k) is not None}
     
     sp_val = values_map_lower.get(sp_value_lower)
     
@@ -441,12 +445,12 @@ def score_behavior(sp_value: str, paca_value: str, values_map: Dict[str, int]) -
     
     Handles multiple PACA values by averaging individual scores.
     """
-    # Normalize to lowercase for case-insensitive matching
-    sp_value_lower = sp_value.lower() if sp_value else sp_value
-    paca_value_lower = paca_value.lower() if paca_value else paca_value
+    # Normalize using normalize_value for consistent handling
+    sp_value_lower = normalize_value(sp_value) if sp_value else sp_value
+    paca_value_lower = normalize_value(paca_value) if paca_value else paca_value
     
-    # Normalize values_map keys to lowercase
-    values_map_lower = {k.lower(): v for k, v in values_map.items()}
+    # Normalize values_map keys using normalize_value (filter out None keys)
+    values_map_lower = {normalize_value(k): v for k, v in values_map.items() if normalize_value(k) is not None}
     
     sp_val = values_map_lower.get(sp_value_lower)
     
@@ -508,9 +512,9 @@ def score_binary(sp_value: str, paca_value: str) -> Tuple[float, str]:
     Handles presence/absence, yes/no normalization.
     Case-insensitive comparison.
     """
-    # Normalize to lowercase
-    sp_norm = sp_value.lower() if sp_value else ""
-    paca_norm = paca_value.lower() if paca_value else ""
+    # Normalize using normalize_value for consistent handling
+    sp_norm = normalize_value(sp_value) if sp_value else ""
+    paca_norm = normalize_value(paca_value) if paca_value else ""
     
     # Normalize presence/absence
     presence_aliases = ['true', 'yes', 'presence', '+', '(+)']
