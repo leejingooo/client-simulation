@@ -16,11 +16,18 @@ import pandas as pd
 import io
 
 
+# paca_llm_claude = ChatAnthropic(
+#     model="claude-haiku-4-5-20251001",
+#     temperature=0.7,
+#     streaming=True,
+# )
+
 paca_llm_claude = ChatAnthropic(
-    model="claude-haiku-4-5-20251001",
+    model="claude-3-haiku-20240307",
     temperature=0.7,
     streaming=True,
 )
+
 
 firebase_ref = get_firebase_ref()
 
