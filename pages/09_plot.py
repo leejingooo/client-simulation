@@ -207,10 +207,10 @@ def create_psyche_plot(scores_data):
                 scores,
                 y_values,
                 marker=marker,
-                s=300,  # size
+                s=150,  # size - reduced for better visibility
                 facecolors=facecolor,
                 edgecolors=edgecolor,
-                linewidths=2.5,
+                linewidths=1.5,
                 hatch=hatch,
                 alpha=alpha,
                 label=label
