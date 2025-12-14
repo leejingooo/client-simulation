@@ -89,16 +89,16 @@ PSYCHE_RUBRIC = {
 
 **Two separate workflows**:
 
-1. **Automated Evaluation** (`pages/연구자용 격리 폴더 (연구모드시 페이지 복원)/04_evaluation.py`):
+1. **Automated Evaluation** (`pages/04_evaluation.py`):
    - **Purpose**: Automated PACA performance assessment using PSYCHE RUBRIC
    - **Process**: Compares PACA construct vs SP construct (ground truth) programmatically
    - **Output**: PSYCHE Score (0-55 range) + detailed element-level scores
    - **Firebase storage**: `clients_{client_num}/psyche_{diagnosis}_{model}_{exp_num}`
      - Key format: `psyche_mdd_gptbasic_1111` (lowercase, no underscores in model name)
    - **Scoring methods**: G-Eval (LLM-based, 0-1), binary (0 or 1), impulsivity/behavior (0, 0.5, or 1)
-   - **Usage**: Research-only page (in 연구자용 격리 폴더) for generating performance metrics
+   - **Usage**: Research page for generating automated performance metrics
 
-2. **Expert Validation** (`pages/06_expert_validation.py`):
+2. **Expert Validation** (`pages/01_에이전트에_대한_전문가_검증.py`):
    - **Purpose**: Human expert review of PACA outputs for quality assessment
    - **Process**: Psychiatrists manually rate PACA construct accuracy
    - **Output**: Expert-validated scores (different scale/purpose than PSYCHE)
@@ -283,16 +283,18 @@ for speaker, message in st.session_state.conversation_generator:
 - `pages/02_가상환자에_대한_전문가_검증.py`: SP authenticity validation by experts
 - `pages/05_json2csv.py`: Utility for converting Firebase JSON exports to CSV
 - `pages/08_sp_validation_viewer.py`: View SP validation results
+- `pages/04_evaluation.py`: Automated PACA evaluation (generates PSYCHE scores)
+  - **Purpose**: Compare SP and PACA constructs using PSYCHE RUBRIC scoring
+  - **Workflow**: Search available experiments → Select experiment → Run evaluation → Save results
+  - **Firebase storage**: Saves to `clients_{client_num}/psyche_{diagnosis}_{model}_{exp_num}`
 - `pages/09_plot.py`: PSYCHE score visualization (matplotlib scatter plot)
   - **Data source**: Loads from `clients_{client_num}/psyche_{diagnosis}_{model}_{exp_num}`
   - **NOT from expert validation data** - uses automated evaluation results
   - **Score range**: 0-55 (max possible PSYCHE score)
 - `pages/연구자용 격리 폴더 (연구모드시 페이지 복원)/`: Research-mode pages
-  - **Critical**: These pages are hidden in normal mode but contain essential evaluation logic
-  - **Must review**: When updating copilot instructions, ALWAYS review pages in this folder
-  - `04_evaluation.py`: Automated PACA evaluation (generates PSYCHE scores)
-  - Contains all disorder-specific experiment pages (MDD, BD, OCD)
+  - Contains disorder-specific experiment pages with guided variants (MDD, BD, OCD)
   - Contains unified experiment pages allowing client selection via dropdown
+  - Historical experiment pages for various client profiles
 
 **Navigation pattern**:
 ```python
@@ -506,10 +508,11 @@ if 'paca_agent' in st.session_state:
 7. **Session state on page change**: Must explicitly delete and recreate `paca_agent`/`paca_memory` when switching between experiment pages - set `force_paca_update=True`
 8. **Model configuration**: SP uses `gpt-5.1` by default (see `SP_utils.py`), PACA variants use different models per implementation
 9. **Authentication flow**: `Home.py` checks `st.secrets["participant"]` list - all pages call `check_participant()` or equivalent before rendering
-10. **Field name normalization**: `get_value_from_construct()` normalizes spaces to underscores (e.g., "Triggering factor" matches "triggering_factor") - see CODE_REVIEW_REPORT.txt
-11. **Marriage/Relationship History key**: In-memory constructs use `"Marriage/Relationship History"` (slash), but Firebase sanitizes to `"Marriage_Relationship History"` (underscore) via `sanitize_dict()` - code must handle both
+10. **Field name normalization**: `get_value_from_construct()` normalizes spaces to underscores (e.g., "Triggering factor" matches "triggering_factor") - **FIXED Dec 2025**, see CODE_REVIEW_REPORT.txt
+11. **Marriage/Relationship History key**: In-memory constructs use `"Marriage/Relationship History"` (slash), but Firebase sanitizes to `"Marriage_Relationship History"` (underscore) via `sanitize_dict()` - code handles both formats automatically
 12. **Firebase sanitization**: `sanitize_dict()` converts `/$#[].` to `_` before saving - all slashes become underscores in stored data
 13. **Initial greeting memory timing**: The hardcoded initial greeting "안녕하세요, 저는 정신과 의사 김민수입니다..." must be added to PACA and SP memories BEFORE creating `conversation_generator` - check for duplicates using `if len(memory.messages) == 0 or memory.messages[-1].content != greeting`
+14. **Playwright setup**: Chromium browser required for certain features - auto-installed on dev container startup via `setup_playwright()` in Home.py
 
 ## Key Files Reference
 
@@ -559,3 +562,26 @@ ref = get_firebase_ref()
 - **UI**: Korean (환자, 전문가, 검증 등)
 - **Code**: English comments + Korean strings
 - **Data**: Mixed (prompts in Korean, keys in English)
+
+## Dependencies & Requirements
+
+**Core Dependencies** (`requirements.txt`):
+- `streamlit`: Main web framework
+- `langchain`, `langchain_anthropic`, `langchain_openai`, `langchain-ollama`: LLM orchestration
+- `openai`, `anthropic`: AI model APIs
+- `firebase-admin`: Firebase Realtime Database integration
+- `pandas`, `matplotlib`: Data processing and visualization
+- `playwright`: Browser automation (Chromium installed via `packages.txt`)
+- `python-dotenv`: Environment variable management
+- `requests`, `pydantic`: HTTP and data validation
+
+**System Packages** (`packages.txt`):
+- `chromium`: Required for Playwright browser automation
+
+**Python Version**: 3.11 (enforced by dev container)
+
+**Critical Setup Requirements**:
+1. Firebase service account JSON in `st.secrets["firebase"]`
+2. Firebase Realtime Database URL in `st.secrets["firebase_database_url"]`
+3. Participant list in `st.secrets["participant"]` for authentication
+4. `OPENAI_API_KEY` and `ANTHROPIC_API_KEY` environment variables

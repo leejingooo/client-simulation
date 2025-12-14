@@ -13,22 +13,28 @@ from Home import check_participant
 # Experiment numbers mapping
 EXPERIMENTS = {
     'MDD': {
-        'gpt_basic': [(6201, 1111), (6201, 1112)],
-        'gpt_guided': [(6201, 1121), (6201, 1122)],
-        'claude_basic': [(6201, 1131), (6201, 1132)],
-        'claude_guided': [(6201, 1141), (6201, 1142)],
+        'gptsmall_basic': [(6201, 1111), (6201, 1112)],
+        'gptsmall_guided': [(6201, 2111), (6201, 2112)],
+        'gptlarge_guided': [(6201, 1121), (6201, 1122)],
+        'claudesmall_basic': [(6201, 1131), (6201, 1132)],
+        'claudesmall_guided': [(6201, 2131), (6201, 2132)],
+        'claudelarge_guided': [(6201, 1141), (6201, 1142)],
     },
     'BD': {
-        'gpt_basic': [(6202, 1211), (6202, 1212)],
-        'gpt_guided': [(6202, 1221), (6202, 1222)],
-        'claude_basic': [(6202, 1231), (6202, 1232)],
-        'claude_guided': [(6202, 1241), (6202, 1242)],
+        'gptsmall_basic': [(6202, 1211), (6202, 1212)],
+        'gptsmall_guided': [(6202, 2211), (6202, 2212)],
+        'gptlarge_guided': [(6202, 1221), (6202, 1222)],
+        'claudesmall_basic': [(6202, 1231), (6202, 1232)],
+        'claudesmall_guided': [(6202, 2231), (6202, 2232)],
+        'claudelarge_guided': [(6202, 1241), (6202, 1242)],
     },
     'OCD': {
-        'gpt_basic': [(6206, 1611), (6206, 1612)],
-        'gpt_guided': [(6206, 1621), (6206, 1622)],
-        'claude_basic': [(6206, 1631), (6206, 1632)],
-        'claude_guided': [(6206, 1641), (6206, 1642)],
+        'gptsmall_basic': [(6206, 1611), (6206, 1612)],
+        'gptsmall_guided': [(6206, 2611), (6206, 2612)],
+        'gptlarge_guided': [(6206, 1621), (6206, 1622)],
+        'claudesmall_basic': [(6206, 1631), (6206, 1632)],
+        'claudesmall_guided': [(6206, 2631), (6206, 2632)],
+        'claudelarge_guided': [(6206, 1641), (6206, 1642)],
     }
 }
 
@@ -41,18 +47,22 @@ DISORDER_COLORS = {
 
 # Marker shapes for models
 MARKER_SHAPES = {
-    'gpt_basic': 'o',      # Circle
-    'gpt_guided': '*',     # Star
-    'claude_basic': '^',   # Triangle
-    'claude_guided': 'D',  # Diamond
+    'gptsmall_basic': 'o',       # Circle
+    'gptsmall_guided': '*',      # Star
+    'gptlarge_guided': 's',      # Square
+    'claudesmall_basic': '^',    # Triangle up
+    'claudesmall_guided': 'v',   # Triangle down
+    'claudelarge_guided': 'D',   # Diamond
 }
 
 # Model display names
 MODEL_NAMES = {
-    'gpt_basic': 'GPT Basic',
-    'gpt_guided': 'GPT Guided',
-    'claude_basic': 'Claude Basic',
-    'claude_guided': 'Claude Guided',
+    'gptsmall_basic': 'GPT-Small Basic',
+    'gptsmall_guided': 'GPT-Small Guided',
+    'gptlarge_guided': 'GPT-Large Guided',
+    'claudesmall_basic': 'Claude-Small Basic',
+    'claudesmall_guided': 'Claude-Small Guided',
+    'claudelarge_guided': 'Claude-Large Guided',
 }
 
 
@@ -89,17 +99,27 @@ def load_psyche_scores(firebase_ref):
                     exp_num = int(parts[5])
                     
                     # Map back to our EXPERIMENTS structure
-                    # Normalize model name: gptbasic -> gpt_basic
+                    # Normalize model name: gptsmallbasic -> gptsmall_basic
                     if "gpt" in model:
-                        if "guided" in model:
-                            model_type = "gpt_guided"
+                        if "small" in model:
+                            if "guided" in model:
+                                model_type = "gptsmall_guided"
+                            else:
+                                model_type = "gptsmall_basic"
+                        elif "large" in model:
+                            model_type = "gptlarge_guided"  # Only guided variant exists
                         else:
-                            model_type = "gpt_basic"
+                            continue  # Unknown gpt variant
                     elif "claude" in model:
-                        if "guided" in model:
-                            model_type = "claude_guided"
+                        if "small" in model:
+                            if "guided" in model:
+                                model_type = "claudesmall_guided"
+                            else:
+                                model_type = "claudesmall_basic"
+                        elif "large" in model:
+                            model_type = "claudelarge_guided"  # Only guided variant exists
                         else:
-                            model_type = "claude_basic"
+                            continue  # Unknown claude variant
                     else:
                         continue  # Unknown model
                     
@@ -137,15 +157,18 @@ def create_psyche_plot(scores_data):
     
     # Marker mapping
     marker_map = {
-        'gpt_basic': 'o',      # circle
-        'gpt_guided': '*',     # star
-        'claude_basic': '^',   # triangle
-        'claude_guided': 'D',  # diamond
+        'gptsmall_basic': 'o',       # circle
+        'gptsmall_guided': '*',      # star
+        'gptlarge_guided': 's',      # square
+        'claudesmall_basic': '^',    # triangle up
+        'claudesmall_guided': 'v',   # triangle down
+        'claudelarge_guided': 'D',   # diamond
     }
     
     # Plot each disorder-model combination
     for disorder in ['MDD', 'BD', 'OCD']:
-        for model_type in ['gpt_basic', 'gpt_guided', 'claude_basic', 'claude_guided']:
+        for model_type in ['gptsmall_basic', 'gptsmall_guided', 'gptlarge_guided', 
+                           'claudesmall_basic', 'claudesmall_guided', 'claudelarge_guided']:
             # Filter data
             filtered = [s for s in scores_data 
                        if s['disorder'] == disorder and s['model'] == model_type]
@@ -245,10 +268,12 @@ def main():
         - 🟡 **노랑**: Obsessive-Compulsive Disorder (OCD)
         
         **모양 (모델)**:
-        - ⭕ **동그라미**: GPT Basic
-        - ⭐ **별**: GPT Guided
-        - 🔺 **세모**: Claude Basic
-        - 💎 **마름모**: Claude Guided
+        - ⭕ **동그라미**: GPT-Small Basic
+        - ⭐ **별**: GPT-Small Guided
+        - ◼️ **네모**: GPT-Large Guided
+        - 🔺 **세모(위)**: Claude-Small Basic
+        - 🔻 **세모(아래)**: Claude-Small Guided
+        - 💎 **마름모**: Claude-Large Guided
         
         ### PSYCHE Score:
         - X축은 PSYCHE Score (0-55점)를 나타냅니다
@@ -294,7 +319,7 @@ def main():
     all_scores = [s['psyche_score'] for s in scores_data]
     
     with col1:
-        st.metric("검증 완료", f"{len(scores_data)}/24")
+        st.metric("검증 완료", f"{len(scores_data)}/36")
     with col2:
         st.metric("평균 점수", f"{sum(all_scores)/len(all_scores):.2f}")
     with col3:
