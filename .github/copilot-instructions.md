@@ -1,5 +1,15 @@
 # Client Simulation - Copilot Instructions
 
+## Quick Start
+
+**For immediate productivity:**
+1. **Dev container auto-starts everything** - Wait for "You can now view your Streamlit app in your browser" message
+2. **Firebase secrets required** - Ensure `st.secrets["firebase"]`, `st.secrets["firebase_database_url"]`, and `st.secrets["participant"]` are configured
+3. **Main entry point**: [Home.py](Home.py) - Streamlit runs on port 8501
+4. **Key directories**: `pages/` (experiment pages), `data/prompts/` (agent instructions), see [Project Structure](#project-structure)
+5. **Common workflows**: [Running Experiments](#running-experiments), [Creating New Pages](#creating-new-experiment-pages)
+6. **Memory critical**: Always store agents in `st.session_state` (see [Memory Management](#memory-management-critical))
+
 ## Project Overview
 
 This is a **psychiatric evaluation research platform** that simulates patient-clinician interactions using two AI agents:
@@ -10,6 +20,42 @@ This is a **psychiatric evaluation research platform** that simulates patient-cl
 The system generates conversations, produces structured psychiatric assessments ("constructs"), evaluates PACA performance against ground truth (SP constructs), and enables expert validation by psychiatrists.
 
 **Tech Stack**: Streamlit + LangChain + Firebase Realtime Database + OpenAI/Anthropic APIs
+
+## Project Structure
+
+```
+/workspaces/client-simulation/
+├── Home.py                          # Entry point, authentication, Playwright setup
+├── SP_utils.py                      # SP agent creation, Firebase I/O, key sanitization
+├── PACA_*_utils.py                  # PACA agent variants (gpt_basic, claude_guided, etc.)
+├── evaluator.py                     # PSYCHE RUBRIC definitions, automated scoring
+├── expert_validation_utils.py       # Expert validation scoring, aggregation logic
+├── firebase_config.py               # Firebase initialization
+├── Experiment_*.py                  # Base experiment logic (imported by pages)
+├── sp_construct_generator.py        # SP construct generation post-conversation
+├── paca_construct_generator.py      # PACA construct generation post-conversation
+├── pages/                           # Streamlit pages (auto-discovered by framework)
+│   ├── 00_진행상태_확인.py          # Experiment progress dashboard
+│   ├── 01_experiment*_*.py         # Experiment pages per disorder/model (MDD/BD/OCD)
+│   ├── 01_에이전트에_대한_전문가_검증.py  # Expert validation of PACA agents
+│   ├── 02_가상환자에_대한_전문가_검증.py  # SP authenticity validation
+│   ├── 04_evaluation.py            # Automated PSYCHE evaluation (generates scores)
+│   ├── 09_plot.py                  # PSYCHE score visualization (uses evaluation data)
+│   └── 연구자용 격리 폴더/          # Research-mode pages (hidden in production)
+├── data/
+│   ├── prompts/                    # Agent system prompts (versioned)
+│   │   ├── con-agent_system_prompt/
+│   │   └── paca_system_prompt/
+│   ├── input/                      # Patient profiles, behavioral directives
+│   └── output/                     # Generated conversation logs
+├── .devcontainer/
+│   └── devcontainer.json           # Dev container config (Python 3.11, auto-start)
+├── .github/
+│   └── copilot-instructions.md     # This file
+├── packages.txt                    # System packages (chromium for Playwright)
+├── requirements.txt                # Python dependencies
+└── test_*.py                       # Test scripts (no pytest/unittest framework)
+```
 
 ## Core Architecture
 
@@ -24,10 +70,11 @@ The system generates conversations, produces structured psychiatric assessments 
 
 2. **PACA Agent** (`PACA_*_utils.py`, `paca_construct_generator.py`)
    - Multiple variants: `claude_basic`, `claude_guided`, `gpt_basic`, `gpt_guided`, `llama`
-   - **Model configuration by variant**:
-     - `gpt_basic`: `gpt-5-nano` (temperature=0.7, streaming)
-     - `gpt_guided`: `gpt-5.1` (temperature=0.7, streaming)
-     - `claude_basic/guided`: `claude-3-5-sonnet-20240620` (temperature=0.7)
+   - **Model configuration by variant** (verified in source files):
+     - `gpt_basic`: `gpt-4o-mini-2024-07-18` (temperature=0.7, streaming)
+     - `gpt_guided`: `gpt-5.1-2025-11-13` (temperature=0.7, streaming)
+     - `claude_basic`: `claude-3-haiku-20240307` (temperature=0.7)
+     - `claude2`: `claude-3-5-sonnet-20240620` (temperature=0.7)
    - Each has initial greeting prompt hardcoded (e.g., "안녕하세요, 저는 정신과 의사...")
    - Generates psychiatric constructs by querying itself post-conversation
    - **Critical**: Must be cached in `st.session_state.paca_agent` and `st.session_state.paca_memory`
@@ -74,13 +121,19 @@ PSYCHE_RUBRIC = {
 ```
 
 **Key patterns**:
-- **Maximum PSYCHE Score: 55** - Sum of all weights (each element scored 0-1, then multiplied by weight)
+- **Maximum PSYCHE Score: 55** - Sum of all weights (59 total elements, each scored 0-1, then multiplied by weight)
   - Weight 1 elements: 10개 (max contribution: 10)
   - Weight 5 elements: 5개 (max contribution: 25)
   - Weight 2 elements: 10개 (max contribution: 20)
   - **Total: 10 + 25 + 20 = 55**
-  - All scoring functions (G-Eval, Binary, Impulsivity, Behavior) return normalized scores 0-1
+  - All scoring functions (G-Eval, Binary, Impulsivity, Behavior) return normalized scores 0-1 or 0.5
   - Final weighted score = Σ(element_score × weight)
+  - See `evaluator.py` for complete PSYCHE_RUBRIC definition
+- **Scoring types** (4 methods):
+  - **G-Eval**: LLM-based semantic similarity (0-1 continuous score)
+  - **Binary**: Exact match required (0 or 1)
+  - **Impulsivity**: Delta-based ordinal scale (high=2→score 1.0, moderate=1→score 0.5, low=0→score 0.0)
+  - **Behavior**: Ordinal value mapping (e.g., Mood: depressed=1, dysphoric=2, ..., euphoric=5)
 - Multiple "Symptom 1-N" entries → aggregated to single "Symptom name" for expert validation
 - PACA constructs are **flat** (`{"Mood": "depressed"}`), SP constructs are **nested** (`{"Mental Status Examination": {"Mood": "depressed"}}`)
 - `flatten_construct()` in `evaluator.py` normalizes both to flat structure
@@ -101,12 +154,14 @@ PSYCHE_RUBRIC = {
 2. **Expert Validation** (`pages/01_에이전트에_대한_전문가_검증.py`):
    - **Purpose**: Human expert review of PACA outputs for quality assessment
    - **Process**: Psychiatrists manually rate PACA construct accuracy
-   - **Output**: Expert-validated scores (different scale/purpose than PSYCHE)
+   - **Output**: Expert-validated scores using PSYCHE RUBRIC weights (same 0-55 scale)
    - **Firebase storage**: `expert_{sanitized_name}_{client_num}_{exp_num}`
    - **Scoring**: Experts choose "Correct", "Partially Correct", "Incorrect" for each element
+     - Correct = 1.0, Partially Correct = 0.5, Incorrect = 0.0
+     - Final score = Σ(expert_score × element_weight)
    - **Usage**: Validation study with domain experts
 
-**Critical distinction**: PSYCHE scores are NOT generated by expert validation - they come from the automated evaluation page!
+**Critical distinction**: Both use PSYCHE RUBRIC (0-55 scale), but automated evaluation is algorithmic while expert validation is human-rated!
 
 ## Development Workflows
 
@@ -347,7 +402,7 @@ st.rerun()  # Trigger page refresh
    )
    ```
 
-4. **Result structure** (changed from `expert_score` to `psyche_score`):
+4. **Result structure**:
    ```json
    {
      "elements": {
@@ -359,7 +414,7 @@ st.rerun()  # Trigger page refresh
          "weighted_score": 1
        }
      },
-     "psyche_score": 35.5,  // Total weighted score
+     "psyche_score": 35.5,  // Total weighted score (0-55 range)
      "metadata": {...}
    }
    ```
@@ -511,13 +566,15 @@ if 'paca_agent' in st.session_state:
 5. **Expert name sanitization**: `sanitize_firebase_key()` required for Firebase keys (different from `sanitize_key()`)
 6. **Aggregation**: "Symptom 1-N" → "Symptom name" happens in `get_aggregated_scoring_options()`, not per-element
 7. **Session state on page change**: Must explicitly delete and recreate `paca_agent`/`paca_memory` when switching between experiment pages - set `force_paca_update=True`
-8. **Model configuration**: SP uses `gpt-5.1` by default (see `SP_utils.py`), PACA variants use different models per implementation
+8. **Model configuration**: 
+   - SP: `gpt-5.1` (default, see `SP_utils.py`)
+   - PACA variants: `gpt-4o-mini` (basic), `gpt-5.1` (guided), `claude-3-haiku` (basic), `claude-3-5-sonnet` (claude2)
 9. **Authentication flow**: `Home.py` checks `st.secrets["participant"]` list - all pages call `check_participant()` or equivalent before rendering
-10. **Field name normalization**: `get_value_from_construct()` normalizes spaces to underscores (e.g., "Triggering factor" matches "triggering_factor") - **FIXED Dec 2025**, see CODE_REVIEW_REPORT.txt
-11. **Marriage/Relationship History key**: In-memory constructs use `"Marriage/Relationship History"` (slash), but Firebase sanitizes to `"Marriage_Relationship History"` (underscore) via `sanitize_dict()` - code handles both formats automatically
+10. **Field name normalization**: `get_value_from_construct()` normalizes spaces to underscores (e.g., "Triggering factor" matches "triggering_factor") - **FIXED Dec 2025**, see [CODE_REVIEW_REPORT.txt](CODE_REVIEW_REPORT.txt)
+11. **Marriage/Relationship History key**: In-memory constructs use `"Marriage/Relationship History"` (slash), expert validation fixed to use slash format - **FIXED Dec 2025**, see [CODE_REVIEW_REPORT.txt](CODE_REVIEW_REPORT.txt)
 12. **Firebase sanitization**: `sanitize_dict()` converts `/$#[].` to `_` before saving - all slashes become underscores in stored data
 13. **Initial greeting memory timing**: The hardcoded initial greeting "안녕하세요, 저는 정신과 의사 김민수입니다..." must be added to PACA and SP memories BEFORE creating `conversation_generator` - check for duplicates using `if len(memory.messages) == 0 or memory.messages[-1].content != greeting`
-14. **Playwright setup**: Chromium browser required for certain features - auto-installed on dev container startup via `setup_playwright()` in Home.py
+14. **Playwright setup**: Chromium browser required for certain features - auto-installed on dev container startup via `setup_playwright()` in [Home.py](Home.py)
 
 ## Key Files Reference
 
@@ -529,6 +586,38 @@ if 'paca_agent' in st.session_state:
 - `Experiment_claude_basic.py` (and variants): Base experiment logic imported by page-specific files
 - `EVALUATOR_REFACTOR.md`, `MEMORY_FIX_GUIDE.md`, `VALIDATION_CODE_REVIEW.md`: Architecture decision records
 - `CODE_REVIEW_REPORT.txt`: Comprehensive review of field mapping issues (Dec 2025)
+
+## Testing
+
+**Test aggregation logic**:
+```bash
+python test_expert_validation_aggregation.py
+```
+This verifies that symptom aggregation and scoring options match expected format.
+
+**Test field mapping** (critical for PSYCHE RUBRIC):
+```bash
+python test_comprehensive_field_mapping.py
+```
+Validates all 59 PSYCHE elements map correctly between SP/PACA constructs.
+
+**Test Firebase structure**:
+```bash
+python test_firebase_sanitized_structure.py
+```
+Ensures key sanitization matches actual Firebase data structure.
+
+**Test Marriage/Relationship key handling** (critical for slash vs underscore):
+```bash
+python test_marriage_key_consistency.py
+```
+
+**Check Firebase connection**:
+```python
+from firebase_config import get_firebase_ref
+ref = get_firebase_ref()
+# Should show "시스템 준비가 완료되었습니다."
+```
 
 ## Testing
 
@@ -590,6 +679,17 @@ ref = get_firebase_ref()
 2. Firebase Realtime Database URL in `st.secrets["firebase_database_url"]`
 3. Participant list in `st.secrets["participant"]` for authentication
 4. `OPENAI_API_KEY` and `ANTHROPIC_API_KEY` environment variables
+
+## Key Files Reference
+
+- `SP_utils.py`: Core agent creation, Firebase I/O, sanitization
+- `evaluator.py`: PSYCHE RUBRIC, construct normalization, scoring, **field name normalization (space↔underscore)**
+- `expert_validation_utils.py`: Validation-specific scoring, aggregation logic
+- `firebase_config.py`: Firebase initialization
+- `paca_construct_generator.py`, `sp_construct_generator.py`: Post-conversation construct generation
+- `Experiment_claude_basic.py` (and variants): Base experiment logic imported by page-specific files
+- `EVALUATOR_REFACTOR.md`, `MEMORY_FIX_GUIDE.md`, `VALIDATION_CODE_REVIEW.md`: Architecture decision records
+- `CODE_REVIEW_REPORT.txt`: Comprehensive review of field mapping issues (Dec 2025)
 
 ## Quick Reference: Common Tasks
 
