@@ -678,34 +678,60 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
     
     with col3:
         if st.button("✅ 완료 - 다음으로", use_container_width=True, type="primary"):
-            # Calculate and save final validation result
-            validation_result = create_validation_result(
-                construct_data,
-                current_responses,
-                exp_item  # Pass (client_number, exp_number) tuple
-            )
-            # Add quality assessment
-            validation_result['quality_assessment'] = st.session_state.validation_responses.get(quality_key, {})
+            # Validate that all items are selected
+            missing_items = []
             
-            # Save to Firebase
-            success = save_validation_to_firebase(
-                firebase_ref,
-                st.session_state.expert_name,
-                exp_item,  # Pass (client_number, exp_number) tuple
-                validation_result
-            )
+            # Check element responses (exclude N/A auto-scored items)
+            for category, items in scoring_options.items():
+                for item in items:
+                    element_name = item['element']
+                    paca_value = item.get('paca_value', 'N/A')
+                    
+                    # Skip N/A items (auto-scored)
+                    if not is_none_or_na(paca_value):
+                        if element_name not in current_responses or not current_responses[element_name]:
+                            missing_items.append(element_name)
             
-            if success:
-                st.success(f"검증 결과가 저장되었습니다! (Client {client_number}, Exp {exp_number})")
-                st.session_state.current_experiment_index += 1
-                
-                # Also save progress
-                save_validation_progress(firebase_ref, st.session_state.expert_name,
-                                       st.session_state.current_experiment_index,
-                                       st.session_state.validation_responses)
-                st.rerun()
+            # Check quality assessment (all 3 criteria must be selected)
+            for criterion_name in PACA_QUALITY_CRITERIA.keys():
+                if criterion_name not in quality_responses or not quality_responses[criterion_name]:
+                    missing_items.append(f"면담 품질 평가 - {criterion_name}")
+            
+            # If there are missing items, show error and don't proceed
+            if missing_items:
+                st.error(
+                    f"⚠️ 다음 항목이 선택되지 않았습니다. 모든 항목을 선택한 후 다시 시도해주세요:\n\n" +
+                    "\n".join([f"- {item}" for item in missing_items])
+                )
             else:
-                st.error("저장 중 오류가 발생했습니다. 다시 시도해주세요. 반복하여 실패할 경우 연구진에게 문의해주세요.")
+                # Calculate and save final validation result
+                validation_result = create_validation_result(
+                    construct_data,
+                    current_responses,
+                    exp_item  # Pass (client_number, exp_number) tuple
+                )
+                # Add quality assessment
+                validation_result['quality_assessment'] = st.session_state.validation_responses.get(quality_key, {})
+                
+                # Save to Firebase
+                success = save_validation_to_firebase(
+                    firebase_ref,
+                    st.session_state.expert_name,
+                    exp_item,  # Pass (client_number, exp_number) tuple
+                    validation_result
+                )
+                
+                if success:
+                    st.success(f"검증 결과가 저장되었습니다! (Client {client_number}, Exp {exp_number})")
+                    st.session_state.current_experiment_index += 1
+                    
+                    # Also save progress
+                    save_validation_progress(firebase_ref, st.session_state.expert_name,
+                                           st.session_state.current_experiment_index,
+                                           st.session_state.validation_responses)
+                    st.rerun()
+                else:
+                    st.error("저장 중 오류가 발생했습니다. 다시 시도해주세요. 반복하여 실패할 경우 연구진에게 문의해주세요.")
 
 def save_validation_progress(firebase_ref, expert_name, current_index, responses):
     """Save validation progress to Firebase"""
