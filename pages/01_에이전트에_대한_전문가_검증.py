@@ -17,36 +17,71 @@ from expert_validation_utils import (
 # 각 항목은 (client_number, experiment_number) 튜플입니다
 # client_number: 4자리 숫자 (예: 6101, 6102)
 # experiment_number: 실험 번호 (예: 101, 102)
+
+# ========== 기존 목록 (주석 처리) ==========
+# EXPERIMENT_NUMBERS = [
+#     # 6201 MDD
+#     (6201, 1111),  # gptbasic
+#     (6201, 1112),  # gptbasic
+#     (6201, 1121),  # gptguided
+#     (6201, 1122),  # gptguided
+#     (6201, 1131),  # claudebasic
+#     (6201, 1132),  # claudebasic
+#     (6201, 1141),  # claudeguided
+#     (6201, 1142),  # claudeguided
+#
+#     # 6202 BD
+#     (6202, 1211),  # gptbasic
+#     (6202, 1212),  # gptbasic
+#     (6202, 1221),  # gptguided
+#     (6202, 1222),  # gptguided
+#     (6202, 1231),  # claudebasic
+#     (6202, 1232),  # claudebasic
+#     (6202, 1241),  # claudeguided
+#     (6202, 1242),  # claudeguided
+#
+#     # 6206 OCD
+#     (6206, 1611),  # gptbasic
+#     (6206, 1612),  # gptbasic
+#     (6206, 1621),  # gptguided
+#     (6206, 1622),  # gptguided
+#     (6206, 1631),  # claudebasic
+#     (6206, 1632),  # claudebasic
+#     (6206, 1641),  # claudeguided
+#     (6206, 1642),  # claudeguided
+# ]
+
+# ========== 새로운 목록 (Smaller vs Large 비교) ==========
 EXPERIMENT_NUMBERS = [
     # 6201 MDD
-    (6201, 1111),  # gptbasic
-    (6201, 1112),  # gptbasic
-    (6201, 1121),  # gptguided
-    (6201, 1122),  # gptguided
-    (6201, 1131),  # claudebasic
-    (6201, 1132),  # claudebasic
-    (6201, 1141),  # claudeguided
-    (6201, 1142),  # claudeguided
+    (6201, 3111),  # gptsmaller
+    (6201, 3117),  # gptsmaller
+    (6201, 1121),  # gptlarge
+    (6201, 1123),  # gptlarge
+    (6201, 3134),  # claudesmaller
+    (6201, 3138),  # claudesmaller
+    (6201, 1143),  # claudelarge
+    (6201, 1145),  # claudelarge
 
     # 6202 BD
-    (6202, 1211),  # gptbasic
-    (6202, 1212),  # gptbasic
-    (6202, 1221),  # gptguided
-    (6202, 1222),  # gptguided
-    (6202, 1231),  # claudebasic
-    (6202, 1232),  # claudebasic
-    (6202, 1241),  # claudeguided
-    (6202, 1242),  # claudeguided
+    (6202, 3211),  # gptsmaller
+    (6202, 3212),  # gptsmaller
+    (6202, 1221),  # gptlarge
+    (6202, 1222),  # gptlarge
+    (6202, 3231),  # claudesmaller
+    (6202, 3234),  # claudesmaller
+    (6202, 1241),  # claudelarge
+    (6202, 1242),  # claudelarge
 
     # 6206 OCD
-    (6206, 1611),  # gptbasic
-    (6206, 1612),  # gptbasic
-    (6206, 1621),  # gptguided
-    (6206, 1622),  # gptguided
-    (6206, 1631),  # claudebasic
-    (6206, 1632),  # claudebasic
-    (6206, 1641),  # claudeguided
-    (6206, 1642),  # claudeguided
+    (6206, 3611),  # gptsmaller
+    (6206, 3612),  # gptsmaller
+    (6206, 1621),  # gptlarge
+    (6206, 1622),  # gptlarge
+    (6206, 3631),  # claudesmaller
+    (6206, 3632),  # claudesmaller
+    (6206, 1641),  # claudelarge
+    (6206, 1642),  # claudelarge
 ]
 
 # ================================
