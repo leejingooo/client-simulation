@@ -366,6 +366,19 @@ def show_validation_page():
     agent = agent_data['agent']
     memory = agent_data['memory']
     
+    # Add CSS for sticky left column with scrollable chat area
+    st.markdown("""
+        <style>
+        /* Fixed height scrollable chat container */
+        .chat-scroll-container {
+            max-height: 70vh;
+            overflow-y: auto;
+            padding-right: 10px;
+            margin-bottom: 20px;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
     # 2-Column Layout
     col_left, col_right = st.columns([1, 1])
     
@@ -374,12 +387,15 @@ def show_validation_page():
         st.markdown("### 💬 면담")
         st.caption("안녕하세요, 저는 정신과 의사 000입니다. 로 면담을 시작해주세요.")
         
+        # Scrollable conversation history container
+        st.markdown('<div class="chat-scroll-container">', unsafe_allow_html=True)
+        
         # Display conversation history
-        chat_container = st.container()
-        with chat_container:
-            for message in memory.messages:
-                with st.chat_message("user" if isinstance(message, HumanMessage) else "assistant"):
-                    st.markdown(message.content)
+        for message in memory.messages:
+            with st.chat_message("user" if isinstance(message, HumanMessage) else "assistant"):
+                st.markdown(message.content)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
         
         # Chat input
         if prompt := st.chat_input("면담 내용을 입력하세요"):
@@ -493,7 +509,7 @@ def show_validation_page():
                     responses[element] = choice
         
         st.markdown("---")
-        st.markdown("### 📊 Qualitative Evaluation")
+        st.markdown("### 📊 질적 검증 섹션")
         
         # Display guideline in expander
         with st.expander("📖 평가 가이드라인 (클릭하여 펼치기/접기)", expanded=False):

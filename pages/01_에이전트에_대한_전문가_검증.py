@@ -486,12 +486,28 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
     
     st.markdown("---")
     
+    # Add CSS for sticky left column with scrollable chat area
+    st.markdown("""
+        <style>
+        /* Make the conversation area scrollable with fixed height */
+        [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlock"] {
+            position: sticky;
+            top: 0;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
     # 2-column layout
     col1, col2 = st.columns([1, 1])
     
     with col1:
         st.subheader("💬 대화 내역")
         st.markdown("---")
+        
+        # Display conversation in a scrollable container
+        st.markdown('<div class="chat-container">', unsafe_allow_html=True)
         
         # Display conversation
         if 'data' in conversation_data:
@@ -507,6 +523,8 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
                 st.markdown("")
         else:
             st.warning("대화 데이터 형식이 올바르지 않습니다. 연구진에게 문의해주세요.")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
     
     with col2:
         st.subheader("✅ 검증 항목")
