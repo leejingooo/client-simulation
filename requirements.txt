@@ -8,6 +8,8 @@ anthropic
 firebase-admin
 pandas
 matplotlib
+seaborn
+scipy
 playwright
 python-dotenv
 requests
