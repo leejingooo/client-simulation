@@ -100,14 +100,20 @@ def init_session_state():
     """Initialize session state variables"""
     if 'validation_stage' not in st.session_state:
         st.session_state.validation_stage = 'intro'  # intro, test, validation
-    if 'current_experiment_index' not in st.session_state:
-        st.session_state.current_experiment_index = 0
-    if 'validation_responses' not in st.session_state:
-        st.session_state.validation_responses = {}
     if 'expert_name' not in st.session_state:
         st.session_state.expert_name = None
-    if 'firebase_loaded' not in st.session_state:
-        st.session_state.firebase_loaded = False
+
+def init_expert_session_state(expert_name):
+    """Initialize session state variables for specific expert"""
+    # Create expert-specific keys
+    expert_key = f"expert_{expert_name}"
+    
+    if expert_key not in st.session_state:
+        st.session_state[expert_key] = {
+            'current_experiment_index': 0,
+            'validation_responses': {},
+            'firebase_loaded': False
+        }
 
 # ================================
 # Authentication Check
@@ -325,13 +331,18 @@ def show_validation_page():
     # Load progress from Firebase (only once per session)
     expert_name = st.session_state.expert_name
     
-    if not st.session_state.get('firebase_loaded', False):
+    # Initialize expert-specific session state
+    init_expert_session_state(expert_name)
+    expert_key = f"expert_{expert_name}"
+    expert_state = st.session_state[expert_key]
+    
+    if not expert_state['firebase_loaded']:
         with st.spinner(f'{expert_name}님의 저장된 검증 결과를 불러오는 중...'):
             progress_data = load_validation_progress(firebase_ref, expert_name)
         
         if progress_data:
-            st.session_state.validation_responses = progress_data.get('responses', {})
-            st.session_state.current_experiment_index = progress_data.get('current_index', 0)
+            expert_state['validation_responses'] = progress_data.get('responses', {})
+            expert_state['current_experiment_index'] = progress_data.get('current_index', 0)
         
         # Also load individual validation results
         for idx, (client_num, exp_num) in enumerate(EXPERIMENT_NUMBERS):
@@ -349,25 +360,25 @@ def show_validation_page():
                         # Use original element name if available, otherwise use sanitized key
                         original_name = element_data.get('element_name_original', element_name)
                         loaded_responses[original_name] = element_data['expert_choice']
-                st.session_state.validation_responses[exp_key] = loaded_responses
+                expert_state['validation_responses'][exp_key] = loaded_responses
                 
                 # Also load quality assessment if exists
                 if 'quality_assessment' in existing_response:
                     quality_key = f"{exp_key}_quality"
-                    st.session_state.validation_responses[quality_key] = existing_response['quality_assessment']
+                    expert_state['validation_responses'][quality_key] = existing_response['quality_assessment']
                     # Debug: Show that quality assessment was loaded
                     st.write(f"✅ Quality assessment loaded for {exp_key}: {existing_response['quality_assessment']}")
         
-        st.session_state.firebase_loaded = True
+        expert_state['firebase_loaded'] = True
         
         # Show info about loaded data
-        if st.session_state.validation_responses:
-            loaded_count = len([k for k in st.session_state.validation_responses.keys() if st.session_state.validation_responses[k]])
+        if expert_state['validation_responses']:
+            loaded_count = len([k for k in expert_state['validation_responses'].keys() if expert_state['validation_responses'][k]])
             if loaded_count > 0:
                 st.success(f"✅ 이전 검증 결과 {loaded_count}개를 불러왔습니다.")
     
     # Progress display
-    current_idx = st.session_state.current_experiment_index
+    current_idx = expert_state['current_experiment_index']
     total_experiments = len(EXPERIMENT_NUMBERS)
     
     st.progress((current_idx) / total_experiments)
@@ -404,7 +415,7 @@ def show_validation_page():
             st.error(f"데이터를 불러올 수 없습니다: Client {client_number}, Exp {exp_number}")
             st.markdown("다음 케이스로 건너뛰시겠습니까? 이 메세지가 출력될 경우 연구진에게 문의해주세요")
             if st.button("다음으로 건너뛰기"):
-                st.session_state.current_experiment_index += 1
+                expert_state['current_experiment_index'] += 1
                 st.rerun()
             st.stop()
         
@@ -428,6 +439,9 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
     """Display the main validation interface with scoring options"""
     
     client_number, exp_number = exp_item
+    expert_name = st.session_state.expert_name
+    expert_key = f"expert_{expert_name}"
+    expert_state = st.session_state[expert_key]
     exp_key = f"{client_number}_{exp_number}"  # Unique key for this experiment
     
     # Display instructions in an expander at the top
@@ -499,15 +513,15 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
         st.markdown("---")
         
         # Get current responses (already loaded from Firebase in show_validation_page)
-        if exp_key not in st.session_state.validation_responses:
-            st.session_state.validation_responses[exp_key] = {}
+        if exp_key not in expert_state['validation_responses']:
+            expert_state['validation_responses'][exp_key] = {}
         
-        current_responses = st.session_state.validation_responses[exp_key]
+        current_responses = expert_state['validation_responses'][exp_key]
         
         # Initialize quality assessment responses
         quality_key = f"{exp_key}_quality"
-        if quality_key not in st.session_state.validation_responses:
-            st.session_state.validation_responses[quality_key] = {}
+        if quality_key not in expert_state['validation_responses']:
+            expert_state['validation_responses'][quality_key] = {}
         
         # Display scoring options by category
         scoring_options = get_scoring_options(construct_data)
@@ -578,7 +592,7 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
                 
                 st.markdown("")
         
-        st.session_state.validation_responses[exp_key] = current_responses
+        expert_state['validation_responses'][exp_key] = current_responses
         
         # ================================
         # PACA Quality Assessment (Likert Scale)
@@ -589,7 +603,7 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
         
         from expert_validation_utils import PACA_QUALITY_CRITERIA
         
-        quality_responses = st.session_state.validation_responses[quality_key]
+        quality_responses = expert_state['validation_responses'][quality_key]
         
         for criterion_name, criterion_data in PACA_QUALITY_CRITERIA.items():
             st.markdown(f"#### {criterion_name}")
@@ -627,7 +641,7 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
             quality_responses[criterion_name] = int(selected_score[0])  # Extract number from "X점"
             st.markdown("")
         
-        st.session_state.validation_responses[quality_key] = quality_responses
+        expert_state['validation_responses'][quality_key] = quality_responses
         
         # Display general notice about N/A handling
         st.info("💡 **안내사항**\n- 에이전트 리포트가 None 또는 N/A인 항목은 자동으로 0점 처리되며, 검증할 필요가 없습니다.\n- '[선택 안 함]'으로 선택된 항목이 남아있지 않도록 유의해주십시오.")
@@ -656,7 +670,7 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
                 is_partial=True  # Mark as partial save
             )
             # Add quality assessment
-            validation_result['quality_assessment'] = st.session_state.validation_responses.get(quality_key, {})
+            validation_result['quality_assessment'] = expert_state['validation_responses'].get(quality_key, {})
             
             success = save_validation_to_firebase(
                 firebase_ref,
@@ -667,9 +681,9 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
             
             if success:
                 # Also save progress
-                save_validation_progress(firebase_ref, st.session_state.expert_name,
-                                       st.session_state.current_experiment_index,
-                                       st.session_state.validation_responses)
+                save_validation_progress(firebase_ref, expert_name,
+                                       expert_state['current_experiment_index'],
+                                       expert_state['validation_responses'])
                 st.session_state.save_status = 'success'
                 st.rerun()
             else:
@@ -693,8 +707,9 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
                             missing_items.append(element_name)
             
             # Check quality assessment (all 3 criteria must be selected)
+            quality_responses_check = expert_state['validation_responses'].get(quality_key, {})
             for criterion_name in PACA_QUALITY_CRITERIA.keys():
-                if criterion_name not in quality_responses or not quality_responses[criterion_name]:
+                if criterion_name not in quality_responses_check or not quality_responses_check[criterion_name]:
                     missing_items.append(f"면담 품질 평가 - {criterion_name}")
             
             # If there are missing items, show error and don't proceed
@@ -711,24 +726,24 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
                     exp_item  # Pass (client_number, exp_number) tuple
                 )
                 # Add quality assessment
-                validation_result['quality_assessment'] = st.session_state.validation_responses.get(quality_key, {})
+                validation_result['quality_assessment'] = expert_state['validation_responses'].get(quality_key, {})
                 
                 # Save to Firebase
                 success = save_validation_to_firebase(
                     firebase_ref,
-                    st.session_state.expert_name,
+                    expert_name,
                     exp_item,  # Pass (client_number, exp_number) tuple
                     validation_result
                 )
                 
                 if success:
                     st.success(f"검증 결과가 저장되었습니다! (Client {client_number}, Exp {exp_number})")
-                    st.session_state.current_experiment_index += 1
+                    expert_state['current_experiment_index'] += 1
                     
                     # Also save progress
-                    save_validation_progress(firebase_ref, st.session_state.expert_name,
-                                           st.session_state.current_experiment_index,
-                                           st.session_state.validation_responses)
+                    save_validation_progress(firebase_ref, expert_name,
+                                           expert_state['current_experiment_index'],
+                                           expert_state['validation_responses'])
                     st.rerun()
                 else:
                     st.error("저장 중 오류가 발생했습니다. 다시 시도해주세요. 반복하여 실패할 경우 연구진에게 문의해주세요.")
