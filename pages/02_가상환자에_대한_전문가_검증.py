@@ -423,11 +423,13 @@ def show_validation_page():
                         if 'expert_choice' in elem_data:
                             st.session_state.sp_validation_responses[response_key][elem_name] = elem_data['expert_choice']
                 
-                # Load additional questions
-                if 'diagnosis_guess' in saved_data:
-                    st.session_state.sp_validation_responses[response_key]['diagnosis_guess'] = saved_data['diagnosis_guess']
-                if 'overall_comment' in saved_data:
-                    st.session_state.sp_validation_responses[response_key]['overall_comment'] = saved_data['overall_comment']
+                # Load qualitative evaluation
+                if 'qualitative' in saved_data:
+                    st.session_state.sp_validation_responses[response_key]['qualitative'] = saved_data['qualitative']
+                
+                # Load additional impressions
+                if 'additional_impressions' in saved_data:
+                    st.session_state.sp_validation_responses[response_key]['additional_impressions'] = saved_data['additional_impressions']
         
         responses = st.session_state.sp_validation_responses[response_key]
         
@@ -491,28 +493,236 @@ def show_validation_page():
                     responses[element] = choice
         
         st.markdown("---")
-        st.markdown("#### 추가 질문")
+        st.markdown("### 📊 Qualitative Evaluation")
         
-        # Question 1: Diagnosis guess
-        st.markdown("**1. 이 가상환자의 진단명은 무엇이라고 생각하십니까?**")
-        diagnosis_guess = st.radio(
-            "진단명 선택",
-            options=DIAGNOSIS_OPTIONS,
-            key=f"diagnosis_{response_key}",
-            index=DIAGNOSIS_OPTIONS.index(responses.get('diagnosis_guess', DIAGNOSIS_OPTIONS[0])) if responses.get('diagnosis_guess') in DIAGNOSIS_OPTIONS else 0
-        )
-        responses['diagnosis_guess'] = diagnosis_guess
+        # Display guideline in expander
+        with st.expander("📖 평가 가이드라인 (클릭하여 펼치기/접기)", expanded=False):
+            st.markdown("""
+            시뮬레이션된 환자를 평가하실 때에는, 해당 진단을 고려하였을 때 제공된 대화 기록에서 환자가 발화한 내용이 임상적으로 타당한 표현인지에만 집중해 주십시오. 평가자의 과제는 환자의 언어적 표현이 기분(mood), 정동(affect), 사고 과정(thought process), 사고 내용(thought content), 병식(insight), 자살 사고/계획/시도, 타해 사고(homicidal ideation) 등의 임상적 영역에서 얼마나 그럴듯하게 나타나는지를, 오직 발화 내용과 전체적인 패턴을 기준으로 판단하는 것입니다. 면담자의 질문 방식이나 면담 기술은 평가 대상에서 제외해 주십시오.
+            
+            각 대화 기록을 검토하실 때, 시뮬레이션된 환자의 표현 방식이 해당 진단에서 일반적으로 관찰되는 임상적 양상과 부합하는지를 임상적 판단을 바탕으로 평가해 주시고, 항목별로 특히 그럴듯하게 느껴진 부분과 그렇지 않았던 부분을 간단히 기록해 주시기 바랍니다. 또한 미리 제시된 항목에 포함되지 않더라도, 대화 내용에서 추가로 임상적으로 합당하거나 그렇지 않다고 판단되는 점이 있다면 자유롭게 의견을 적어 주셔도 됩니다.
+            
+            ---
+            
+            ### PSYCHE-SP Qualitative Evaluation — Instruction Sheet for Independent Psychiatrists
+            
+            #### 1. Purpose of This Evaluation
+            You will be evaluating whether the simulated patient's utterances in a transcript plausibly reflect the clinical presentation of a real patient with the specified target diagnosis (e.g., Major Depressive Disorder, Bipolar Disorder, Panic Disorder, OCD, PTSD, etc.).
+            
+            This evaluation focuses only on the simulated patient's side of the dialogue. You should not evaluate the quality of the interviewer or the conversational agent.
+            
+            #### 2. Materials Provided
+            You will receive:
+            - An interview transcript between a conversational agent and a simulated patient.
+            - The target diagnosis that the simulated patient is intended to present.
+            
+            You will not receive the underlying schema (construct) used to generate the simulated patient.
+            Your task is to judge whether the observable verbal presentation is clinically compatible with the stated diagnosis.
+            
+            #### 3. Psychiatric Elements to Evaluate
+            For each transcript, you will rate the clinical plausibility of the simulated patient's presentation in the following seven psychiatric elements:
+            1. Mood
+            2. Affect
+            3. Thought Process
+            4. Thought Content
+            5. Insight
+            6. Suicidal Ideation / Plan / Attempt
+            7. Homicidal Ideation
+            
+            Each element should be rated solely from the verbal content of the dialogue.
+            
+            #### 4. Rating Scale (1–5 Likert)
+            For each psychiatric element, rate:
+            
+            **"To what extent does the simulated patient's verbal presentation show a clinically plausible manifestation of this element for a real patient with the given diagnosis?"**
+            
+            - **1 — Clearly incompatible**
+              - Strongly contradicts expected clinical presentation
+              - Highly implausible or misleading for this diagnosis
+              - Would make you question whether the patient has this condition
+            
+            - **2 — Weakly compatible / atypical**
+              - Could appear in rare or atypical cases
+              - Generally inconsistent with common clinical experience
+            
+            - **3 — Plausible but non-specific**
+              - Reasonably compatible
+              - Could fit several disorders
+              - Not strongly characteristic
+            
+            - **4 — Typical**
+              - Commonly seen in patients with this diagnosis
+              - Clinically appropriate and realistic
+            
+            - **5 — Prototypical**
+              - Very characteristic or textbook-like
+              - Strongly aligns with typical clinical phenomenology
+            
+            #### 5. Free-Text Explanations
+            For each element, please provide:
+            - "What aspects of the dialogue made this plausible?"
+            - "What aspects appeared less plausible or contradictory?"
+            
+            At the end:
+            - "Please list any additional clinically plausible or implausible features you noticed that were not directly asked about."
+            
+            #### 6. Instructions for Completing the Form
+            1. Read the entire transcript once without scoring.
+            2. On a second pass, evaluate each element based on overall verbal patterns, not isolated sentences.
+            3. Focus strictly on the simulated patient's utterances, not the interviewer.
+            4. Use your clinical judgment as you would when evaluating a real patient's verbal presentation.
+            
+            ---
+            
+            ### Why Certain Classical Psychiatric Elements Are Excluded
+            To ensure methodological validity and avoid misleading evaluations, we exclude several psychiatric examination domains that cannot be reliably judged from text alone.
+            
+            #### Excluded Elements and Rationale
+            
+            **1. Perceptual Disturbances (Hallucinations, Derealization, Deja Vu, Jamais Vu)**
+            - Reason for exclusion: These phenomena typically manifest through behavioral cues, nonverbal responses, and contextual details which are not observable in a text-only interview transcript.
+            - Furthermore, perceptual distortions such as déjà vu, jamais vu, or derealization 1) are not reliably elicited in MDD, BD, OCD, 2) often require contextual elaboration or clinician probing, 3) and cannot be inferred solely from written utterances.
+            - Including these items would risk introducing false negatives due to missing modalities.
+            
+            **2. Speech Characteristics** (spontaneity, response latency, pressure of speech, verbal productivity, tone)
+            - Reason for exclusion: These elements require auditory or temporal information:
+              - speed of speech
+              - response time 
+              - tone
+              - spontaneity
+              - verbal productivity 
+            - None of these can be observed in plain-text dialogue transcripts. Thus, scoring would not be possible.
+            
+            **3. Psychomotor / Behavioral Abnormalities** (restlessness, retardation, agitation, tics, catatonia, gestures, posture)
+            - Reason for exclusion: These rely entirely on visual observation and are not inferable from text.
+            """)
         
-        # Question 2: Overall comment
-        st.markdown("**2. 이 가상환자에 대한 총평을 작성해주세요**")
-        overall_comment = st.text_area(
-            "총평",
-            value=responses.get('overall_comment', ''),
-            key=f"comment_{response_key}",
+        st.markdown("---")
+        
+        # Define psychiatric elements for evaluation
+        PSYCHIATRIC_ELEMENTS = [
+            {
+                'name': 'Mood',
+                'key': 'mood',
+                'description': ''
+            },
+            {
+                'name': 'Affect',
+                'key': 'affect',
+                'description': '(as inferred from language)'
+            },
+            {
+                'name': 'Thought Process',
+                'key': 'thought_process',
+                'description': '(linear, circumstantial, tangential, FOI, blocking, etc.)'
+            },
+            {
+                'name': 'Thought Content',
+                'key': 'thought_content',
+                'description': '(negative cognitions, obsessions, delusions, preoccupations)'
+            },
+            {
+                'name': 'Insight',
+                'key': 'insight',
+                'description': "(patient's awareness of illness, need for help)"
+            },
+            {
+                'name': 'Suicidal Ideation / Plan / Attempt',
+                'key': 'suicidal',
+                'description': '(as verbally expressed)'
+            },
+            {
+                'name': 'Homicidal Ideation',
+                'key': 'homicidal',
+                'description': '(if applicable in transcript)'
+            }
+        ]
+        
+        # Initialize qualitative responses if not exists
+        if 'qualitative' not in responses:
+            responses['qualitative'] = {}
+        
+        # Rating scale options
+        rating_options = [
+            "1 — Clearly incompatible",
+            "2 — Weakly compatible / atypical",
+            "3 — Plausible but non-specific",
+            "4 — Typical",
+            "5 — Prototypical"
+        ]
+        
+        # Evaluate each psychiatric element
+        for idx, element in enumerate(PSYCHIATRIC_ELEMENTS, 1):
+            st.markdown(f"#### {idx}. {element['name']}")
+            if element['description']:
+                st.caption(element['description'])
+            
+            element_key = element['key']
+            
+            # Initialize element data if not exists
+            if element_key not in responses['qualitative']:
+                responses['qualitative'][element_key] = {
+                    'rating': None,
+                    'plausible_aspects': '',
+                    'less_plausible_aspects': ''
+                }
+            
+            # Rating
+            current_rating = responses['qualitative'][element_key].get('rating')
+            if current_rating and isinstance(current_rating, int):
+                # Convert int to index (1-5 -> 0-4)
+                current_index = current_rating - 1
+            else:
+                current_index = 2  # Default to middle option (3)
+            
+            selected_rating = st.radio(
+                f"Rating for {element['name']}",
+                options=rating_options,
+                index=current_index,
+                key=f"qual_rating_{response_key}_{element_key}",
+                horizontal=False,
+                label_visibility="collapsed"
+            )
+            
+            # Extract numeric rating (1-5)
+            rating_value = int(selected_rating.split("—")[0].strip())
+            responses['qualitative'][element_key]['rating'] = rating_value
+            
+            # Plausible aspects
+            plausible = st.text_area(
+                "What aspects of the dialogue made this plausible?",
+                value=responses['qualitative'][element_key].get('plausible_aspects', ''),
+                key=f"qual_plausible_{response_key}_{element_key}",
+                height=80,
+                placeholder="Describe what aspects made this clinically plausible..."
+            )
+            responses['qualitative'][element_key]['plausible_aspects'] = plausible
+            
+            # Less plausible aspects
+            less_plausible = st.text_area(
+                "What aspects appeared less plausible or contradictory?",
+                value=responses['qualitative'][element_key].get('less_plausible_aspects', ''),
+                key=f"qual_less_plausible_{response_key}_{element_key}",
+                height=80,
+                placeholder="Describe what aspects appeared less plausible..."
+            )
+            responses['qualitative'][element_key]['less_plausible_aspects'] = less_plausible
+            
+            st.markdown("---")
+        
+        # Additional impressions
+        st.markdown("#### 8. Additional Clinically Relevant Impressions (Optional)")
+        st.caption("Please list any additional clinically plausible or implausible features you noticed that were not directly asked about.")
+        
+        additional_impressions = st.text_area(
+            "Additional impressions",
+            value=responses.get('additional_impressions', ''),
+            key=f"qual_additional_{response_key}",
             height=150,
-            placeholder="가상환자의 시뮬레이션 품질, 개선점 등을 자유롭게 작성해주세요."
+            placeholder="Any other clinical observations...",
+            label_visibility="collapsed"
         )
-        responses['overall_comment'] = overall_comment
+        responses['additional_impressions'] = additional_impressions
         
         st.markdown("---")
         
@@ -539,13 +749,19 @@ def show_validation_page():
                         if element not in responses or not responses[element]:
                             missing_items.append(element)
                 
-                # Check diagnosis guess
-                if 'diagnosis_guess' not in responses or not responses['diagnosis_guess']:
-                    missing_items.append("진단명 추측")
-                
-                # Check overall comment (optional but encourage filling)
-                if 'overall_comment' not in responses or not responses['overall_comment'].strip():
-                    missing_items.append("총평 (권장 사항)")
+                # Check qualitative evaluation
+                if 'qualitative' not in responses:
+                    missing_items.append("Qualitative Evaluation (전체)")
+                else:
+                    PSYCHIATRIC_ELEMENTS_KEYS = ['mood', 'affect', 'thought_process', 'thought_content', 'insight', 'suicidal', 'homicidal']
+                    for elem_key in PSYCHIATRIC_ELEMENTS_KEYS:
+                        if elem_key not in responses['qualitative']:
+                            missing_items.append(f"Qualitative Evaluation - {elem_key}")
+                        else:
+                            elem_data = responses['qualitative'][elem_key]
+                            if not elem_data.get('rating'):
+                                missing_items.append(f"Qualitative Evaluation - {elem_key} (rating)")
+                            # Text fields are optional, only rating is required
                 
                 # If there are missing items, show error and don't proceed
                 if missing_items:
@@ -588,10 +804,6 @@ def show_validation_page():
                             st.rerun()
                 else:
                     # All items selected - proceed
-                    # Clear skip flag if it exists
-                    if 'allow_skip_comment' in st.session_state:
-                        del st.session_state.allow_skip_comment
-                    
                     # Final save
                     save_sp_validation(firebase_ref, page_number, client_number, responses, memory, is_final=True)
                     
@@ -627,11 +839,11 @@ def save_sp_validation(firebase_ref, page_number, client_number, responses, memo
         'timestamp': datetime.now().isoformat(),
         'is_final': is_final,
         'elements': {},
-        'diagnosis_guess': responses.get('diagnosis_guess', ''),
-        'overall_comment': responses.get('overall_comment', '')
+        'qualitative': responses.get('qualitative', {}),
+        'additional_impressions': responses.get('additional_impressions', '')
     }
     
-        # Add element validations
+    # Add element validations
     for element in VALIDATION_ELEMENTS:
         if element in responses:
             # Get SP content
