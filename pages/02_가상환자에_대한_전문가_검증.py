@@ -89,8 +89,20 @@ VALIDATION_ELEMENTS = [
 # ================================
 # Session State Initialization
 # ================================
+# NOTE: Streamlit 세션 상태는 브라우저 세션별로 완전히 격리됩니다.
+# - 다른 전문가 = 다른 브라우저/기기 → 세션 충돌 없음
+# - 같은 전문가 = 다른 탭에서 세션 공유 → 한 번에 한 탭만 사용 권장
+# - Firebase 저장은 expert_name과 client/page로 분리되어 데이터 충돌 없음
+# - 각 SP의 agent/memory는 session_key로 완전히 독립적
+
 def init_session_state():
-    """Initialize session state variables"""
+    """Initialize session state variables
+    
+    전역 세션 상태 패턴:
+    - current_sp_index: 현재 가상환자 인덱스 (전역)
+    - sp_validation_responses: 각 SP별 응답 (key: sp_{page}_{client})
+    - 각 SP agent/memory는 sp_validation_{expert}_{page}_{client} 키로 분리
+    """
     if 'sp_validation_stage' not in st.session_state:
         st.session_state.sp_validation_stage = 'intro'  # intro, practice, validation
     if 'current_sp_index' not in st.session_state:
@@ -252,7 +264,7 @@ def show_validation_page():
         progress_data = load_sp_validation_progress(firebase_ref, expert_name)
         if progress_data and 'current_index' in progress_data:
             st.session_state.current_sp_index = progress_data['current_index']
-            st.info(f"💾 이전 진행도를 불러왔습니다. (가상환자 {st.session_state.current_sp_index + 1}/{len(SP_SEQUENCE)})")
+            st.info(f"💾 이전 데이터를 불러왔습니다. (가상환자 {st.session_state.current_sp_index + 1}/{len(SP_SEQUENCE)})")
         st.session_state.sp_progress_loaded = True
     
     # Get current SP info

@@ -96,6 +96,11 @@ st.set_page_config(
 # ================================
 # Session State Initialization
 # ================================
+# NOTE: Streamlit 세션 상태는 브라우저 세션별로 완전히 격리됩니다.
+# - 다른 전문가 = 다른 브라우저/기기 → 세션 충돌 없음
+# - 같은 전문가 = 다른 탭에서 세션 공유 → 의도된 동작
+# - Firebase 저장은 expert_name으로 분리되어 데이터 충돌 없음
+
 def init_session_state():
     """Initialize session state variables"""
     if 'validation_stage' not in st.session_state:
@@ -104,7 +109,12 @@ def init_session_state():
         st.session_state.expert_name = None
 
 def init_expert_session_state(expert_name):
-    """Initialize session state variables for specific expert"""
+    """Initialize session state variables for specific expert
+    
+    전문가별 세션 격리 패턴:
+    - expert_{expert_name} 키로 각 전문가의 상태 분리
+    - 같은 전문가가 여러 탭에서 작업해도 일관성 유지
+    """
     # Create expert-specific keys
     expert_key = f"expert_{expert_name}"
     
