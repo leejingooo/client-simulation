@@ -691,7 +691,7 @@ def show_validation_page():
                     
                     # Only check non-empty items
                     if not is_empty:
-                        if element not in responses or not responses[element]:
+                        if element not in responses or not responses[element] or responses[element] == "선택 안함":
                             missing_items.append(element)
                 
                 # Check qualitative evaluation
