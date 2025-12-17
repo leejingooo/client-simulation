@@ -246,6 +246,15 @@ def show_validation_page():
         st.error("Firebase 초기화 실패. 연구진에게 문의해주세요.")
         st.stop()
     
+    # Load progress from Firebase if not already loaded
+    expert_name = st.session_state.expert_name
+    if 'sp_progress_loaded' not in st.session_state:
+        progress_data = load_sp_validation_progress(firebase_ref, expert_name)
+        if progress_data and 'current_index' in progress_data:
+            st.session_state.current_sp_index = progress_data['current_index']
+            st.info(f"💾 이전 진행도를 불러왔습니다. (가상환자 {st.session_state.current_sp_index + 1}/{len(SP_SEQUENCE)})")
+        st.session_state.sp_progress_loaded = True
+    
     # Get current SP info
     if st.session_state.current_sp_index >= len(SP_SEQUENCE):
         show_completion_page()
@@ -682,6 +691,8 @@ def show_validation_page():
                     save_sp_validation(firebase_ref, page_number, client_number, responses, memory, is_final=False)
                     # Decrease index to go back
                     st.session_state.current_sp_index -= 1
+                    # Save progress to Firebase
+                    save_sp_validation_progress(firebase_ref, st.session_state.expert_name, st.session_state.current_sp_index)
                     # Clear current session to force reload of previous SP
                     if session_key in st.session_state:
                         del st.session_state[session_key]
@@ -770,6 +781,9 @@ def show_validation_page():
                     # Move to next SP
                     st.session_state.current_sp_index += 1
                     
+                    # Save progress to Firebase
+                    save_sp_validation_progress(firebase_ref, st.session_state.expert_name, st.session_state.current_sp_index)
+                    
                     # Clear session for this SP
                     if session_key in st.session_state:
                         del st.session_state[session_key]
@@ -845,6 +859,32 @@ def save_sp_validation(firebase_ref, page_number, client_number, responses, memo
         'timestamp': datetime.now().isoformat(),
         'conversation': conversation_log
     })
+
+
+def save_sp_validation_progress(firebase_ref, expert_name, current_index):
+    """Save SP validation progress to Firebase"""
+    try:
+        progress_key = f"sp_progress_{sanitize_key(expert_name)}"
+        progress_data = {
+            'current_index': current_index,
+            'timestamp': datetime.now().isoformat()
+        }
+        firebase_ref.child(progress_key).set(progress_data)
+        return True
+    except Exception as e:
+        st.error(f"진행도 저장 실패: {e}")
+        return False
+
+
+def load_sp_validation_progress(firebase_ref, expert_name):
+    """Load SP validation progress from Firebase"""
+    try:
+        progress_key = f"sp_progress_{sanitize_key(expert_name)}"
+        progress_data = firebase_ref.child(progress_key).get()
+        return progress_data
+    except Exception as e:
+        st.warning(f"진행도 불러오기 실패: {e}")
+        return None
 
 
 def show_completion_page():

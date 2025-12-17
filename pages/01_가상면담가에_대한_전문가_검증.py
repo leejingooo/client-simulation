@@ -443,6 +443,7 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
     expert_key = f"expert_{expert_name}"
     expert_state = st.session_state[expert_key]
     exp_key = f"{client_number}_{exp_number}"  # Unique key for this experiment
+    current_idx = expert_state['current_experiment_index']  # Get current index for back button
     
     # Display instructions in an expander at the top
     with st.expander("📖 검증 프로세스 안내 (클릭하여 펼치기/접기)", expanded=False):
