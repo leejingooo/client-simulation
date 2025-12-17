@@ -45,8 +45,8 @@ def check_participant():
 def main():
     if check_participant():
         st.success(f"환영합니다, {st.session_state['name']}님!")
-        st.title("Client-Simulation에 오신 것을 환영합니다")
-        st.write("계속하려면 사이드바에서 페이지를 선택하세요.")
+        st.title("연구에 참여해주셔서 감사합니다!")
+        st.write("가상면담가와 가상환자에 대한 검증을 수행해주십시오. 사이드바에서 각 검증 페이지로 이동할 수 있습니다.")
 
         # Playwright 설정 실행
         with st.spinner("Playwright 설정 중..."):

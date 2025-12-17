@@ -502,35 +502,7 @@ def show_validation_page():
             각 대화 기록을 검토하실 때, 시뮬레이션된 환자의 표현 방식이 해당 진단에서 일반적으로 관찰되는 임상적 양상과 부합하는지를 임상적 판단을 바탕으로 평가해 주시고, 항목별로 특히 그럴듯하게 느껴진 부분과 그렇지 않았던 부분을 간단히 기록해 주시기 바랍니다. 또한 미리 제시된 항목에 포함되지 않더라도, 대화 내용에서 추가로 임상적으로 합당하거나 그렇지 않다고 판단되는 점이 있다면 자유롭게 의견을 적어 주셔도 됩니다.
             
             ---
-            
-            ### PSYCHE-SP Qualitative Evaluation — Instruction Sheet for Independent Psychiatrists
-            
-            #### 1. Purpose of This Evaluation
-            You will be evaluating whether the simulated patient's utterances in a transcript plausibly reflect the clinical presentation of a real patient with the specified target diagnosis (e.g., Major Depressive Disorder, Bipolar Disorder, Panic Disorder, OCD, PTSD, etc.).
-            
-            This evaluation focuses only on the simulated patient's side of the dialogue. You should not evaluate the quality of the interviewer or the conversational agent.
-            
-            #### 2. Materials Provided
-            You will receive:
-            - An interview transcript between a conversational agent and a simulated patient.
-            - The target diagnosis that the simulated patient is intended to present.
-            
-            You will not receive the underlying schema (construct) used to generate the simulated patient.
-            Your task is to judge whether the observable verbal presentation is clinically compatible with the stated diagnosis.
-            
-            #### 3. Psychiatric Elements to Evaluate
-            For each transcript, you will rate the clinical plausibility of the simulated patient's presentation in the following seven psychiatric elements:
-            1. Mood
-            2. Affect
-            3. Thought Process
-            4. Thought Content
-            5. Insight
-            6. Suicidal Ideation / Plan / Attempt
-            7. Homicidal Ideation
-            
-            Each element should be rated solely from the verbal content of the dialogue.
-            
-            #### 4. Rating Scale (1–5 Likert)
+            #### Rating Scale (1–5 Likert)
             For each psychiatric element, rate:
             
             **"To what extent does the simulated patient's verbal presentation show a clinically plausible manifestation of this element for a real patient with the given diagnosis?"**
@@ -557,43 +529,6 @@ def show_validation_page():
               - Very characteristic or textbook-like
               - Strongly aligns with typical clinical phenomenology
             
-            #### 5. Free-Text Explanations
-            For each element, please provide:
-            - "What aspects of the dialogue made this plausible?"
-            - "What aspects appeared less plausible or contradictory?"
-            
-            At the end:
-            - "Please list any additional clinically plausible or implausible features you noticed that were not directly asked about."
-            
-            #### 6. Instructions for Completing the Form
-            1. Read the entire transcript once without scoring.
-            2. On a second pass, evaluate each element based on overall verbal patterns, not isolated sentences.
-            3. Focus strictly on the simulated patient's utterances, not the interviewer.
-            4. Use your clinical judgment as you would when evaluating a real patient's verbal presentation.
-            
-            ---
-            
-            ### Why Certain Classical Psychiatric Elements Are Excluded
-            To ensure methodological validity and avoid misleading evaluations, we exclude several psychiatric examination domains that cannot be reliably judged from text alone.
-            
-            #### Excluded Elements and Rationale
-            
-            **1. Perceptual Disturbances (Hallucinations, Derealization, Deja Vu, Jamais Vu)**
-            - Reason for exclusion: These phenomena typically manifest through behavioral cues, nonverbal responses, and contextual details which are not observable in a text-only interview transcript.
-            - Furthermore, perceptual distortions such as déjà vu, jamais vu, or derealization 1) are not reliably elicited in MDD, BD, OCD, 2) often require contextual elaboration or clinician probing, 3) and cannot be inferred solely from written utterances.
-            - Including these items would risk introducing false negatives due to missing modalities.
-            
-            **2. Speech Characteristics** (spontaneity, response latency, pressure of speech, verbal productivity, tone)
-            - Reason for exclusion: These elements require auditory or temporal information:
-              - speed of speech
-              - response time 
-              - tone
-              - spontaneity
-              - verbal productivity 
-            - None of these can be observed in plain-text dialogue transcripts. Thus, scoring would not be possible.
-            
-            **3. Psychomotor / Behavioral Abnormalities** (restlessness, retardation, agitation, tics, catatonia, gestures, posture)
-            - Reason for exclusion: These rely entirely on visual observation and are not inferable from text.
             """)
         
         st.markdown("---")

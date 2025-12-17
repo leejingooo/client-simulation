@@ -41,6 +41,9 @@ The system generates conversations, produces structured psychiatric assessments 
 │   ├── 02_가상환자에_대한_전문가_검증.py  # SP authenticity validation
 │   ├── 04_evaluation.py            # Automated PSYCHE evaluation (generates scores)
 │   ├── 09_plot.py                  # PSYCHE score visualization (uses evaluation data)
+│   ├── 10_plot2.py                 # Alternative visualization (5 experiments per model)
+│   ├── 10_plot3.py                 # Scatter plot for smaller vs large model comparison
+│   ├── 11_correlation_analysis.py  # Correlation analysis between expert and automated scores
 │   └── 연구자용 격리 폴더/          # Research-mode pages (hidden in production)
 ├── data/
 │   ├── prompts/                    # Agent system prompts (versioned)
@@ -349,6 +352,17 @@ for speaker, message in st.session_state.conversation_generator:
   - **Data source**: Loads from `clients_{client_num}/psyche_{diagnosis}_{model}_{exp_num}`
   - **NOT from expert validation data** - uses automated evaluation results
   - **Score range**: 0-55 (max possible PSYCHE score)
+- `pages/10_plot2.py`: Alternative visualization with 5 experiments per model variant
+  - Supports larger datasets with filled/hatched markers for model differentiation
+  - Uses same Firebase data structure as `09_plot.py`
+- `pages/10_plot3.py`: Scatter plot optimized for smaller vs large model comparison
+  - Uses diamond/circle markers with filled/empty/hatched styles
+  - Aligned with current EXPERIMENT_NUMBERS preset (24 experiments)
+- `pages/11_correlation_analysis.py`: Statistical correlation analysis page
+  - **Purpose**: Compare expert validation scores vs automated PSYCHE scores
+  - **Methods**: Pearson and Spearman correlation coefficients
+  - **Visualizations**: Scatter plots with regression lines, category-level breakdowns
+  - **Data sources**: Loads both expert validation data and automated evaluation results
 - `pages/연구자용 격리 폴더 (연구모드시 페이지 복원)/`: Research-mode pages
   - Contains disorder-specific experiment pages with guided variants (MDD, BD, OCD)
   - Contains unified experiment pages allowing client selection via dropdown
@@ -366,12 +380,15 @@ st.rerun()  # Trigger page refresh
 
 1. **PRESET Configuration** (top of file):
    ```python
+   # Current configuration: Smaller vs Large model comparison
    EXPERIMENT_NUMBERS = [
-       (6201, 11),   # (client_number, experiment_number)
-       (6201, 12),   # MDD patient, experiment 12
-       (6202, 211),  # BD patient, experiment 211
-       (6206, 611),  # OCD patient, experiment 611
-       # Total 24 experiments across 3 disorders × 2 models × 2 variants × 2 reps
+       # 6201 MDD
+       (6201, 3111), (6201, 3117),  # gptsmaller
+       (6201, 1121), (6201, 1123),  # gptlarge
+       (6201, 3134), (6201, 3138),  # claudesmaller
+       (6201, 1143), (6201, 1145),  # claudelarge
+       # Similar patterns for 6202 BD and 6206 OCD
+       # Total 24 experiments across 3 disorders × 4 model variants × 2 reps
    ]
    ```
 
@@ -568,7 +585,8 @@ if 'paca_agent' in st.session_state:
 7. **Session state on page change**: Must explicitly delete and recreate `paca_agent`/`paca_memory` when switching between experiment pages - set `force_paca_update=True`
 8. **Model configuration**: 
    - SP: `gpt-5.1` (default, see `SP_utils.py`)
-   - PACA variants: `gpt-4o-mini` (basic), `gpt-5.1` (guided), `claude-3-haiku` (basic), `claude-3-5-sonnet` (claude2)
+   - PACA variants: `gpt-4o-mini` (basic/smaller), `gpt-5.1` (guided/large), `claude-3-haiku` (basic/smaller), `claude-3-5-sonnet` (claude2/large)
+   - **Model naming evolution**: Original terminology was `gptbasic`/`gptguided`, now uses `gptsmaller`/`gptlarge` to reflect model size comparison
 9. **Authentication flow**: `Home.py` checks `st.secrets["participant"]` list - all pages call `check_participant()` or equivalent before rendering
 10. **Field name normalization**: `get_value_from_construct()` normalizes spaces to underscores (e.g., "Triggering factor" matches "triggering_factor") - **FIXED Dec 2025**, see [CODE_REVIEW_REPORT.txt](CODE_REVIEW_REPORT.txt)
 11. **Marriage/Relationship History key**: In-memory constructs use `"Marriage/Relationship History"` (slash), expert validation fixed to use slash format - **FIXED Dec 2025**, see [CODE_REVIEW_REPORT.txt](CODE_REVIEW_REPORT.txt)
@@ -698,6 +716,12 @@ ref = get_firebase_ref()
 2. Update import to match base experiment file
 3. Set client number (6201=MDD, 6202=BD, 6206=OCD)
 4. Update `current_page` and `current_agent_type` tracking strings
+
+**Add a new visualization page**:
+1. Define `EXPERIMENTS` dict with disorder→model→experiment list mapping
+2. Use consistent model names: `gptsmaller_guided`, `gptlarge_guided`, `claudesmaller_guided`, `claudelarge_guided`
+3. Set up color mapping for disorders (MDD=red, BD=teal, OCD=orange)
+4. Configure marker styles for model differentiation (see `10_plot2.py`, `10_plot3.py` for patterns)
 
 **Debug memory issues**:
 ```python

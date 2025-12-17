@@ -88,7 +88,7 @@ EXPERIMENT_NUMBERS = [
 # Page Configuration
 # ================================
 st.set_page_config(
-    page_title="에이전트에 대한 전문가 검증",
+    page_title="가상면담가에 대한 전문가 검증",
     page_icon="📋",
     layout="wide"
 )
@@ -132,13 +132,13 @@ def check_expert_login():
 # ================================
 def show_intro_page():
     """Display introduction page with instructions"""
-    st.title("📋 에이전트에 대한 전문가 검증")
+    st.title("📋 가상면담가에 대한 전문가 검증")
     st.markdown("---")
     
     st.markdown("""
     ## 검증 프로세스 안내
     
-    안녕하세요, 전문가님. 본 시스템은 정신과적 평가를 위한 대화형 에이전트(이하 에이전트)의 
+    안녕하세요, 전문가님. 본 시스템은 정신과적 평가를 위한 대화형 가상면담가의 
     성능을 검증하기 위한 전문가 평가 도구입니다.
     
     ### 📌 절차
@@ -151,14 +151,14 @@ def show_intro_page():
     
     앞으로 보시게 될 페이지는 다음과 같이 구성될 예정입니다.
     
-    - **왼쪽 패널**: 가상환자와 에이전트 간의 대화 내역
-    - **오른쪽 패널**: 에이전트가 생성한 가상환자에 대한 정신과적 평가 리포트
+    - **왼쪽 패널**: 가상환자와 가상면담가 간의 대화 내역
+    - **오른쪽 패널**: 가상면담가가 생성한 가상환자에 대한 정신과적 평가 리포트
     
     ### ✅ 검증 방법
     
-    에이전트는 정신과 의사와 유사한 방식으로 가상환자와 대화를 나누고, **리포트**를 생성합니다.
-    에이전트는 다음 세 가지 영역에 대해 리포트를 생성하고, **전문가(당신)**는 이를 검증해야 합니다.
-    가상환자에 대해 에이전트가 평가한 결과인 **리포트**를 보고, 그것이 올바르게 평가된 것인지 검증해주십시오.
+    가상면담가는 정신과 의사와 유사한 방식으로 가상환자와 대화를 나누고, **리포트**를 생성합니다.
+    가상면담가는 다음 세 가지 영역에 대해 리포트를 생성하고, **전문가(당신)**는 이를 검증해야 합니다.
+    가상환자에 대해 가상면담가가 평가한 결과인 **리포트**를 보고, 그것이 올바르게 평가된 것인지 검증해주십시오.
     
     1. **주관적 정보 (Subjective Information)**
        - Chief Complaint, Present Illness, Family History 등
@@ -217,7 +217,7 @@ def show_test_page():
         st.markdown("---")
         for msg in example_conversation:
             if msg["speaker"] == "PACA":
-                st.markdown(f"**🤖 에이전트:** {msg['message']}")
+                st.markdown(f"**🤖 가상면담가:** {msg['message']}")
             else:
                 st.markdown(f"**👤 가상환자:** {msg['message']}")
             st.markdown("")
@@ -230,7 +230,7 @@ def show_test_page():
         st.markdown("#### Subjective Information")
         
         st.markdown("**Chief complaint**")
-        st.info(f"📌 에이전트의 리포트: **불면증과 지속적인 걱정**")
+        st.info(f"📌 가상면담가의 리포트: **불면증과 지속적인 걱정**")
         st.radio(
             "평가",
             ["[선택 안 함]", "Correct", "Partially correct", "Incorrect"],
@@ -241,7 +241,7 @@ def show_test_page():
         st.markdown("")
         
         st.markdown("**Symptom name**")
-        st.info("📌 에이전트의 리포트:\n\n- Insomnia\n- Anxiety")
+        st.info("📌 가상면담가의 리포트:\n\n- Insomnia\n- Anxiety")
         st.radio(
             "평가",
             ["[선택 안 함]", "Correct", "Partially correct", "Incorrect"],
@@ -254,7 +254,7 @@ def show_test_page():
         st.markdown("#### Behavior (Mental Status Examination)")
         
         st.markdown("**Mood**")
-        st.info(f"📌 에이전트의 리포트: **anxious, dysphoric**")
+        st.info(f"📌 가상면담가의 리포트: **anxious, dysphoric**")
         st.radio(
             "전문가의 판단",
             ["[선택 안 함]", "Irritable", "Euphoric", "Elated", "Euthymic", "Dysphoric", "Depressed"],
@@ -265,7 +265,7 @@ def show_test_page():
         st.markdown("")
         
         st.markdown("**Verbal productivity**")
-        st.info(f"📌 에이전트의 리포트: **moderate**")
+        st.info(f"📌 가상면담가의 리포트: **moderate**")
         st.radio(
             "Expert의 판단",
             ["[선택 안 함]", "Increased", "Moderate", "Decreased"],
@@ -277,8 +277,8 @@ def show_test_page():
         
         # PACA Quality Assessment
         st.markdown("---")
-        st.markdown("### 🎯 에이전트가 진행한 면담의 품질 평가")
-        st.info("아래 3가지 항목에 대해 1-5점 척도로 에이전트의 전반적인 면담 품질을 평가해주세요.")
+        st.markdown("### 🎯 가상면담가가 진행한 면담의 품질 평가")
+        st.info("아래 3가지 항목에 대해 1-5점 척도로 가상면담가의 전반적인 면담 품질을 평가해주세요.")
         
         from expert_validation_utils import PACA_QUALITY_CRITERIA
         
@@ -306,7 +306,7 @@ def show_test_page():
             )
             st.markdown("")
         
-        st.info("💡 **안내사항**\n- 전문가는 자신의 판단만 선택하면 됩니다. \n- 에이전트 리포트가 None 또는 N/A인 항목은 자동으로 0점 처리되며, 검증할 필요가 없습니다. \n- '[선택 안 함]'으로 선택된 항목이 남아있지 않도록 유의해주십시오.")
+        st.info("💡 **안내사항**\n- 전문가는 자신의 판단만 선택하면 됩니다. \n- 가상면담가 리포트가 None 또는 N/A인 항목은 자동으로 0점 처리되며, 검증할 필요가 없습니다. \n- '[선택 안 함]'으로 선택된 항목이 남아있지 않도록 유의해주십시오.")
     
     st.markdown("---")
     col1, col2, col3 = st.columns([1, 1, 1])
@@ -449,19 +449,19 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
         st.markdown("""
         ## 검증 프로세스 안내
         
-        본 시스템은 정신과적 평가를 위한 대화형 에이전트(이하 에이전트)의 
+        본 시스템은 정신과적 평가를 위한 대화형 가상면담가의 
         성능을 검증하기 위한 전문가 평가 도구입니다.
         
         ### 📝 페이지 구성
         
-        - **왼쪽 패널**: 가상환자와 에이전트 간의 대화 내역
-        - **오른쪽 패널**: 에이전트가 생성한 가상환자에 대한 정신과적 평가 리포트
+        - **왼쪽 패널**: 가상환자와 가상면담가 간의 대화 내역
+        - **오른쪽 패널**: 가상면담가가 생성한 가상환자에 대한 정신과적 평가 리포트
         
         ### ✅ 검증 내용
         
-        에이전트는 정신과 의사와 유사한 방식으로 가상환자와 대화를 나누고, **리포트**를 생성합니다.
-        에이전트는 다음 세 가지 영역에 대해 리포트를 생성하고, **전문가(당신)**는 이를 검증해야 합니다.
-        가상환자에 대해 에이전트가 평가한 결과인 **리포트**를 보고, 그것이 올바르게 평가된 것인지 검증해주십시오.
+        가상면담가는 정신과 의사와 유사한 방식으로 가상환자와 대화를 나누고, **리포트**를 생성합니다.
+        가상면담가는 다음 세 가지 영역에 대해 리포트를 생성하고, **전문가(당신)**는 이를 검증해야 합니다.
+        가상환자에 대해 가상면담가가 평가한 결과인 **리포트**를 보고, 그것이 올바르게 평가된 것인지 검증해주십시오.
         
         1. **주관적 정보 (Subjective Information)**
            - Chief Complaint, Present Illness, Family History 등
@@ -480,7 +480,7 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
         ### ⚠️ 유의사항
         
         - 모든 항목에 대해 신중하게 평가해주시기 바랍니다.
-        - 에이전트 리포트가 None 또는 N/A인 항목은 자동으로 0점 처리되며, 검증할 필요가 없습니다.
+        - 가상면담가 리포트가 None 또는 N/A인 항목은 자동으로 0점 처리되며, 검증할 필요가 없습니다.
         - "선택 안 함"으로 체크된 항목이 남아있지 않도록 유의 부탁드립니다.
         """)
     
@@ -503,7 +503,7 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
                     message = msg.get('message', '')
                     
                     if speaker == 'PACA':
-                        st.markdown(f"**🤖 에이전트:** {message}")
+                        st.markdown(f"**🤖 가상면담가:** {message}")
                     else:
                         st.markdown(f"**👤 가상환자:** {message}")
                     st.markdown("")
@@ -545,16 +545,16 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
                 # Check if PACA value is None or N/A
                 if is_none_or_na(paca_value):
                     # Display N/A notice and skip radio buttons
-                    st.warning(f"⚠️ 에이전트의 리포트: **N/A** (자동으로 0점 처리됩니다)")
+                    st.warning(f"⚠️ 가상면담가의 리포트: **N/A** (자동으로 0점 처리됩니다)")
                     # Automatically mark as N/A in responses for tracking
                     current_responses[element_name] = "N/A (auto-scored 0)"
                 else:
                     # Handle multiline PACA values properly (e.g., symptom lists)
                     if '\n' in str(paca_value):
                         # Display with proper line breaks
-                        st.info(f"📌 에이전트의 리포트:\n\n{paca_value}")
+                        st.info(f"📌 가상면담가의 리포트:\n\n{paca_value}")
                     else:
-                        st.info(f"📌 에이전트의 리포트: **{paca_value}**")
+                        st.info(f"📌 가상면담가의 리포트: **{paca_value}**")
                     
                     # Create unique key for this element
                     key = f"{exp_key}_{element_name}"
@@ -600,8 +600,8 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
         # PACA Quality Assessment (Likert Scale)
         # ================================
         st.markdown("---")
-        st.markdown("### 🎯 에이전트가 진행한 면담의 품질 평가")
-        st.info("아래 3가지 항목에 대해 1-5점 척도로 에이전트의 전반적인 면담 품질을 평가해주세요.")
+        st.markdown("### 🎯 가상면담가가 진행한 면담의 품질 평가")
+        st.info("아래 3가지 항목에 대해 1-5점 척도로 가상면담가의 전반적인 면담 품질을 평가해주세요.")
         
         from expert_validation_utils import PACA_QUALITY_CRITERIA
         
@@ -646,7 +646,7 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
         expert_state['validation_responses'][quality_key] = quality_responses
         
         # Display general notice about N/A handling
-        st.info("💡 **안내사항**\n- 에이전트 리포트가 None 또는 N/A인 항목은 자동으로 0점 처리되며, 검증할 필요가 없습니다.\n- '[선택 안 함]'으로 선택된 항목이 남아있지 않도록 유의해주십시오.")
+        st.info("💡 **안내사항**\n- 가상면담가 리포트가 None 또는 N/A인 항목은 자동으로 0점 처리되며, 검증할 필요가 없습니다.\n- '[선택 안 함]'으로 선택된 항목이 남아있지 않도록 유의해주십시오.")
     
     # Save and navigation buttons
     st.markdown("---")
