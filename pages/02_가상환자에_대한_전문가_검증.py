@@ -671,15 +671,30 @@ def show_validation_page():
         
         st.markdown("---")
         
-        # Save buttons
-        col_save1, col_save2 = st.columns(2)
+        # Save and navigation buttons
+        col_save1, col_save2, col_save3 = st.columns(3)
         
         with col_save1:
+            # Back button - only show if not on first SP
+            if st.session_state.current_sp_index > 0:
+                if st.button("⬅️ 이전으로", use_container_width=True):
+                    # Save current state before going back
+                    save_sp_validation(firebase_ref, page_number, client_number, responses, memory, is_final=False)
+                    # Decrease index to go back
+                    st.session_state.current_sp_index -= 1
+                    # Clear current session to force reload of previous SP
+                    if session_key in st.session_state:
+                        del st.session_state[session_key]
+                    st.rerun()
+            else:
+                st.write("")  # Empty placeholder
+        
+        with col_save2:
             if st.button("💾 중간 저장", use_container_width=True):
                 save_sp_validation(firebase_ref, page_number, client_number, responses, memory, is_final=False)
                 st.success("중간 저장되었습니다!")
         
-        with col_save2:
+        with col_save3:
             if st.button("✅ 검증 완료 및 다음으로", type="primary", use_container_width=True):
                 # Validate that all non-empty items are selected
                 missing_items = []

@@ -658,9 +658,23 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
         # Clear status after displaying
         del st.session_state.save_status
     
-    col1, col2, col3 = st.columns([1, 2, 1])
+    col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
     
     with col1:
+        # Back button - only show if not on first experiment
+        if current_idx > 0:
+            if st.button("⬅️ 이전으로", use_container_width=True):
+                # Decrease index to go back
+                expert_state['current_experiment_index'] -= 1
+                # Save current progress
+                save_validation_progress(firebase_ref, expert_name,
+                                       expert_state['current_experiment_index'],
+                                       expert_state['validation_responses'])
+                st.rerun()
+        else:
+            st.write("")  # Empty placeholder
+    
+    with col2:
         if st.button("💾 중간 저장", use_container_width=True):
             # Save current responses to Firebase immediately
             validation_result = create_validation_result(
@@ -690,7 +704,7 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
                 st.session_state.save_status = 'error'
                 st.rerun()
     
-    with col3:
+    with col4:
         if st.button("✅ 완료 - 다음으로", use_container_width=True, type="primary"):
             # Validate that all items are selected
             missing_items = []
