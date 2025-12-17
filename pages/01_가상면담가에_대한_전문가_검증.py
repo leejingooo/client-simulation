@@ -493,22 +493,20 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
         st.subheader("💬 대화 내역")
         st.markdown("---")
         
-        # Display conversation in a scrollable container with fixed height
-        # Using Streamlit's native scrollable container
-        with st.container(height=600, border=True):
-            if 'data' in conversation_data:
-                messages = conversation_data['data']
-                for msg in messages:
-                    speaker = msg.get('speaker', 'Unknown')
-                    message = msg.get('message', '')
-                    
-                    if speaker == 'PACA':
-                        st.markdown(f"**🤖 가상면담가:** {message}")
-                    else:
-                        st.markdown(f"**👤 가상환자:** {message}")
-                    st.markdown("")
-            else:
-                st.warning("대화 데이터 형식이 올바르지 않습니다. 연구진에게 문의해주세요.")
+        # Display conversation history
+        if 'data' in conversation_data:
+            messages = conversation_data['data']
+            for msg in messages:
+                speaker = msg.get('speaker', 'Unknown')
+                message = msg.get('message', '')
+                
+                if speaker == 'PACA':
+                    st.markdown(f"**🤖 가상면담가:** {message}")
+                else:
+                    st.markdown(f"**👤 가상환자:** {message}")
+                st.markdown("")
+        else:
+            st.warning("대화 데이터 형식이 올바르지 않습니다. 연구진에게 문의해주세요.")
     
     with col2:
         st.subheader("✅ 검증 항목")

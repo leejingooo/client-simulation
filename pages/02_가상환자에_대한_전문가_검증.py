@@ -374,9 +374,14 @@ def show_validation_page():
         st.markdown("### 💬 면담")
         st.caption("안녕하세요, 저는 정신과 의사 000입니다. 로 면담을 시작해주세요.")
         
-        # Scrollable conversation history with fixed height
-        with st.container(height=500, border=True):
-            for message in memory.messages:
+        # Display conversation history
+        for message in memory.messages:
+            if isinstance(message, HumanMessage):
+                with st.chat_message("user"):
+                    st.markdown(message.content)
+            else:
+                with st.chat_message("assistant"):
+                    st.markdown(message.content)
                 with st.chat_message("user" if isinstance(message, HumanMessage) else "assistant"):
                     st.markdown(message.content)
         
@@ -497,10 +502,18 @@ def show_validation_page():
         # Display guideline in expander
         with st.expander("📖 평가 가이드라인 (클릭하여 펼치기/접기)", expanded=False):
             st.markdown("""
-            시뮬레이션된 환자를 평가하실 때에는, 해당 진단을 고려하였을 때 제공된 대화 기록에서 환자가 발화한 내용이 임상적으로 타당한 표현인지에만 집중해 주십시오. 평가자의 과제는 환자의 언어적 표현이 기분(mood), 정동(affect), 사고 과정(thought process), 사고 내용(thought content), 병식(insight), 자살 사고/계획/시도, 타해 사고(homicidal ideation) 등의 임상적 영역에서 얼마나 그럴듯하게 나타나는지를, 오직 발화 내용과 전체적인 패턴을 기준으로 판단하는 것입니다. 면담자의 질문 방식이나 면담 기술은 평가 대상에서 제외해 주십시오.
+            시뮬레이션된 환자를 평가하실 때에는, 해당 진단을 고려하였을 때 제공된 대화 기록에서 환자가 발화한 내용이 임상적으로 타당한 표현인지에만 집중해 주십시오.
+                        
+            평가자의 과제는 환자의 언어적 표현이 기분(mood), 정동(affect), 사고 과정(thought process), 사고 내용(thought content), 병식(insight), 자살 사고/계획/시도, 타해 사고(homicidal ideation) 등의 임상적 영역에서 얼마나 그럴듯하게 나타나는지를, 오직 발화 내용과 전체적인 패턴을 기준으로 판단하는 것입니다.
+                        
+            면담자의 질문 방식이나 면담 기술은 평가 대상에서 제외해 주십시오.
             
-            각 대화 기록을 검토하실 때, 시뮬레이션된 환자의 표현 방식이 해당 진단에서 일반적으로 관찰되는 임상적 양상과 부합하는지를 임상적 판단을 바탕으로 평가해 주시고, 항목별로 특히 그럴듯하게 느껴진 부분과 그렇지 않았던 부분을 간단히 기록해 주시기 바랍니다. 또한 미리 제시된 항목에 포함되지 않더라도, 대화 내용에서 추가로 임상적으로 합당하거나 그렇지 않다고 판단되는 점이 있다면 자유롭게 의견을 적어 주셔도 됩니다.
+            각 대화 기록을 검토하실 때, 시뮬레이션된 환자의 표현 방식이 해당 진단에서 일반적으로 관찰되는 임상적 양상과 부합하는지를 아래 **Rating scale**을 바탕으로 평가해 주시고,
             
+            항목별로 특히 그럴듯하게 느껴진 부분과 그렇지 않았던 부분을 간단히 기록해 주시기 바랍니다.
+            
+            또한 미리 제시된 항목에 포함되지 않더라도, 대화 내용에서 추가로 임상적으로 합당하거나 그렇지 않다고 판단되는 점이 있다면 자유롭게 의견을 적어 주셔도 됩니다.
+                        
             ---
             #### Rating Scale (1–5 Likert)
             For each psychiatric element, rate:
