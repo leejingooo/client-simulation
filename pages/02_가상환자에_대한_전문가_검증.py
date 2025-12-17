@@ -382,8 +382,6 @@ def show_validation_page():
             else:
                 with st.chat_message("assistant"):
                     st.markdown(message.content)
-                with st.chat_message("user" if isinstance(message, HumanMessage) else "assistant"):
-                    st.markdown(message.content)
         
         # Chat input
         if prompt := st.chat_input("면담 내용을 입력하세요"):
@@ -399,9 +397,9 @@ def show_validation_page():
         
         # New conversation button
         if st.button("🔄 대화 초기화 (면담 처음부터 다시 시작)", use_container_width=True):
-            # Reset memory
-            from SP_utils import reset_agent_memory
-            st.session_state[session_key] = reset_agent_memory((agent, memory))
+            # Delete the session key to force recreation of agent with fresh memory
+            if session_key in st.session_state:
+                del st.session_state[session_key]
             st.success("대화가 초기화되었습니다.")
             st.rerun()
     
