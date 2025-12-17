@@ -372,7 +372,7 @@ def show_validation_page():
     # ===== LEFT COLUMN: Conversation =====
     with col_left:
         st.markdown("### 💬 면담")
-        st.caption("안녕하세요, 저는 정신과 의사 000입니다. 로 면담을 시작해주세요.")
+        st.caption("안녕하세요, 저는 정신과 의사 000입니다. 오늘 어떤 일로 오셨나요? 로 면담을 시작해주세요.")
         
         # Display conversation history
         for message in memory.messages:
