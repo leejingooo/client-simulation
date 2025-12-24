@@ -268,18 +268,50 @@ def show_validation_page():
         st.session_state.sp_progress_loaded = True
     
     # Get current SP info
+    all_completed = st.session_state.current_sp_index >= len(SP_SEQUENCE)
+    
+    if all_completed:
+        st.success("🎉 모든 검증이 완료되었습니다!")
+        st.markdown("**14명의 가상환자에 대한 검증을 모두 완료하셨습니다.**")
+        st.markdown("연구에 참여해주셔서 진심으로 감사드립니다.")
+        st.info("💡 이전 검증 항목을 수정하려면 아래에서 항목을 선택하세요.")
+        st.markdown("---")
+        
+        # Allow user to select which SP to review/edit
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            sp_options = [f"가상환자 {page}" 
+                         for page, client in SP_SEQUENCE]
+            selected_option = st.selectbox(
+                "수정할 가상환자 선택",
+                options=sp_options,
+                index=min(st.session_state.current_sp_index, len(SP_SEQUENCE) - 1)
+            )
+            selected_idx = sp_options.index(selected_option)
+        
+        with col2:
+            if st.button("선택한 항목으로 이동", use_container_width=True, type="primary"):
+                st.session_state.current_sp_index = selected_idx
+                st.rerun()
+        
+        st.markdown("---")
+        # Set index to selected SP for display
+        st.session_state.current_sp_index = selected_idx
+    
+    # Ensure index is within bounds
     if st.session_state.current_sp_index >= len(SP_SEQUENCE):
-        show_completion_page()
-        return
+        st.session_state.current_sp_index = len(SP_SEQUENCE) - 1
     
     page_number, client_number = SP_SEQUENCE[st.session_state.current_sp_index]
     
     # Progress bar
     progress = (st.session_state.current_sp_index) / len(SP_SEQUENCE)
-    st.progress(progress, text=f"진행도: {st.session_state.current_sp_index}/{len(SP_SEQUENCE)}")
+    if all_completed:
+        st.progress(1.0, text=f"진행도: {len(SP_SEQUENCE)}/{len(SP_SEQUENCE)} ✅ 완료")
+    else:
+        st.progress(progress, text=f"진행도: {st.session_state.current_sp_index}/{len(SP_SEQUENCE)}")
     
     st.title(f"가상환자 {page_number}")
-    st.caption(f"Client Number: {client_number} (내부 번호)")
     
     # Display instructions in an expander at the top
     with st.expander("📖 검증 안내사항 (클릭하여 펼치기/접기)", expanded=False):
@@ -718,7 +750,15 @@ def show_validation_page():
                 st.success("중간 저장되었습니다!")
         
         with col_save3:
-            if st.button("✅ 검증 완료 및 다음으로", type="primary", use_container_width=True):
+            # Determine button text based on completion status
+            if all_completed:
+                next_button_text = "✅ 저장"
+            elif st.session_state.current_sp_index == len(SP_SEQUENCE) - 1:
+                next_button_text = "✅ 완료"
+            else:
+                next_button_text = "✅ 검증 완료 및 다음으로"
+            
+            if st.button(next_button_text, type="primary", use_container_width=True):
                 # Validate that all non-empty items are selected
                 missing_items = []
                 
@@ -790,18 +830,23 @@ def show_validation_page():
                     # Final save
                     save_sp_validation(firebase_ref, page_number, client_number, responses, memory, is_final=True)
                     
-                    # Move to next SP
-                    st.session_state.current_sp_index += 1
-                    
-                    # Save progress to Firebase
-                    save_sp_validation_progress(firebase_ref, st.session_state.expert_name, st.session_state.current_sp_index)
-                    
-                    # Clear session for this SP
-                    if session_key in st.session_state:
-                        del st.session_state[session_key]
-                    
-                    st.success("검증이 완료되었습니다! 다음 가상환자로 이동합니다.")
-                    st.rerun()
+                    # If all completed, just save (don't move forward)
+                    if all_completed:
+                        st.success("검증이 저장되었습니다!")
+                        st.rerun()
+                    else:
+                        # Move to next SP
+                        st.session_state.current_sp_index += 1
+                        
+                        # Save progress to Firebase
+                        save_sp_validation_progress(firebase_ref, st.session_state.expert_name, st.session_state.current_sp_index)
+                        
+                        # Clear session for this SP
+                        if session_key in st.session_state:
+                            del st.session_state[session_key]
+                        
+                        st.success("검증이 완료되었습니다! 다음 가상환자로 이동합니다.")
+                        st.rerun()
 
 
 def save_sp_validation(firebase_ref, page_number, client_number, responses, memory, is_final=True):

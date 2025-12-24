@@ -396,14 +396,39 @@ def show_validation_page():
     st.markdown("---")
     
     # Check if all validations are complete
-    if current_idx >= total_experiments:
+    all_completed = current_idx >= total_experiments
+    if all_completed:
         st.success("🎉 모든 검증이 완료되었습니다!")
-        st.balloons()
         st.markdown(f"총 **{total_experiments}개**의 케이스에 대한 검증을 완료하셨습니다.")
         st.markdown("검증 결과는 성공적으로 전송되었습니다.")
-        st.stop()
+        st.info("💡 이전 검증 항목을 수정하려면 아래에서 항목을 선택하세요.")
+        st.markdown("---")
+        
+        # Allow user to select which experiment to review/edit
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            # Create dropdown options
+            experiment_options = [f"실험 {idx+1}" 
+                                for idx in range(len(EXPERIMENT_NUMBERS))]
+            selected_option = st.selectbox(
+                "수정할 검증 항목 선택",
+                options=experiment_options,
+                index=min(current_idx, total_experiments - 1)
+            )
+            selected_idx = experiment_options.index(selected_option)
+        
+        with col2:
+            if st.button("선택한 항목으로 이동", use_container_width=True, type="primary"):
+                expert_state['current_experiment_index'] = selected_idx
+                st.rerun()
+        
+        # Set current_idx to selected experiment for display
+        current_idx = selected_idx
     
     # Get current experiment number
+    if current_idx >= total_experiments:
+        current_idx = total_experiments - 1
+    
     current_item = EXPERIMENT_NUMBERS[current_idx]
     client_number, exp_number = current_item
     
@@ -411,7 +436,7 @@ def show_validation_page():
     client_number_str = str(client_number)
     exp_number_str = str(exp_number)
     
-    st.info(f"**현재 검증 대상:** Client #{client_number}, Experiment #{exp_number}")
+    st.info(f"**현재 검증 대상:** 실험 {current_idx + 1}")
     
     # Load conversation and construct from Firebase
     try:
@@ -454,6 +479,8 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
     expert_state = st.session_state[expert_key]
     exp_key = f"{client_number}_{exp_number}"  # Unique key for this experiment
     current_idx = expert_state['current_experiment_index']  # Get current index for back button
+    total_experiments = len(EXPERIMENT_NUMBERS)
+    all_completed = current_idx >= total_experiments
     
     # Display instructions in an expander at the top
     with st.expander("📖 검증 프로세스 안내 (클릭하여 펼치기/접기)", expanded=False):
@@ -735,7 +762,15 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
                 st.rerun()
     
     with col4:
-        if st.button("✅ 완료 - 다음으로", use_container_width=True, type="primary"):
+        # Determine button text based on completion status
+        if all_completed:
+            next_button_text = "✅ 저장"
+        elif current_idx == total_experiments - 1:
+            next_button_text = "✅ 완료"
+        else:
+            next_button_text = "✅ 완료 - 다음으로"
+        
+        if st.button(next_button_text, use_container_width=True, type="primary"):
             # Validate that all items are selected
             missing_items = []
             
@@ -782,13 +817,18 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
                 
                 if success:
                     st.success(f"검증 결과가 저장되었습니다! (Client {client_number}, Exp {exp_number})")
-                    expert_state['current_experiment_index'] += 1
                     
-                    # Also save progress
-                    save_validation_progress(firebase_ref, expert_name,
-                                           expert_state['current_experiment_index'],
-                                           expert_state['validation_responses'])
-                    st.rerun()
+                    # If all completed, just save (don't move forward)
+                    if all_completed:
+                        st.rerun()
+                    else:
+                        expert_state['current_experiment_index'] += 1
+                        
+                        # Also save progress
+                        save_validation_progress(firebase_ref, expert_name,
+                                               expert_state['current_experiment_index'],
+                                               expert_state['validation_responses'])
+                        st.rerun()
                 else:
                     st.error("저장 중 오류가 발생했습니다. 다시 시도해주세요. 반복하여 실패할 경우 연구진에게 문의해주세요.")
 
