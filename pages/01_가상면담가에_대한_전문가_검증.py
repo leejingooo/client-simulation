@@ -548,8 +548,27 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
                 options = item['options']
                 paca_value = item.get('paca_value', 'N/A')
                 
+                # Determine display title and help text
+                display_title = element_name
+                help_text = None
+                
+                if element_name == "Triggering factor":
+                    help_text = "💡 환자가 왜 하필 오늘 병원을 찾게 된 이유"
+                elif element_name == "Stressor":
+                    help_text = "💡 증상 유발 요인"
+                elif element_name == "Diagnosis":
+                    display_title = "Family History - Diagnosis"
+                    help_text = "⚠️ 가족력의 정신과적 진단명입니다 (환자 본인의 진단명이 아님)"
+                elif element_name == "Substance use":
+                    display_title = "Family History - Substance use"
+                    help_text = "⚠️ 가족의 물질 사용력입니다 (환자 본인의 물질 사용력이 아님)"
+                
                 # Display element name
-                st.markdown(f"**{element_name}**")
+                st.markdown(f"**{display_title}**")
+                
+                # Display help text if available
+                if help_text:
+                    st.caption(help_text)
                 
                 # Check if PACA value is None or N/A
                 if is_none_or_na(paca_value):
