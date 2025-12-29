@@ -145,14 +145,20 @@ PSYCHE_RUBRIC = {
 
 **Two separate workflows**:
 
-1. **Automated Evaluation** (`pages/04_evaluation.py`):
+1. **Automated Evaluation** (`pages/연구자용 격리 폴더/04_evaluation.py`):
    - **Purpose**: Automated PACA performance assessment using PSYCHE RUBRIC
    - **Process**: Compares PACA construct vs SP construct (ground truth) programmatically
+   - **Workflow**: 
+     1. Search available experiments in Firebase (filters by client number, experiment number range)
+     2. Select experiment from dropdown list
+     3. Load SP construct (ground truth) and PACA construct
+     4. Run PSYCHE RUBRIC evaluation - element-by-element scoring
+     5. Save results to Firebase
    - **Output**: PSYCHE Score (0-55 range) + detailed element-level scores
    - **Firebase storage**: `clients_{client_num}/psyche_{diagnosis}_{model}_{exp_num}`
      - Key format: `psyche_mdd_gptbasic_1111` (lowercase, no underscores in model name)
    - **Scoring methods**: G-Eval (LLM-based, 0-1), binary (0 or 1), impulsivity/behavior (0, 0.5, or 1)
-   - **Usage**: Research page for generating automated performance metrics
+   - **Usage**: Research page for generating automated performance metrics (hidden in production)
 
 2. **Expert Validation** (`pages/01_에이전트에_대한_전문가_검증.py`):
    - **Purpose**: Human expert review of PACA outputs for quality assessment
@@ -344,10 +350,6 @@ for speaker, message in st.session_state.conversation_generator:
 - `pages/02_가상환자에_대한_전문가_검증.py`: SP authenticity validation by experts
 - `pages/05_json2csv.py`: Utility for converting Firebase JSON exports to CSV
 - `pages/08_sp_validation_viewer.py`: View SP validation results
-- `pages/04_evaluation.py`: Automated PACA evaluation (generates PSYCHE scores)
-  - **Purpose**: Compare SP and PACA constructs using PSYCHE RUBRIC scoring
-  - **Workflow**: Search available experiments → Select experiment → Run evaluation → Save results
-  - **Firebase storage**: Saves to `clients_{client_num}/psyche_{diagnosis}_{model}_{exp_num}`
 - `pages/09_plot.py`: PSYCHE score visualization (matplotlib scatter plot)
   - **Data source**: Loads from `clients_{client_num}/psyche_{diagnosis}_{model}_{exp_num}`
   - **NOT from expert validation data** - uses automated evaluation results
@@ -359,13 +361,23 @@ for speaker, message in st.session_state.conversation_generator:
   - Uses diamond/circle markers with filled/empty/hatched styles
   - Aligned with current EXPERIMENT_NUMBERS preset (24 experiments)
 - `pages/11_correlation_analysis.py`: Statistical correlation analysis page
-  - **Purpose**: Compare expert validation scores vs automated PSYCHE scores
-  - **Methods**: Pearson and Spearman correlation coefficients
-  - **Visualizations**: Scatter plots with regression lines, category-level breakdowns
-  - **Data sources**: Loads both expert validation data and automated evaluation results
+  - **Purpose**: Compare expert validation scores vs automated PSYCHE scores to measure agreement
+  - **Methods**: 
+    - Pearson correlation (linear relationship, normal distribution)
+    - Spearman correlation (monotonic relationship, non-parametric)
+  - **Visualizations**: 
+    - Overall scatter plots with regression lines showing expert vs automated scores
+    - Category-level breakdowns (Subjective, Impulsivity, Behavior)
+    - Correlation heatmaps showing relationships across PSYCHE elements
+  - **Data sources**: 
+    - Expert validation data from `expert_{name}_{client}_{exp}` paths
+    - Automated evaluation results from `clients_{client_num}/psyche_{diagnosis}_{model}_{exp_num}`
+  - **PRESET configuration**: Uses same `EXPERIMENT_NUMBERS` list as expert validation (24 experiments across 3 disorders × 4 model variants × 2 reps)
+  - **Key functions**: `calculate_correlation()`, `create_correlation_heatmap()`, element-level analysis
 - `pages/연구자용 격리 폴더 (연구모드시 페이지 복원)/`: Research-mode pages
   - Contains disorder-specific experiment pages with guided variants (MDD, BD, OCD)
   - Contains unified experiment pages allowing client selection via dropdown
+  - Contains `04_evaluation.py`: Automated PACA evaluation tool (generates PSYCHE scores by comparing SP vs PACA constructs)
   - Historical experiment pages for various client profiles
 
 **Navigation pattern**:
