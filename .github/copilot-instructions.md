@@ -12,12 +12,27 @@
 
 ## Project Overview
 
-This is a **psychiatric evaluation research platform** that simulates patient-clinician interactions using two AI agents:
+This codebase implements the **PSYCHE (Patient Simulation for Yielding psyCHiatric assessment conversational agent Evaluation) framework**, a research platform for evaluating psychiatric assessment conversational agents (PACAs) through construct-grounded simulation and evaluation.
 
-- **SP (Simulated Patient)**: LLM-based agent that mimics psychiatric patients based on profiles and behavioral instructions
-- **PACA (Psychiatric Assessment Conversational Agent)**: LLM-based clinician agent that conducts psychiatric interviews
+**Research Context**: Peer-reviewed research paper currently in **revision stage**. Re-running experiments with updated configurations. Focus on methodology, not historical results.
 
-The system generates conversations, produces structured psychiatric assessments ("constructs"), evaluates PACA performance against ground truth (SP constructs), and enables expert validation by psychiatrists.
+### Core Concepts
+
+- **PACA (Psychiatric Assessment Conversational Agent)**: AI agent that conducts psychiatric interviews - the **subject of evaluation**
+- **PSYCHE-SP (Simulated Patient)**: LLM-based patient agent fed with Multi-faceted Construct (MFC) - serves as **ground truth** for PACA evaluation
+- **MFC (Multi-faceted Construct)**: Clinically grounded psychiatric schema with 3 components:
+  1. **MFC-Profile**: Patient demographics, symptoms, history (analogous to medical records)
+  2. **MFC-History**: Dynamic life story and biographical narrative
+  3. **MFC-Behavior**: Observable behavioral instructions based on Mental Status Examination (MSE)
+- **Construct-SP**: Selected MFC elements serving as evaluation reference (ground truth)
+- **Construct-PACA**: PACA's predictions of patient's psychiatric state after interview
+- **PSYCHE SCORE**: Quantitative evaluation metric (0-55 range) comparing Construct-PACA vs Construct-SP
+
+**Two Key Principles**:
+1. **Construct-grounded patient utterance simulation**: PSYCHE-SP generates realistic patient responses based on MFC
+2. **Construct-grounded evaluation**: PACA performance measured by accuracy in discerning MFC elements
+
+**Target Disorders** (7 total): Major Depressive Disorder (MDD), Bipolar Disorder (BD), Panic Disorder (PD), Generalized Anxiety Disorder (GAD), Social Anxiety Disorder (SAD), Obsessive-Compulsive Disorder (OCD), Post-Traumatic Stress Disorder (PTSD)
 
 **Tech Stack**: Streamlit + LangChain + Firebase Realtime Database + OpenAI/Anthropic APIs
 
@@ -37,18 +52,20 @@ The system generates conversations, produces structured psychiatric assessments 
 ├── pages/                           # Streamlit pages (auto-discovered by framework)
 │   ├── 00_진행상태_확인.py          # Experiment progress dashboard
 │   ├── 01_experiment*_*.py         # Experiment pages per disorder/model (MDD/BD/OCD)
-│   ├── 01_에이전트에_대한_전문가_검증.py  # Expert validation of PACA agents
-│   ├── 02_가상환자에_대한_전문가_검증.py  # SP authenticity validation
-│   ├── 04_evaluation.py            # Automated PSYCHE evaluation (generates scores)
+│   ├── 01_에이전트에_대한_전문가_검증.py  # Expert validation of PACA agents (4.3)
+│   ├── 02_가상환자에_대한_전문가_검증.py  # SP authenticity validation (4.1, 4.2)
+│   ├── 05_json2csv.py              # Utility for converting Firebase JSON exports to CSV
+│   ├── 08_sp_validation_viewer.py  # View SP validation results
 │   ├── 09_plot.py                  # PSYCHE score visualization (uses evaluation data)
 │   ├── 10_plot2.py                 # Alternative visualization (5 experiments per model)
 │   ├── 10_plot3.py                 # Scatter plot for smaller vs large model comparison
 │   ├── 11_correlation_analysis.py  # Correlation analysis between expert and automated scores
 │   └── 연구자용 격리 폴더/          # Research-mode pages (hidden in production)
+│       └── 04_evaluation.py        # Automated PACA evaluation tool (4.4)
 ├── data/
 │   ├── prompts/                    # Agent system prompts (versioned)
-│   │   ├── con-agent_system_prompt/
-│   │   └── paca_system_prompt/
+│   │   ├── con-agent_system_prompt/  # SP system prompts (SP-Prompt-1/2/3)
+│   │   └── paca_system_prompt/       # PACA prompts (basic vs guided)
 │   ├── input/                      # Patient profiles, behavioral directives
 │   └── output/                     # Generated conversation logs
 ├── .devcontainer/
@@ -62,32 +79,68 @@ The system generates conversations, produces structured psychiatric assessments 
 
 ## Core Architecture
 
-### Three-Layer Agent System
+### PSYCHE Framework Components
 
-1. **SP Agent** (`SP_utils.py`, `sp_construct_generator.py`)
-   - Built with LangChain + ChatOpenAI/ChatAnthropic (gpt-5.1 default model)
-   - Configured via: profile JSON, history narrative, behavioral instructions loaded from Firebase
+#### 1. MFC Generation System
+
+**Sequential generation pipeline** (in `data/prompts/`):
+1. **MFC-Profile generation**: Based on user input (diagnosis/age/sex)
+   - Contains 9 categories: Identifying data, Chief complaint, Present illness, Past psychiatric history, Past medical history, Family history, Developmental and social history, Marriage/relationship history, Impulsivity
+   - Analogous to psychiatric medical records - multi-faceted patient schema
+   - Some elements have fixed values per disorder (e.g., impulsivity elements)
+2. **MFC-History generation**: Conditioned on MFC-Profile
+   - Dynamic lifetime biography complementing short-answer Profile
+   - Not used in PSYCHE SCORE calculation (enrichment only)
+3. **MFC-Behavior generation**: Conditioned on Profile + History
+   - Based on Mental Status Examination (MSE) - "snapshot" of current mental state
+   - Observable behavioral aspects: mood, affect, thought process, verbal productivity, etc.
+   - Critical for behavioral alignment with real patients
+
+**Rationale**: Sequential chain prevents "lost-in-the-middle" problem with long contexts, ensures clinically consistent patient behavior
+
+#### 2. PSYCHE-SP Agent (`SP_utils.py`, `sp_construct_generator.py`)
+   - Built with LangChain + ChatOpenAI/ChatAnthropic (gpt-4o-2024-11-20 in paper)
+   - **Fed with entire MFC** (Profile + History + Behavior) as psychiatric schema
    - Uses `InMemoryChatMessageHistory` for conversation state
    - **Critical**: Cached with `@st.cache_resource` to persist across Streamlit reruns - without this, memory resets!
    - Created via `create_conversational_agent()` which returns `(agent, memory)` tuple
+   - **Three system prompt components** (SP-Prompt-1/2/3):
+     1. MFC explanation
+     2. Methods for generating utterances grounded in MFC elements
+     3. Instructions aligning LLM with real psychiatric patients (counters assistant-tuning bias)
+   - **Research purpose**: Ground truth for PACA evaluation - simulates realistic patient behavior
 
-2. **PACA Agent** (`PACA_*_utils.py`, `paca_construct_generator.py`)
+#### 3. PACA Agent (`PACA_*_utils.py`, `paca_construct_generator.py`)
+   - **Subject of evaluation** - interviews PSYCHE-SP to assess psychiatric state
    - Multiple variants: `claude_basic`, `claude_guided`, `gpt_basic`, `gpt_guided`, `llama`
-   - **Model configuration by variant** (verified in source files):
-     - `gpt_basic`: `gpt-4o-mini-2024-07-18` (temperature=0.7, streaming)
-     - `gpt_guided`: `gpt-5.1-2025-11-13` (temperature=0.7, streaming)
-     - `claude_basic`: `claude-3-haiku-20240307` (temperature=0.7)
-     - `claude2`: `claude-3-5-sonnet-20240620` (temperature=0.7)
-   - Each has initial greeting prompt hardcoded (e.g., "안녕하세요, 저는 정신과 의사...")
-   - Generates psychiatric constructs by querying itself post-conversation
+   - **Model configuration by variant** (paper uses gpt-4o and claude-3-5-sonnet):
+     - `gpt_basic` / `gptsmaller`: `gpt-4o-mini-2024-07-18` (temperature=0.7, streaming)
+     - `gpt_guided` / `gptlarge`: `gpt-5.1-2025-11-13` (temperature=0.7, streaming)
+     - `claude_basic` / `claudesmaller`: `claude-3-haiku-20240307` (temperature=0.7)
+     - `claude2` / `claudelarge`: `claude-3-5-sonnet-20240620` (temperature=0.7)
+   - **Prompt types**: Basic vs Guided (guided expected to perform better per paper validation)
+   - Each has initial greeting prompt hardcoded (e.g., "안녕하세요, 저는 정신과 의사 김민수입니다...")
+   - **Construct-PACA generation**: After interview, PACA answers element-by-element questions about patient's MFC (e.g., "What is the patient's Mood?")
    - **Critical**: Must be cached in `st.session_state.paca_agent` and `st.session_state.paca_memory`
    - Created via `create_paca_agent(version, page_id)` which returns `(agent, memory, version)` tuple
    - **Memory isolation**: `page_id` parameter ensures separate memory for each experiment page when multiple pages are open simultaneously
+   - **Research purpose**: Demonstrates clinical assessment competence through accurate MFC discernment
 
-3. **Evaluator** (`evaluator.py`, `expert_validation_utils.py`)
-   - Compares PACA construct vs SP construct (ground truth)
-   - Uses **PSYCHE RUBRIC** - standardized psychiatric evaluation criteria (59 elements across 3 categories)
-   - Three scoring methods: G-Eval (LLM-based), binary, ordinal/delta-based
+#### 4. Evaluation System (`evaluator.py`, `expert_validation_utils.py`)
+   - Compares **Construct-PACA** (PACA's predictions) vs **Construct-SP** (ground truth from MFC)
+   - Uses **PSYCHE RUBRIC** - standardized psychiatric evaluation criteria
+   - **59 elements across 3 weight categories**:
+     - **Subjective (w=1)**: 10 elements - patient-reported information (chief complaint, symptoms, triggers, stressors, family history)
+     - **Impulsivity (w=5)**: 5 elements - safety-critical risk assessment (suicidal ideation/plan/attempt, self-harm risk, homicide risk)
+     - **Behavior (w=2)**: 10 elements - MSE-based observations (mood, affect, thought process/content, insight, verbal productivity)
+   - **Maximum PSYCHE Score: 55** (sum of all weighted scores)
+   - **Four scoring methods**:
+     1. **G-Eval**: LLM-based semantic similarity for open-ended elements (chief complaint, symptom names, triggers, affect, perception, thought process/content)
+     2. **Binary**: Exact match (0 or 1) for simple categorical elements
+     3. **Impulsivity**: Delta-based ordinal scoring with safety bias (underestimation = 0 score)
+     4. **Behavior**: Ordinal value mapping with distance penalty (|Δ| > 1 = 0 score)
+   - **Clinical rationale**: Weights reflect ethical importance (safety), task complexity (MSE observation), and information type (subjective reporting)
+   - **Research purpose**: Enables quantitative, automated, and clinically meaningful PACA performance measurement
 
 ### Data Storage: Firebase Realtime Database
 
@@ -114,63 +167,104 @@ PSYCHE_RUBRIC = {
     "Chief complaint": {"type": "g-eval", "weight": 1},
     "Symptom name": {"type": "g-eval", "weight": 1},
     
-    # Impulsivity (weight=5): Delta-based (high=2, moderate=1, low=0)
-    "Suicidal ideation": {"type": "impulsivity", "weight": 5, ...},
+    # Impulsivity (weight=5): Delta-based with safety bias
+    "Suicidal ideation": {"type": "impulsivity", "weight": 5, 
+                          "values": {"high": 2, "moderate": 1, "low": 0}},
     
-    # Behavior (weight=2): Ordinal scales
+    # Behavior (weight=2): Ordinal scales with distance penalty
     "Mood": {"type": "behavior", "weight": 2, 
-             "values": {"depressed": 1, "dysphoric": 2, ...}},
+             "values": {"depressed": 1, "dysphoric": 2, "euthymic": 3, 
+                       "elated": 4, "euphoric": 5, "irritable": 5}},
 }
 ```
 
 **Key patterns**:
-- **Maximum PSYCHE Score: 55** - Sum of all weights (59 total elements, each scored 0-1, then multiplied by weight)
-  - Weight 1 elements: 10개 (max contribution: 10)
-  - Weight 5 elements: 5개 (max contribution: 25)
-  - Weight 2 elements: 10개 (max contribution: 20)
+- **Maximum PSYCHE Score: 55** - Sum of all weights (59 total elements)
+  - Weight 1 elements: 10개 (Subjective) = max 10 points
+  - Weight 5 elements: 5개 (Impulsivity) = max 25 points  
+  - Weight 2 elements: 10개 (MSE-Behavior) = max 20 points
   - **Total: 10 + 25 + 20 = 55**
-  - All scoring functions (G-Eval, Binary, Impulsivity, Behavior) return normalized scores 0-1 or 0.5
-  - Final weighted score = Σ(element_score × weight)
-  - See `evaluator.py` for complete PSYCHE_RUBRIC definition
-- **Scoring types** (4 methods):
-  - **G-Eval**: LLM-based semantic similarity (0-1 continuous score)
-  - **Binary**: Exact match required (0 or 1)
-  - **Impulsivity**: Delta-based ordinal scale (high=2→score 1.0, moderate=1→score 0.5, low=0→score 0.0)
-  - **Behavior**: Ordinal value mapping (e.g., Mood: depressed=1, dysphoric=2, ..., euphoric=5)
-- Multiple "Symptom 1-N" entries → aggregated to single "Symptom name" for expert validation
-- PACA constructs are **flat** (`{"Mood": "depressed"}`), SP constructs are **nested** (`{"Mental Status Examination": {"Mood": "depressed"}}`)
-- `flatten_construct()` in `evaluator.py` normalizes both to flat structure
+- **Scoring methods with clinical rationale**:
+  - **G-Eval** (LLM semantic similarity, 0-1): For open-ended narrative responses
+    - Examples: Chief complaint, Symptom names, Triggering factors, Stressors, Affect, Thought process/content
+    - Uses gpt-4o-2024-11-20 with custom prompts
+  - **Binary** (0 or 1): For categorical yes/no elements
+    - Examples: Symptom length, Suicidal plan, Suicidal attempt history, Spontaneity
+  - **Impulsivity** (safety-biased, 0/0.5/1): Δ = (PACA value) - (SP value)
+    - If Δ < 0 (underestimation): Score = 0 (critical safety failure)
+    - If Δ = 0 (correct): Score = 1
+    - If Δ = 1: Score = 0.5, If Δ = 2: Score = 0
+    - Applies to: Suicidal ideation, Self-mutilating behavior risk, Homicide risk
+  - **Behavior** (distance-penalized, 0/0.5/1): |Δ| > 1 = 0 score
+    - Rationale: States differing by >1 point are clinically distinct
+    - Mood: depressed(1)↔dysphoric(2)↔euthymic(3)↔elated(4)↔euphoric/irritable(5)
+    - Verbal productivity: decreased(0)↔moderate(1)↔increased(2)
+    - Insight: true emotional(1)↔intellectual(2)↔external blame(3)↔slight awareness(4)↔complete denial(5)
+- **Symptom aggregation**: Multiple "Symptom 1-N" entries → single "Symptom name" for expert validation
+- **Construct structure**: PACA (flat) vs SP (nested) → both flattened via `flatten_construct()`
+- **Paper validation**: Correlation remains high (min Pearson's r = 0.7802) across varied weights, proving rubric robustness
 
-### Evaluation vs Expert Validation
+### Research Validation Studies (Paper Sections 4.1-4.4)
 
-**Two separate workflows**:
+#### 4.1 SP Quantitative Validation (`pages/02_가상환자에_대한_전문가_검증.py`)
+- **Purpose**: Validate PSYCHE-SP authenticity - do simulated patients behave like real psychiatric patients?
+- **Method**: 10 psychiatrists evaluate 14 PSYCHE-SP cases (7 disorders × 2 repetitions)
+- **Evaluation**: 24-element Construct-SP review (Appropriate/Inappropriate per element)
+- **Metrics**: 
+  - Conformity score (%) = proportion of psychiatrists rating element as "appropriate"
+  - Inter-observer reliability: Gwet's AC1 = 0.87, simple agreement = 0.89
+  - Intra-observer reliability: PABAK = 0.86, simple agreement = 0.94 (repeat MDD case)
+- **Paper results**: Average conformity 93% (range 85-97%), proving clinical appropriateness
+- **SP_SEQUENCE preset** (lines 18-33): 14 cases with randomized order
+  - Client numbers: 6201-6207 representing 7 distinct disorders
+  - Each disorder appears twice with different behavioral variations
 
-1. **Automated Evaluation** (`pages/연구자용 격리 폴더/04_evaluation.py`):
-   - **Purpose**: Automated PACA performance assessment using PSYCHE RUBRIC
-   - **Process**: Compares PACA construct vs SP construct (ground truth) programmatically
-   - **Workflow**: 
-     1. Search available experiments in Firebase (filters by client number, experiment number range)
-     2. Select experiment from dropdown list
-     3. Load SP construct (ground truth) and PACA construct
-     4. Run PSYCHE RUBRIC evaluation - element-by-element scoring
-     5. Save results to Firebase
-   - **Output**: PSYCHE Score (0-55 range) + detailed element-level scores
-   - **Firebase storage**: `clients_{client_num}/psyche_{diagnosis}_{model}_{exp_num}`
-     - Key format: `psyche_mdd_gptbasic_1111` (lowercase, no underscores in model name)
-   - **Scoring methods**: G-Eval (LLM-based, 0-1), binary (0 or 1), impulsivity/behavior (0, 0.5, or 1)
-   - **Usage**: Research page for generating automated performance metrics (hidden in production)
+#### 4.2 SP Qualitative Validation (`pages/02_가상환자에_대한_전문가_검증.py`)
+- **Purpose**: Collect expert impressions on SP believability and clinical realism
+- **Method**: After each SP quantitative validation, experts provide open-ended feedback
+- **Evaluation**: Free-text fields for diagnostic accuracy, behavioral authenticity, improvement areas
+- **Paper findings**: Board-certified psychiatrist (K.L.) validated clinical appropriateness across all 7 disorders
+  - MDD: Decreased energy, psychomotor retardation, reluctance to use term "depressed"
+  - BD: Euphoric mood, labile affect, flight of ideas, limited insight
+  - Anxiety: Anxious affect, somatic symptoms, increased suicide risk
+  - OCD: Intrusive thoughts, compulsive behaviors, ego-dystonic symptoms
+  - PTSD: Trauma-related nightmares, avoidance behaviors, emotional reactivity
+- **Integration**: Same page as 4.1, separate stage after construct validation
 
-2. **Expert Validation** (`pages/01_에이전트에_대한_전문가_검증.py`):
-   - **Purpose**: Human expert review of PACA outputs for quality assessment
-   - **Process**: Psychiatrists manually rate PACA construct accuracy
-   - **Output**: Expert-validated scores using PSYCHE RUBRIC weights (same 0-55 scale)
-   - **Firebase storage**: `expert_{sanitized_name}_{client_num}_{exp_num}`
-   - **Scoring**: Experts choose "Correct", "Partially Correct", "Incorrect" for each element
-     - Correct = 1.0, Partially Correct = 0.5, Incorrect = 0.0
-     - Final score = Σ(expert_score × element_weight)
-   - **Usage**: Validation study with domain experts
+#### 4.3 PACA Quantitative Validation (`pages/01_에이전트에_대한_전문가_검증.py`)
+- **Purpose**: Validate PACA clinical assessment competence - does it accurately assess patients?
+- **Method**: Expert psychiatrists evaluate 24 experiments (3 disorders × 4 model variants × 2 reps)
+- **Evaluation**: Element-by-element Construct-PACA vs Construct-SP comparison using PSYCHE RUBRIC
+- **Scoring**: Correct (1.0), Partially Correct (0.5), Incorrect (0.0) per element → weighted PSYCHE Score (0-55)
+- **Paper results**: 
+  - Strong correlation with expert scores: Pearson's r = 0.8486, p < 0.0001, n=20
+  - Moderate correlation with PIQSCA (interview quality scale): Pearson's r = 0.6367, p = 0.0025
+  - Guided prompt PACAs consistently outperformed basic prompt PACAs
+- **EXPERIMENT_NUMBERS preset** (lines 60-87): 24 experiments
+  - Client numbers: 6201 (MDD), 6202 (BD), 6206 (OCD)
+  - Model variants: gptsmaller, gptlarge, claudesmaller, claudelarge
+  - Experiment numbering: `<disorder_digit><model_digit><variant_digit><rep_digit>`
 
-**Critical distinction**: Both use PSYCHE RUBRIC (0-55 scale), but automated evaluation is algorithmic while expert validation is human-rated!
+#### 4.4 Automated PACA Evaluation (`pages/연구자용 격리 폴더/04_evaluation.py`)
+- **Purpose**: Algorithmic PACA evaluation without human experts - enables scalability
+- **Method**: Automated construct comparison using G-Eval, binary, and ordinal scoring
+- **Workflow**:
+  1. Search available experiments in Firebase (filter by client/experiment number range)
+  2. Select experiment from dropdown
+  3. Load Construct-SP (ground truth) and Construct-PACA
+  4. Run PSYCHE RUBRIC evaluation element-by-element
+  5. Save results to Firebase as `clients_{client_num}/psyche_{diagnosis}_{model}_{exp_num}`
+- **Validation**: Page 11 correlation analysis compares automated vs expert scores
+- **Firebase key format**: `psyche_mdd_gptbasic_1111` (lowercase, no underscores in model name)
+- **Usage**: Research page hidden in production - for rapid iteration and pre-screening
+
+#### Paper Ablation Study
+- **Compared** 3 SP variants: PSYCHE-SP (full MFC), NoMFCBehavior (Profile+History only), NoMFC (simple "act-like-patient" prompt)
+- **Results**: PSYCHE-SP significantly outperformed others (ANOVA p<0.05)
+  - Speech/thought process: PSYCHE-SP > NoMFC (p=0.047)
+  - Affect: PSYCHE-SP > both NoMFCBehavior and NoMFC (p<0.001)
+  - Mood: Trend toward PSYCHE-SP superiority (p=0.078)
+- **Conclusion**: MFC-Behavior is critical - MSE-based behavioral instructions essential for realism
 
 ## Development Workflows
 
@@ -346,8 +440,8 @@ for speaker, message in st.session_state.conversation_generator:
   - **Page cleanup pattern**: On page change, delete all agent/memory session state + set `force_paca_update=True`
 
 - `pages/00_진행상태_확인.py`: Experiment progress monitoring dashboard
-- `pages/01_에이전트에_대한_전문가_검증.py`: Expert validation interface for PACA agents
-- `pages/02_가상환자에_대한_전문가_검증.py`: SP authenticity validation by experts
+- `pages/01_에이전트에_대한_전문가_검증.py`: Expert validation interface for PACA agents (Section 4.3)
+- `pages/02_가상환자에_대한_전문가_검증.py`: SP authenticity validation by experts (Sections 4.1, 4.2)
 - `pages/05_json2csv.py`: Utility for converting Firebase JSON exports to CSV
 - `pages/08_sp_validation_viewer.py`: View SP validation results
 - `pages/09_plot.py`: PSYCHE score visualization (matplotlib scatter plot)
@@ -649,38 +743,6 @@ ref = get_firebase_ref()
 # Should show "시스템 준비가 완료되었습니다."
 ```
 
-## Testing
-
-**Test aggregation logic**:
-```bash
-python test_expert_validation_aggregation.py
-```
-This verifies that symptom aggregation and scoring options match expected format.
-
-**Test field mapping** (critical for PSYCHE RUBRIC):
-```bash
-python test_comprehensive_field_mapping.py
-```
-Validates all 59 PSYCHE elements map correctly between SP/PACA constructs.
-
-**Test Firebase structure**:
-```bash
-python test_firebase_sanitized_structure.py
-```
-Ensures key sanitization matches actual Firebase data structure.
-
-**Test Marriage/Relationship key handling** (critical for slash vs underscore):
-```bash
-python test_marriage_key_consistency.py
-```
-
-**Check Firebase connection**:
-```python
-from firebase_config import get_firebase_ref
-ref = get_firebase_ref()
-# Should show "시스템 준비가 완료되었습니다."
-```
-
 ## Language
 
 - **UI**: Korean (환자, 전문가, 검증 등)
@@ -709,17 +771,6 @@ ref = get_firebase_ref()
 2. Firebase Realtime Database URL in `st.secrets["firebase_database_url"]`
 3. Participant list in `st.secrets["participant"]` for authentication
 4. `OPENAI_API_KEY` and `ANTHROPIC_API_KEY` environment variables
-
-## Key Files Reference
-
-- `SP_utils.py`: Core agent creation, Firebase I/O, sanitization
-- `evaluator.py`: PSYCHE RUBRIC, construct normalization, scoring, **field name normalization (space↔underscore)**
-- `expert_validation_utils.py`: Validation-specific scoring, aggregation logic
-- `firebase_config.py`: Firebase initialization
-- `paca_construct_generator.py`, `sp_construct_generator.py`: Post-conversation construct generation
-- `Experiment_claude_basic.py` (and variants): Base experiment logic imported by page-specific files
-- `EVALUATOR_REFACTOR.md`, `MEMORY_FIX_GUIDE.md`, `VALIDATION_CODE_REVIEW.md`: Architecture decision records
-- `CODE_REVIEW_REPORT.txt`: Comprehensive review of field mapping issues (Dec 2025)
 
 ## Quick Reference: Common Tasks
 
