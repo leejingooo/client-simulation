@@ -10,7 +10,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from firebase_config import get_firebase_ref
-from SP_utils import load_from_firebase
 from expert_validation_utils import sanitize_firebase_key
 import matplotlib.pyplot as plt
 import matplotlib
@@ -124,7 +123,7 @@ def load_expert_scores(firebase_ref):
         
         for client_num, exp_num in EXPERIMENT_NUMBERS:
             key = f"expert_{sanitized_name}_{client_num}_{exp_num}"
-            data = load_from_firebase(firebase_ref, key)
+            data = firebase_ref.child(key).get()
             
             if data and 'psyche_score' in data:
                 validator_scores[(client_num, exp_num)] = data['psyche_score']
@@ -151,7 +150,7 @@ def load_psyche_scores(firebase_ref):
         ]
         
         for key in possible_keys:
-            data = load_from_firebase(firebase_ref, key)
+            data = firebase_ref.child(key).get()
             if data and 'psyche_score' in data:
                 psyche_data[(client_num, exp_num)] = data['psyche_score']
                 break
