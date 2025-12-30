@@ -211,9 +211,9 @@ def calculate_average_expert_scores(expert_data):
 # Visualization Functions
 # ================================
 def plot_correlation(avg_expert_scores, psyche_scores, title="Overall Correlation", 
-                     color_by_model=False, disorder_filter=None):
+                     color_by_model=False, disorder_filter=None, figsize=(8, 6)):
     """Plot correlation between average expert scores and PSYCHE scores"""
-    fig, ax = plt.subplots(figsize=(10, 8))
+    fig, ax = plt.subplots(figsize=figsize)
     
     # Prepare data
     data_points = {'gptsmaller': [], 'gptlarge': [], 'claudesmaller': [], 'claudelarge': [], 'unknown': []}
@@ -348,15 +348,17 @@ def main():
     # Disorder-specific plots
     st.markdown("### 📊 질환별 Correlation Plot (각 8개 실험)")
     
-    tabs = st.tabs(["MDD", "BD", "OCD"])
+    # Create 3-column layout for disorders
+    disorder_cols = st.columns(3)
     
     for i, disorder in enumerate(["mdd", "bd", "ocd"]):
-        with tabs[i]:
+        with disorder_cols[i]:
             fig_disorder = plot_correlation(
                 avg_expert_scores, psyche_scores,
-                title=f"{DISORDER_NAMES[disorder]}: Average Expert Score vs PSYCHE Score",
+                title=f"{DISORDER_NAMES[disorder]}",
                 color_by_model=True,
-                disorder_filter=disorder
+                disorder_filter=disorder,
+                figsize=(5, 4)
             )
             st.pyplot(fig_disorder)
             plt.close(fig_disorder)
