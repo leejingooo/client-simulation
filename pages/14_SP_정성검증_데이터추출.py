@@ -299,6 +299,10 @@ def create_text_summary_file(all_data):
 # Main Application
 # ================================
 def main():
+    # Clear any existing matplotlib figures
+    import matplotlib.pyplot as plt
+    plt.close('all')
+    
     st.title("📝 SP 정성 검증 데이터 추출")
     st.markdown("---")
     
@@ -422,6 +426,7 @@ def main():
             ax.set_ylabel('Psychiatric Element', fontsize=12)
             plt.tight_layout()
             st.pyplot(fig)
+            plt.close(fig)
             
             # Summary statistics
             st.markdown("#### 📊 Summary Statistics")

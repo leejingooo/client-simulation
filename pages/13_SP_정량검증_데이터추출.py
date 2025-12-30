@@ -306,6 +306,10 @@ def calculate_reliability(all_data):
 # Main Application
 # ================================
 def main():
+    # Clear any existing matplotlib figures
+    import matplotlib.pyplot as plt
+    plt.close('all')
+    
     st.title("📊 SP 정량 검증 데이터 추출")
     st.markdown("---")
     
@@ -429,6 +433,7 @@ def main():
             ax.set_ylabel('Element', fontsize=12)
             plt.tight_layout()
             st.pyplot(fig)
+            plt.close(fig)
         else:
             st.warning("평균 파일을 생성할 수 없습니다.")
     

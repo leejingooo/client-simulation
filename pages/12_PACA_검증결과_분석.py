@@ -291,6 +291,9 @@ def plot_correlation(avg_expert_scores, psyche_scores, title="Overall Correlatio
 # Main Application
 # ================================
 def main():
+    # Clear any existing matplotlib figures
+    plt.close('all')
+    
     st.title("📊 PACA 검증 결과 분석")
     st.markdown("---")
     
@@ -338,6 +341,7 @@ def main():
                                    title="Overall: Average Expert Score vs PSYCHE Score",
                                    color_by_model=True)
     st.pyplot(fig_overall)
+    plt.close(fig_overall)
     
     st.markdown("---")
     
@@ -355,6 +359,7 @@ def main():
                 disorder_filter=disorder
             )
             st.pyplot(fig_disorder)
+            plt.close(fig_disorder)
     
     st.markdown("---")
     
