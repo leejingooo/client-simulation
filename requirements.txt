@@ -10,6 +10,7 @@ pandas
 matplotlib
 seaborn
 scipy
+pingouin
 playwright
 python-dotenv
 requests

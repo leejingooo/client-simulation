@@ -13,6 +13,7 @@ from firebase_config import get_firebase_ref
 from SP_utils import sanitize_key
 from datetime import datetime
 import io
+import pingouin as pg
 
 # ================================
 # Configuration
@@ -224,36 +225,51 @@ def create_average_file_qualitative(all_data):
     
     return df
 
-def calculate_icc_approximate(all_ratings):
-    """Calculate approximate ICC (Intraclass Correlation Coefficient)
+def calculate_icc_accurate(case_element_ratings):
+    """Calculate accurate ICC using pingouin library
     
-    For Likert scale data (1-5), we use a simplified ICC(2,1) calculation
-    This measures absolute agreement for single raters
+    Args:
+        case_element_ratings: dict of {(page, client, element): [ratings]}
+    
+    Returns:
+        float: ICC(2,1) value - absolute agreement, single rater
     """
-    if not all_ratings or len(all_ratings) < 2:
+    if not case_element_ratings:
         return None
     
-    # Convert to numpy array for easier calculation
-    ratings_array = np.array(all_ratings)
+    # Prepare data in long format for pingouin
+    # Format: targets (cases), raters (experts), ratings (values)
+    data_rows = []
     
-    # Calculate between-case variance and within-case variance
-    grand_mean = np.mean(ratings_array)
+    for (page, client, element), ratings in case_element_ratings.items():
+        if len(ratings) < 2:
+            continue
+        
+        target_id = f"{page}_{client}_{element}"
+        for rater_idx, rating in enumerate(ratings):
+            data_rows.append({
+                'targets': target_id,
+                'raters': rater_idx,
+                'ratings': rating
+            })
     
-    # Between-case variance (BMS)
-    case_means = np.mean(ratings_array, axis=1)
-    n_raters = ratings_array.shape[1]
-    bms = n_raters * np.var(case_means, ddof=1)
-    
-    # Within-case variance (WMS)
-    case_variances = np.var(ratings_array, axis=1, ddof=1)
-    wms = np.mean(case_variances)
-    
-    # ICC(2,1) calculation
-    if (bms + wms) == 0:
+    if len(data_rows) < 3:  # Need minimum data
         return None
     
-    icc = (bms - wms) / (bms + wms)
-    return max(0, min(1, icc))  # Constrain to [0, 1]
+    df = pd.DataFrame(data_rows)
+    
+    try:
+        # Calculate ICC(2,1) - two-way random effects, absolute agreement, single rater
+        icc_result = pg.intraclass_corr(data=df, targets='targets', raters='raters', ratings='ratings')
+        # Extract ICC2 (two-way random effects, absolute agreement)
+        icc2_row = icc_result[icc_result['Type'] == 'ICC2']
+        if not icc2_row.empty:
+            return icc2_row['ICC'].values[0]
+        else:
+            return None
+    except Exception as e:
+        st.warning(f"ICC calculation error: {e}")
+        return None
 
 
 def calculate_qualitative_reliability(all_data):
@@ -365,17 +381,8 @@ def calculate_qualitative_reliability(all_data):
     
     # Calculate ICC if we have enough data
     if case_element_ratings:
-        # Prepare data for ICC: rows = cases, columns = raters
-        # We'll calculate ICC across all elements combined
-        icc_data = []
-        for key, ratings in case_element_ratings.items():
-            if len(ratings) >= 2:
-                icc_data.append(ratings[:2])  # Take first 2 raters for consistency
-        
-        if len(icc_data) >= 3:  # Need at least 3 cases for meaningful ICC
-            reliability_stats['inter_observer_icc'] = calculate_icc_approximate(icc_data)
-        else:
-            reliability_stats['inter_observer_icc'] = None
+        # Use pingouin for accurate ICC calculation
+        reliability_stats['inter_observer_icc'] = calculate_icc_accurate(case_element_ratings)
     else:
         reliability_stats['inter_observer_icc'] = None
     
@@ -655,9 +662,9 @@ def main():
                 
                 if reliability['inter_observer_icc'] is not None:
                     st.metric(
-                        "ICC (approx)",
+                        "ICC(2,1)",
                         f"{reliability['inter_observer_icc']:.4f}",
-                        help="Intraclass Correlation Coefficient - measures absolute agreement"
+                        help="ICC(2,1): Two-way random effects, absolute agreement, single rater (calculated with pingouin)"
                     )
                 
                 st.info(f"**n = {reliability['inter_observer_n']}** comparisons")
