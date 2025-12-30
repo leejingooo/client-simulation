@@ -234,11 +234,63 @@ def create_average_file(all_data):
     
     return df
 
+def calculate_pabak(po):
+    """Calculate PABAK (Prevalence-Adjusted Bias-Adjusted Kappa)
+    
+    PABAK = 2 * Po - 1
+    where Po = proportion of observed agreement
+    
+    Used for intra-observer reliability (same rater, repeated measurements)
+    """
+    return 2 * po - 1
+
+
+def calculate_gwet_ac1(all_scores):
+    """Calculate Gwet's AC1 coefficient
+    
+    AC1 = (Po - Pe) / (1 - Pe)
+    where:
+    - Po = observed agreement proportion
+    - Pe = chance agreement = 2 * p * (1-p) for binary ratings
+    - p = overall proportion of positive ratings
+    
+    Used for inter-observer reliability (multiple raters)
+    More stable than Cohen's Kappa, especially with high agreement
+    """
+    if not all_scores:
+        return None
+    
+    # Flatten all scores to calculate overall proportion
+    all_values = []
+    agreements = []
+    
+    for score_pair in all_scores:
+        score1, score2 = score_pair
+        all_values.extend([score1, score2])
+        agreements.append(1 if score1 == score2 else 0)
+    
+    # Observed agreement
+    po = np.mean(agreements)
+    
+    # Overall proportion of "yes" (1) responses
+    p = np.mean(all_values)
+    
+    # Chance agreement for binary data
+    pe = 2 * p * (1 - p)
+    
+    # Gwet's AC1
+    if pe == 1:  # Avoid division by zero
+        return None
+    
+    ac1 = (po - pe) / (1 - pe)
+    return ac1
+
+
 def calculate_reliability(all_data):
     """Calculate inter-observer and intra-observer reliability
     
     Returns:
-        dict: Reliability metrics
+        dict: Reliability metrics including Simple Agreement, PABAK, and Gwet's AC1
     """
     reliability_stats = {}
     
@@ -250,8 +302,11 @@ def calculate_reliability(all_data):
         if len(pages) == 2:
             repeated_cases[client_num] = pages
     
-    # Intra-observer reliability (agreement between two evaluations of same case)
+    # ===== INTRA-OBSERVER RELIABILITY =====
+    # (same rater evaluates same case twice)
     intra_agreements = []
+    intra_pabak_scores = []
+    
     for expert, expert_data in all_data.items():
         for client_num, pages in repeated_cases.items():
             if len(pages) == 2:
@@ -269,13 +324,20 @@ def calculate_reliability(all_data):
                             agreements.append(1 if score1 == score2 else 0)
                     
                     if agreements:
-                        intra_agreements.append(np.mean(agreements))
+                        po = np.mean(agreements)
+                        intra_agreements.append(po)
+                        # PABAK for this comparison
+                        intra_pabak_scores.append(calculate_pabak(po))
     
     reliability_stats['intra_observer_agreement'] = np.mean(intra_agreements) if intra_agreements else None
+    reliability_stats['intra_observer_pabak'] = np.mean(intra_pabak_scores) if intra_pabak_scores else None
     reliability_stats['intra_observer_n'] = len(intra_agreements)
     
-    # Inter-observer reliability (agreement between different evaluators for same case)
+    # ===== INTER-OBSERVER RELIABILITY =====
+    # (different raters evaluate same case)
     inter_agreements = []
+    inter_score_pairs = []  # For Gwet's AC1 calculation
+    
     for page_num, client_num in SP_SEQUENCE:
         experts_with_data = [expert for expert in all_data.keys() 
                             if (page_num, client_num) in all_data[expert]]
@@ -293,11 +355,14 @@ def calculate_reliability(all_data):
                         score2 = scores2.get(element)
                         if score1 is not None and score2 is not None:
                             agreements.append(1 if score1 == score2 else 0)
+                            # Collect score pairs for Gwet's AC1
+                            inter_score_pairs.append((score1, score2))
                     
                     if agreements:
                         inter_agreements.append(np.mean(agreements))
     
     reliability_stats['inter_observer_agreement'] = np.mean(inter_agreements) if inter_agreements else None
+    reliability_stats['inter_observer_gwet_ac1'] = calculate_gwet_ac1(inter_score_pairs)
     reliability_stats['inter_observer_n'] = len(inter_agreements)
     
     return reliability_stats
@@ -455,6 +520,14 @@ def main():
                     f"{reliability['intra_observer_agreement']:.4f}",
                     help=f"Based on {reliability['intra_observer_n']} comparisons"
                 )
+                
+                if reliability['intra_observer_pabak'] is not None:
+                    st.metric(
+                        "PABAK",
+                        f"{reliability['intra_observer_pabak']:.4f}",
+                        help="Prevalence-Adjusted Bias-Adjusted Kappa"
+                    )
+                
                 st.info(f"**n = {reliability['intra_observer_n']}** comparisons")
             else:
                 st.warning("데이터 부족")
@@ -469,6 +542,14 @@ def main():
                     f"{reliability['inter_observer_agreement']:.4f}",
                     help=f"Based on {reliability['inter_observer_n']} comparisons"
                 )
+                
+                if reliability['inter_observer_gwet_ac1'] is not None:
+                    st.metric(
+                        "Gwet's AC1",
+                        f"{reliability['inter_observer_gwet_ac1']:.4f}",
+                        help="Gwet's Agreement Coefficient (more stable than Kappa)"
+                    )
+                
                 st.info(f"**n = {reliability['inter_observer_n']}** comparisons")
             else:
                 st.warning("데이터 부족")
@@ -478,8 +559,9 @@ def main():
         **Note:** 
         - Intra-observer reliability는 각 평가자가 같은 case를 두 번 평가한 결과 비교
         - Inter-observer reliability는 서로 다른 평가자들이 같은 case를 평가한 결과 비교
-        - Simple Agreement: Element별 일치 비율의 평균
-        - 논문에서는 Gwet's AC1, PABAK 등 추가 지표 사용
+        - **Simple Agreement**: Element별 일치 비율의 평균
+        - **PABAK** (Intra): Prevalence-Adjusted Bias-Adjusted Kappa, 반복 측정에 적합
+        - **Gwet's AC1** (Inter): 다중 평가자 일치도, Kappa보다 안정적 (고일치도에서 특히 유용)
         """)
 
 if __name__ == "__main__":
