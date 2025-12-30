@@ -66,6 +66,16 @@ EXPERIMENT_NUMBERS = [
 # 검증자 목록
 VALIDATORS = ["이강토", "김태환", "김광현", "김주오", "허율", "장재용"]
 
+# 검증자 영어 이니셜 매핑 (한글 깨짐 방지)
+VALIDATOR_INITIALS = {
+    "이강토": "K.T. Lee",
+    "김태환": "T.H. Kim",
+    "김광현": "K.H. Kim",
+    "김주오": "J.O. Kim",
+    "허율": "Y. Heo",
+    "장재용": "J.Y. Jang"
+}
+
 # Disorder mapping
 DISORDER_MAP = {
     6201: "mdd",
@@ -361,24 +371,45 @@ def main():
         
         for idx, validator in enumerate(row_validators):
             with cols[idx]:
-                # Collect data points for this validator
-                validator_x, validator_y = [], []
+                # Collect data points for this validator (grouped by model)
+                validator_data_points = {'gptsmaller': [], 'gptlarge': [], 'claudesmaller': [], 'claudelarge': []}
                 
                 for exp in EXPERIMENT_NUMBERS:
+                    client_num, exp_num = exp
                     expert_score = expert_data[validator].get(exp)
                     psyche_score = psyche_scores.get(exp)
                     
                     if expert_score is not None and psyche_score is not None:
-                        validator_x.append(psyche_score)
-                        validator_y.append(expert_score)
+                        model = get_model_from_exp(exp_num)
+                        if model in validator_data_points:
+                            validator_data_points[model].append((psyche_score, expert_score))
                 
                 # Create mini plot
                 fig_validator, ax_validator = plt.subplots(figsize=(5, 4))
                 
+                # Model styles (same as main plot)
+                model_styles = {
+                    'gptsmaller': {'marker': 'o', 'color': 'blue'},
+                    'gptlarge': {'marker': 's', 'color': 'darkblue'},
+                    'claudesmaller': {'marker': '^', 'color': 'red'},
+                    'claudelarge': {'marker': 'D', 'color': 'darkred'}
+                }
+                
+                # Collect all points for correlation calculation
+                validator_x, validator_y = [], []
+                
+                # Plot points by model
+                for model, points in validator_data_points.items():
+                    if points:
+                        x, y = zip(*points)
+                        validator_x.extend(x)
+                        validator_y.extend(y)
+                        
+                        style = model_styles[model]
+                        ax_validator.scatter(x, y, marker=style['marker'], c=style['color'], 
+                                           s=50, alpha=0.6, edgecolors='black')
+                
                 if len(validator_x) >= 2:
-                    # Plot points
-                    ax_validator.scatter(validator_x, validator_y, c='steelblue', 
-                                        s=50, alpha=0.6, edgecolors='black')
                     
                     # Calculate correlation
                     pearson_r, pearson_p = stats.pearsonr(validator_x, validator_y)
@@ -401,7 +432,7 @@ def main():
                 
                 ax_validator.set_xlabel('PSYCHE Score', fontsize=10)
                 ax_validator.set_ylabel('Expert Score', fontsize=10)
-                ax_validator.set_title(validator, fontsize=11, fontweight='bold')
+                ax_validator.set_title(VALIDATOR_INITIALS.get(validator, validator), fontsize=11, fontweight='bold')
                 ax_validator.grid(True, alpha=0.3)
                 plt.tight_layout()
                 
