@@ -14,6 +14,8 @@ from SP_utils import sanitize_key
 from datetime import datetime
 import io
 import pingouin as pg
+from sklearn.metrics import cohen_kappa_score
+from itertools import combinations
 
 # ================================
 # Configuration
@@ -225,6 +227,167 @@ def create_average_file_qualitative(all_data):
     
     return df
 
+def calculate_weighted_kappa(all_data):
+    """Calculate Weighted Kappa (Cohen's) for Likert scale data
+    
+    Uses quadratic weights appropriate for ordinal data
+    Computes pairwise kappa between all rater pairs and returns average
+    
+    Args:
+        all_data: dict of expert validation data
+    
+    Returns:
+        dict: mean kappa, std, and number of comparisons
+    """
+    # Collect all pairwise comparisons
+    kappa_scores = []
+    
+    experts = list(all_data.keys())
+    
+    # For each pair of experts
+    for expert1, expert2 in combinations(experts, 2):
+        # Find common cases they both evaluated
+        cases1 = set(all_data[expert1].keys())
+        cases2 = set(all_data[expert2].keys())
+        common_cases = cases1 & cases2
+        
+        if not common_cases:
+            continue
+        
+        # Collect ratings for each element
+        for elem_key in ELEMENT_KEYS:
+            ratings1 = []
+            ratings2 = []
+            
+            for case_key in common_cases:
+                rating1 = all_data[expert1][case_key].get(elem_key, {}).get('rating')
+                rating2 = all_data[expert2][case_key].get(elem_key, {}).get('rating')
+                
+                if rating1 is not None and rating2 is not None:
+                    ratings1.append(rating1)
+                    ratings2.append(rating2)
+            
+            if len(ratings1) >= 2:  # Need at least 2 ratings
+                try:
+                    # Quadratic weights for ordinal data (penalizes large disagreements more)
+                    kappa = cohen_kappa_score(ratings1, ratings2, weights='quadratic')
+                    kappa_scores.append(kappa)
+                except:
+                    pass
+    
+    if not kappa_scores:
+        return None
+    
+    return {
+        'mean': np.mean(kappa_scores),
+        'std': np.std(kappa_scores),
+        'n': len(kappa_scores)
+    }
+
+
+def calculate_krippendorff_alpha_ordinal(all_data):
+    """Calculate Krippendorff's Alpha for ordinal Likert scale data
+    
+    More robust than Kappa, handles missing data well
+    Designed for ordinal/interval data
+    
+    Args:
+        all_data: dict of expert validation data
+    
+    Returns:
+        float: Krippendorff's Alpha coefficient
+    """
+    # Build reliability matrix: rows = units (case-element pairs), columns = coders (experts)
+    experts = list(all_data.keys())
+    
+    # Collect all unique case-element pairs
+    all_units = set()
+    for expert_data in all_data.values():
+        for case_key in expert_data.keys():
+            for elem_key in ELEMENT_KEYS:
+                all_units.add((case_key, elem_key))
+    
+    all_units = sorted(list(all_units))
+    
+    # Build matrix
+    matrix = []
+    for unit in all_units:
+        case_key, elem_key = unit
+        row = []
+        for expert in experts:
+            if case_key in all_data[expert]:
+                rating = all_data[expert][case_key].get(elem_key, {}).get('rating')
+                row.append(rating if rating is not None else np.nan)
+            else:
+                row.append(np.nan)
+        matrix.append(row)
+    
+    matrix = np.array(matrix, dtype=float)
+    
+    # Calculate Krippendorff's Alpha for ordinal data
+    n_units, n_coders = matrix.shape
+    
+    # Remove units with less than 2 valid ratings
+    valid_counts = np.sum(~np.isnan(matrix), axis=1)
+    matrix = matrix[valid_counts >= 2]
+    
+    if len(matrix) < 2:
+        return None
+    
+    # Compute coincidence matrix for ordinal metric
+    values = np.array([1, 2, 3, 4, 5])  # Likert scale values
+    n_values = len(values)
+    
+    coincidence_matrix = np.zeros((n_values, n_values))
+    
+    for unit_ratings in matrix:
+        valid_ratings = unit_ratings[~np.isnan(unit_ratings)]
+        if len(valid_ratings) < 2:
+            continue
+        
+        for i, val1 in enumerate(values):
+            for j, val2 in enumerate(values):
+                count1 = np.sum(valid_ratings == val1)
+                count2 = np.sum(valid_ratings == val2)
+                
+                if i == j:
+                    coincidence_matrix[i, j] += count1 * (count1 - 1)
+                else:
+                    coincidence_matrix[i, j] += count1 * count2
+    
+    # Observed disagreement (ordinal metric)
+    total_comparisons = np.sum(coincidence_matrix)
+    if total_comparisons == 0:
+        return None
+    
+    observed_disagreement = 0
+    for i in range(n_values):
+        for j in range(n_values):
+            # Ordinal distance: sum of categories between i and j
+            distance = abs(i - j)
+            observed_disagreement += coincidence_matrix[i, j] * distance
+    
+    observed_disagreement /= total_comparisons
+    
+    # Expected disagreement
+    marginals = np.sum(coincidence_matrix, axis=1)
+    total = np.sum(marginals)
+    
+    expected_disagreement = 0
+    for i in range(n_values):
+        for j in range(n_values):
+            distance = abs(i - j)
+            expected_disagreement += (marginals[i] * marginals[j] * distance)
+    
+    expected_disagreement /= (total * (total - 1))
+    
+    if expected_disagreement == 0:
+        return None
+    
+    alpha = 1 - (observed_disagreement / expected_disagreement)
+    return alpha
+
+
 def calculate_icc_accurate(all_data):
     """Calculate accurate ICC using pingouin library
     
@@ -265,14 +428,27 @@ def calculate_icc_accurate(all_data):
         return None
     
     try:
-        # Calculate ICC(2,1) - two-way random effects, absolute agreement, single rater
+        # Calculate ICC - two-way random effects
         icc_result = pg.intraclass_corr(data=df, targets='targets', raters='raters', ratings='ratings')
-        # Extract ICC2 (two-way random effects, absolute agreement)
+        
+        # Store full ICC results for debugging
+        st.session_state['icc_debug_df'] = df.copy()
+        st.session_state['icc_full_results'] = icc_result.copy()
+        
+        # Extract ICC2 (absolute agreement) and ICC3 (consistency)
         icc2_row = icc_result[icc_result['Type'] == 'ICC2']
+        icc3_row = icc_result[icc_result['Type'] == 'ICC3']
+        
+        # Return both ICC2 and ICC3
+        results = {}
         if not icc2_row.empty:
-            return icc2_row['ICC'].values[0]
-        else:
-            return None
+            results['icc2'] = icc2_row['ICC'].values[0]
+            results['icc2_ci'] = (icc2_row['CI95%'].values[0][0], icc2_row['CI95%'].values[0][1])
+        if not icc3_row.empty:
+            results['icc3'] = icc3_row['ICC'].values[0]
+            results['icc3_ci'] = (icc3_row['CI95%'].values[0][0], icc3_row['CI95%'].values[0][1])
+        
+        return results if results else None
     except Exception as e:
         st.warning(f"ICC calculation error: {e}")
         return None
@@ -385,8 +561,28 @@ def calculate_qualitative_reliability(all_data):
     reliability_stats['inter_observer_weighted_agreement'] = np.mean(inter_weighted_agreements) if inter_weighted_agreements else None
     reliability_stats['inter_observer_n'] = len(inter_agreements)
     
-    # Calculate ICC with expert identity preserved
-    reliability_stats['inter_observer_icc'] = calculate_icc_accurate(all_data)
+    # Calculate Weighted Kappa (Cohen's) - appropriate for ordinal Likert data
+    weighted_kappa_result = calculate_weighted_kappa(all_data)
+    if weighted_kappa_result:
+        reliability_stats['inter_observer_weighted_kappa'] = weighted_kappa_result['mean']
+        reliability_stats['inter_observer_weighted_kappa_std'] = weighted_kappa_result['std']
+        reliability_stats['weighted_kappa_n'] = weighted_kappa_result['n']
+    else:
+        reliability_stats['inter_observer_weighted_kappa'] = None
+    
+    # Calculate Krippendorff's Alpha (ordinal) - robust for multiple raters
+    reliability_stats['inter_observer_krippendorff'] = calculate_krippendorff_alpha_ordinal(all_data)
+    
+    # Calculate ICC with expert identity preserved (for comparison)
+    icc_results = calculate_icc_accurate(all_data)
+    if icc_results:
+        reliability_stats['inter_observer_icc2'] = icc_results.get('icc2')
+        reliability_stats['inter_observer_icc2_ci'] = icc_results.get('icc2_ci')
+        reliability_stats['inter_observer_icc3'] = icc_results.get('icc3')
+        reliability_stats['inter_observer_icc3_ci'] = icc_results.get('icc3_ci')
+    else:
+        reliability_stats['inter_observer_icc2'] = None
+        reliability_stats['inter_observer_icc3'] = None
     
     return reliability_stats
 
@@ -662,24 +858,94 @@ def main():
                         help="Agreement weighted by distance"
                     )
                 
-                if reliability['inter_observer_icc'] is not None:
+                st.markdown("##### 🎯 Likert Scale에 적합한 지표")
+                
+                if reliability.get('inter_observer_weighted_kappa') is not None:
                     st.metric(
-                        "ICC(2,1)",
-                        f"{reliability['inter_observer_icc']:.4f}",
-                        help="ICC(2,1): Two-way random effects, absolute agreement, single rater (calculated with pingouin)"
+                        "Weighted Kappa (Cohen's)",
+                        f"{reliability['inter_observer_weighted_kappa']:.4f}",
+                        help="Quadratic weighted kappa for ordinal data - standard for Likert scales"
                     )
+                    if reliability.get('inter_observer_weighted_kappa_std') is not None:
+                        st.caption(f"SD: {reliability['inter_observer_weighted_kappa_std']:.4f} | n={reliability.get('weighted_kappa_n', 0)} comparisons")
+                
+                if reliability.get('inter_observer_krippendorff') is not None:
+                    st.metric(
+                        "Krippendorff's Alpha (ordinal)",
+                        f"{reliability['inter_observer_krippendorff']:.4f}",
+                        help="Robust reliability for ordinal data with multiple raters - handles missing data well"
+                    )
+                
+                st.markdown("##### 참고: ICC (Continuous Data Metric)")
+                
+                if reliability.get('inter_observer_icc2') is not None:
+                    st.metric(
+                        "ICC(2,1) - Absolute Agreement",
+                        f"{reliability['inter_observer_icc2']:.4f}",
+                        help="Two-way random, absolute agreement (designed for continuous data)"
+                    )
+                    if reliability.get('inter_observer_icc2_ci'):
+                        ci = reliability['inter_observer_icc2_ci']
+                        st.caption(f"95% CI: [{ci[0]:.4f}, {ci[1]:.4f}]")
+                
+                if reliability.get('inter_observer_icc3') is not None:
+                    st.metric(
+                        "ICC(3,1) - Consistency",
+                        f"{reliability['inter_observer_icc3']:.4f}",
+                        help="Two-way random, consistency (allows systematic differences)"
+                    )
+                    if reliability.get('inter_observer_icc3_ci'):
+                        ci = reliability['inter_observer_icc3_ci']
+                        st.caption(f"95% CI: [{ci[0]:.4f}, {ci[1]:.4f}]")
                 
                 st.info(f"**n = {reliability['inter_observer_n']}** comparisons")
             else:
                 st.warning("데이터 부족")
         
+        # Debugging information
+        if 'icc_debug_df' in st.session_state:
+            with st.expander("🔍 ICC 계산 상세 정보 (디버깅)"):
+                st.markdown("#### 평가자별 평균 점수")
+                debug_df = st.session_state['icc_debug_df']
+                rater_means = debug_df.groupby('raters')['ratings'].agg(['mean', 'std', 'count'])
+                rater_means.columns = ['평균 점수', '표준편차', '평가 수']
+                st.dataframe(rater_means.round(3))
+                
+                st.markdown("#### Case별 변동성 vs 평가자 간 변동성")
+                target_variance = debug_df.groupby('targets')['ratings'].var().mean()
+                rater_variance = debug_df.groupby('raters')['ratings'].var().mean()
+                st.write(f"- **Case 내 변동성 (평가자 간 차이)**: {target_variance:.4f}")
+                st.write(f"- **평가자 내 변동성 (Case 간 차이)**: {rater_variance:.4f}")
+                
+                if 'icc_full_results' in st.session_state:
+                    st.markdown("#### 전체 ICC 결과")
+                    st.dataframe(st.session_state['icc_full_results'])
+                
+                st.caption("""
+                **ICC가 낮은 이유 진단:**
+                - ICC2 (Absolute Agreement)는 평가자들이 동일한 절대 점수를 주는지 측정
+                - ICC3 (Consistency)는 평가자 간 체계적 차이를 허용하고 상대적 순서만 측정
+                - ICC가 낮다 = Case 간 차이보다 평가자 간 차이가 더 크다
+                - Weighted Agreement는 "가까운 점수"를 부분적으로 인정하므로 ICC보다 높을 수 있음
+                """)
+        
         st.markdown("---")
         st.caption("""
-        **Note (Likert Scale):** 
-        - **Exact Agreement**: Proportion of identical ratings
-        - **Weighted Agreement**: Closer ratings receive higher agreement scores (1-off = 0.75, 2-off = 0.5)
-        - **ICC**: Intraclass Correlation Coefficient for continuous-like data, measures consistency across raters
-        - Likert scale (1-5) requires different reliability measures than binary data
+        **Likert Scale (1-5)에 적합한 지표:**
+        - **Weighted Kappa (Cohen's)**: Ordinal data 표준 지표, quadratic weights로 큰 불일치를 더 크게 패널티
+        - **Krippendorff's Alpha**: 다중 평가자 + ordinal data에 강력, 결측치 처리 우수
+        - **Weighted Agreement**: 거리 기반 일치도 (1-off=0.75, 2-off=0.5)
+        
+        **참고 지표 (Continuous data용):**
+        - **ICC**: 연속형 데이터를 위해 설계된 지표로, Likert scale에서는 낮게 나올 수 있음
+        
+        **해석 기준 (Kappa/Alpha):**
+        - < 0.00: Poor
+        - 0.00-0.20: Slight
+        - 0.21-0.40: Fair
+        - 0.41-0.60: Moderate  
+        - 0.61-0.80: Substantial
+        - 0.81-1.00: Almost Perfect
         """)
     
     # ===== TAB 4: 텍스트 정리 =====
