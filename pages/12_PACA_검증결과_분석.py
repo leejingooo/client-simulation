@@ -149,20 +149,25 @@ def load_expert_scores(root_data):
 
 
 def load_psyche_scores(root_data):
-    """Load automated PSYCHE scores from root snapshot."""
+    """Load automated PSYCHE scores from root snapshot.
+
+    Model tags are ignored; exp_num is unique, so we match by client and exp suffix.
+    """
     psyche_data = {}
 
     for client_num, exp_num in EXPERIMENT_NUMBERS:
-        disorder = DISORDER_MAP[client_num]
-        base_model = get_model_from_exp(exp_num)
-        model_candidates = _possible_model_tags(base_model)
-
         value = None
-        for model_tag in model_candidates:
-            key = f"clients_{client_num}_psyche_{disorder}_{model_tag}_{exp_num}"
-            data = (root_data or {}).get(key, {}) or {}
-            if 'psyche_score' in data:
-                value = data['psyche_score']
+        target_prefix = f"clients_{client_num}_psyche_"
+        target_suffix = f"_{exp_num}"
+
+        for key, data in (root_data or {}).items():
+            if not key.startswith(target_prefix):
+                continue
+            if not key.endswith(target_suffix):
+                continue
+            record = data or {}
+            if 'psyche_score' in record:
+                value = record['psyche_score']
                 break
 
         psyche_data[(client_num, exp_num)] = value
