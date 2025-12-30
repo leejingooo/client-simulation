@@ -225,38 +225,44 @@ def create_average_file_qualitative(all_data):
     
     return df
 
-def calculate_icc_accurate(case_element_ratings):
+def calculate_icc_accurate(all_data):
     """Calculate accurate ICC using pingouin library
     
     Args:
-        case_element_ratings: dict of {(page, client, element): [ratings]}
+        all_data: dict of expert validation data with expert names as keys
     
     Returns:
         float: ICC(2,1) value - absolute agreement, single rater
     """
-    if not case_element_ratings:
-        return None
-    
     # Prepare data in long format for pingouin
-    # Format: targets (cases), raters (experts), ratings (values)
+    # Format: targets (case-element combinations), raters (expert names), ratings (values)
     data_rows = []
     
-    for (page, client, element), ratings in case_element_ratings.items():
-        if len(ratings) < 2:
-            continue
-        
-        target_id = f"{page}_{client}_{element}"
-        for rater_idx, rating in enumerate(ratings):
-            data_rows.append({
-                'targets': target_id,
-                'raters': rater_idx,
-                'ratings': rating
-            })
+    for expert, expert_data in all_data.items():
+        for (page_num, client_num), qual_data in expert_data.items():
+            for elem_key in ELEMENT_KEYS:
+                rating = qual_data.get(elem_key, {}).get('rating')
+                if rating is not None:
+                    # Target = unique case-element combination
+                    target_id = f"{page_num}_{client_num}_{elem_key}"
+                    data_rows.append({
+                        'targets': target_id,
+                        'raters': expert,  # Use actual expert name, not index
+                        'ratings': rating
+                    })
     
-    if len(data_rows) < 3:  # Need minimum data
+    if len(data_rows) < 6:  # Need minimum data for ICC
         return None
     
     df = pd.DataFrame(data_rows)
+    
+    # Filter to only include targets rated by at least 2 raters
+    target_counts = df.groupby('targets').size()
+    valid_targets = target_counts[target_counts >= 2].index
+    df = df[df['targets'].isin(valid_targets)]
+    
+    if len(df) < 6 or df['targets'].nunique() < 2:
+        return None
     
     try:
         # Calculate ICC(2,1) - two-way random effects, absolute agreement, single rater
@@ -379,12 +385,8 @@ def calculate_qualitative_reliability(all_data):
     reliability_stats['inter_observer_weighted_agreement'] = np.mean(inter_weighted_agreements) if inter_weighted_agreements else None
     reliability_stats['inter_observer_n'] = len(inter_agreements)
     
-    # Calculate ICC if we have enough data
-    if case_element_ratings:
-        # Use pingouin for accurate ICC calculation
-        reliability_stats['inter_observer_icc'] = calculate_icc_accurate(case_element_ratings)
-    else:
-        reliability_stats['inter_observer_icc'] = None
+    # Calculate ICC with expert identity preserved
+    reliability_stats['inter_observer_icc'] = calculate_icc_accurate(all_data)
     
     return reliability_stats
 
