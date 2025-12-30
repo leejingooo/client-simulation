@@ -79,36 +79,41 @@ DISORDER_NAMES = {
     "ocd": "Obsessive-Compulsive Disorder"
 }
 
-# Model identification
+# Model identification (explicit mapping for 24 experiments)
+MODEL_BY_EXP = {
+    # 6201 MDD
+    3111: 'gptsmaller',
+    3117: 'gptsmaller',
+    1121: 'gptlarge',
+    1123: 'gptlarge',
+    3134: 'claudesmaller',
+    3138: 'claudesmaller',
+    1143: 'claudelarge',
+    1145: 'claudelarge',
+    # 6202 BD
+    3211: 'gptsmaller',
+    3212: 'gptsmaller',
+    1221: 'gptlarge',
+    1222: 'gptlarge',
+    3231: 'claudesmaller',
+    3234: 'claudesmaller',
+    1241: 'claudelarge',
+    1242: 'claudelarge',
+    # 6206 OCD
+    3611: 'gptsmaller',
+    3612: 'gptsmaller',
+    1621: 'gptlarge',
+    1622: 'gptlarge',
+    3631: 'claudesmaller',
+    3632: 'claudesmaller',
+    1641: 'claudelarge',
+    1642: 'claudelarge',
+}
+
+
 def get_model_from_exp(exp_num):
-    """Identify model from experiment number"""
-    exp_str = str(exp_num)
-    if exp_str[1] == '1':  # x1xx
-        if exp_str[2] == '1':
-            return 'gptsmaller'
-        elif exp_str[2] in ['2', '3']:
-            return 'gptlarge'
-        elif exp_str[2] == '3':
-            return 'claudesmaller'
-        elif exp_str[2] == '4':
-            return 'claudelarge'
-    elif exp_str[0] == '3':  # 3xxx
-        if exp_str[2] == '1':
-            return 'gptsmaller'
-        elif exp_str[2] == '3':
-            return 'claudesmaller'
-    
-    # Fallback logic
-    if '11' in exp_str[:3]:
-        return 'gptsmaller'
-    elif '12' in exp_str[:3]:
-        return 'gptlarge'
-    elif '31' in exp_str or '34' in exp_str or '38' in exp_str:
-        return 'gptsmaller' if '31' in exp_str else 'claudesmaller'
-    elif '14' in exp_str[:3]:
-        return 'claudelarge'
-    
-    return 'unknown'
+    """Identify model from experiment number (explicit mapping)."""
+    return MODEL_BY_EXP.get(exp_num, 'unknown')
 
 # ================================
 # Data Loading Functions
@@ -201,7 +206,7 @@ def plot_correlation(avg_expert_scores, psyche_scores, title="Overall Correlatio
     fig, ax = plt.subplots(figsize=(10, 8))
     
     # Prepare data
-    data_points = {'gptsmaller': [], 'gptlarge': [], 'claudesmaller': [], 'claudelarge': []}
+    data_points = {'gptsmaller': [], 'gptlarge': [], 'claudesmaller': [], 'claudelarge': [], 'unknown': []}
     
     for exp in EXPERIMENT_NUMBERS:
         client_num, exp_num = exp
@@ -215,6 +220,8 @@ def plot_correlation(avg_expert_scores, psyche_scores, title="Overall Correlatio
         
         if avg_score is not None and psyche_score is not None:
             model = get_model_from_exp(exp_num)
+            if model not in data_points:
+                model = 'unknown'
             data_points[model].append((psyche_score, avg_score))
     
     # Plot styles
@@ -222,7 +229,8 @@ def plot_correlation(avg_expert_scores, psyche_scores, title="Overall Correlatio
         'gptsmaller': {'marker': 'o', 'color': 'blue', 'label': 'GPT Smaller'},
         'gptlarge': {'marker': 's', 'color': 'darkblue', 'label': 'GPT Large'},
         'claudesmaller': {'marker': '^', 'color': 'red', 'label': 'Claude Smaller'},
-        'claudelarge': {'marker': 'D', 'color': 'darkred', 'label': 'Claude Large'}
+        'claudelarge': {'marker': 'D', 'color': 'darkred', 'label': 'Claude Large'},
+        'unknown': {'marker': 'x', 'color': 'gray', 'label': 'Unknown'}
     }
     
     # Plot points
