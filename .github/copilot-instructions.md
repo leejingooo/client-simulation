@@ -60,6 +60,9 @@ This codebase implements the **PSYCHE (Patient Simulation for Yielding psyCHiatr
 │   ├── 10_plot2.py                 # Alternative visualization (5 experiments per model)
 │   ├── 10_plot3.py                 # Scatter plot for smaller vs large model comparison
 │   ├── 11_correlation_analysis.py  # Correlation analysis between expert and automated scores
+│   ├── 12_PACA_검증결과_분석.py     # Expert vs PSYCHE score comparison (6 validators × 24 experiments)
+│   ├── 13_SP_정량검증_데이터추출.py  # SP quantitative validation data extraction
+│   ├── 14_SP_정성검증_데이터추출.py  # SP qualitative validation data extraction
 │   └── 연구자용 격리 폴더/          # Research-mode pages (hidden in production)
 │       └── 04_evaluation.py        # Automated PACA evaluation tool (4.4)
 ├── data/
@@ -150,9 +153,26 @@ This codebase implements the **PSYCHE (Patient Simulation for Yielding psyCHiatr
 # Key patterns (see SP_utils.sanitize_key):
 clients/<client_number>/profile_version6_0  # Underscores replace dots
 clients/<client_number>/beh_dir_version6_0
-clients/<client_number>/construct_paca_<client_num>_<exp_num>
-clients/<client_number>/conversation_log_<client_num>_<exp_num>
-expert_<sanitized_name>_<client_num>_<exp_num>  # Validation results
+clients_<client_num>_psyche_<disorder>_<model>_<exp_num>  # PSYCHE scores (ROOT level)
+```
+
+**Critical Firebase Data Loading Patterns**:
+1. **Version numbers**: `6.0` → `version6_0` in Firebase paths
+2. **PSYCHE scores location**: Stored at **ROOT level** with key `clients_{client_num}_psyche_{disorder}_{model}_{exp_num}`
+   - NOT nested under `clients/{client_num}/` path
+   - Example: `clients_6201_psyche_mdd_gptsmaller_3111`
+3. **Expert validation scores**: Stored at ROOT level as `expert_{sanitized_name}_{client_num}_{exp_num}`
+4. **Loading pattern for analysis pages**: 
+   ```python
+   # Get ALL root-level keys first
+   all_data = firebase_ref.get()
+   for key in all_data.keys():
+       if "_psyche_" in key and key.startswith("clients_"):
+           # Parse and process
+   ```
+5. **Model name in keys**: No underscores - use `gptsmaller`, `gptlarge`, `claudesmaller`, `claudelarge` (not `gpt_smaller`)
+
+**See**: `09_plot.py` lines 90-140 for working Firebase data loading example
 ```
 
 **Critical**: Version numbers like `6.0` → `version6_0` in Firebase paths (see `save_to_firebase`/`load_from_firebase` in `SP_utils.py`)
@@ -465,9 +485,25 @@ for speaker, message in st.session_state.conversation_generator:
     - Correlation heatmaps showing relationships across PSYCHE elements
   - **Data sources**: 
     - Expert validation data from `expert_{name}_{client}_{exp}` paths
-    - Automated evaluation results from `clients_{client_num}/psyche_{diagnosis}_{model}_{exp_num}`
+    - Automated evaluation results from `clients_{client_num}_psyche_{diagnosis}_{model}_{exp_num}` (ROOT level)
   - **PRESET configuration**: Uses same `EXPERIMENT_NUMBERS` list as expert validation (24 experiments across 3 disorders × 4 model variants × 2 reps)
   - **Key functions**: `calculate_correlation()`, `create_correlation_heatmap()`, element-level analysis
+- `pages/12_PACA_검증결과_분석.py`: Expert score aggregation and comparison page
+  - **Purpose**: Aggregate 6 expert validators' scores and compare with automated PSYCHE scores
+  - **Validators**: 이강토, 김태환, 김광현, 김주오, 허율, 장재용
+  - **Data loading**:
+    - Expert scores: `expert_{sanitized_name}_{client_num}_{exp_num}` (ROOT level)
+    - PSYCHE scores: `clients_{client_num}_psyche_{disorder}_{model}_{exp_num}` (ROOT level)
+    - Calculates average across all 6 validators per experiment
+  - **Visualizations**: Overall correlation plot + disorder-specific plots (MDD, BD, OCD)
+  - **Critical**: Must load ALL Firebase root keys first (`firebase_ref.get()`), then filter by pattern
+  - **Experiment number → model mapping**: See `get_model_from_exp()` function
+    - 3111, 3117 → gptsmaller (pattern: 31xx with second 1)
+    - 1121, 1123 → gptlarge (pattern: 112x)
+    - 3134, 3138 → claudesmaller (pattern: 313x, 314x)
+    - 1143, 1145 → claudelarge (pattern: 114x)
+    - BD: 32xx series (3211/3212=gpt, 1221/1222=gpt, 3231/3234=claude, 1241/1242=claude)
+    - OCD: 36xx series (3611/3612=gpt, 1621/1622=gpt, 3631/3632=claude, 1641/1642=claude)
 - `pages/연구자용 격리 폴더 (연구모드시 페이지 복원)/`: Research-mode pages
   - Contains disorder-specific experiment pages with guided variants (MDD, BD, OCD)
   - Contains unified experiment pages allowing client selection via dropdown
@@ -699,6 +735,17 @@ if 'paca_agent' in st.session_state:
 12. **Firebase sanitization**: `sanitize_dict()` converts `/$#[].` to `_` before saving - all slashes become underscores in stored data
 13. **Initial greeting memory timing**: The hardcoded initial greeting "안녕하세요, 저는 정신과 의사 김민수입니다..." must be added to PACA and SP memories BEFORE creating `conversation_generator` - check for duplicates using `if len(memory.messages) == 0 or memory.messages[-1].content != greeting`
 14. **Playwright setup**: Chromium browser required for certain features - auto-installed on dev container startup via `setup_playwright()` in [Home.py](Home.py)
+15. **Firebase data loading for analysis pages**: 
+    - Always load ALL root keys first: `all_data = firebase_ref.get()`
+    - NEVER use `firebase_ref.child(key).get()` in a loop without checking root first
+    - PSYCHE scores are at ROOT level, not nested under `clients/`
+    - Key pattern matching: `if "_psyche_" in key and key.startswith("clients_")`
+    - See [09_plot.py](pages/09_plot.py) lines 90-140 for correct pattern
+16. **Experiment number → model mapping**:
+    - Pattern recognition is complex - see `get_model_from_exp()` in visualization pages
+    - Do NOT rely on simple index-based parsing (e.g., `exp_str[1]`) - use substring matching
+    - Different disorders use different numbering schemes (MDD=31xx/11xx, BD=32xx/12xx, OCD=36xx/16xx)
+    - Model identifiers: gptsmaller (3111, 3117), gptlarge (1121, 1123), claudesmaller (3134, 3138), claudelarge (1143, 1145)
 
 ## Key Files Reference
 
@@ -809,3 +856,35 @@ st.write(f"Generator exists: {'conversation_generator' in st.session_state}")
 - All data under `clients/<client_num>/` or `expert_<name>_<client>_<exp>`
 - Keys auto-sanitized: dots→underscores, slashes→underscores
 - Test with: `python test_firebase_sanitized_structure.py`
+
+**Debug Firebase data loading** (for analysis pages):
+```python
+# Check what keys exist
+firebase_ref = get_firebase_ref()
+all_data = firebase_ref.get()
+if all_data:
+    # Look for PSYCHE scores
+    psyche_keys = [k for k in all_data.keys() if "_psyche_" in k]
+    print(f"Found {len(psyche_keys)} PSYCHE score keys")
+    
+    # Look for expert scores
+    expert_keys = [k for k in all_data.keys() if k.startswith("expert_")]
+    print(f"Found {len(expert_keys)} expert validation keys")
+    
+    # Inspect a sample key
+    if psyche_keys:
+        sample = psyche_keys[0]
+        print(f"Sample: {sample}")
+        data = all_data[sample]
+        print(f"Has psyche_score: {'psyche_score' in data}")
+```
+
+**Troubleshoot experiment number parsing**:
+```python
+# Test get_model_from_exp() function
+test_exp_nums = [3111, 1121, 3134, 1143, 3211, 1221]
+for exp_num in test_exp_nums:
+    model = get_model_from_exp(exp_num)
+    print(f"{exp_num} → {model}")
+# Should output: gptsmaller, gptlarge, claudesmaller, claudelarge, etc.
+```
