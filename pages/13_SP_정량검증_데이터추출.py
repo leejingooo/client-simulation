@@ -47,13 +47,13 @@ SP_SEQUENCE = [
 
 # Client to case mapping (for averaging)
 CLIENT_TO_CASE = {
-    6201: 'Case 1',
-    6202: 'Case 2',
-    6203: 'Case 3',
-    6204: 'Case 4',
-    6205: 'Case 5',
-    6206: 'Case 6',
-    6207: 'Case 7'
+    6201: 'MDD',  # Major Depressive Disorder
+    6202: 'BD',   # Bipolar Disorder
+    6203: 'PD',   # Panic Disorder
+    6204: 'GAD',  # Generalized Anxiety Disorder
+    6205: 'SAD',  # Social Anxiety Disorder
+    6206: 'OCD',  # Obsessive-Compulsive Disorder
+    6207: 'PTSD'  # Post-Traumatic Stress Disorder
 }
 
 # 검증자 목록 (12번 페이지와 동일)

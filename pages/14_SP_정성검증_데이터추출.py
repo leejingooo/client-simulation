@@ -45,13 +45,13 @@ SP_SEQUENCE = [
 
 # Client to case mapping
 CLIENT_TO_CASE = {
-    6201: 'Case 1',
-    6202: 'Case 2',
-    6203: 'Case 3',
-    6204: 'Case 4',
-    6205: 'Case 5',
-    6206: 'Case 6',
-    6207: 'Case 7'
+    6201: 'MDD',  # Major Depressive Disorder
+    6202: 'BD',   # Bipolar Disorder
+    6203: 'PD',   # Panic Disorder
+    6204: 'GAD',  # Generalized Anxiety Disorder
+    6205: 'SAD',  # Social Anxiety Disorder
+    6206: 'OCD',  # Obsessive-Compulsive Disorder
+    6207: 'PTSD'  # Post-Traumatic Stress Disorder
 }
 
 # 검증자 목록 (12번 페이지와 동일)
@@ -224,6 +224,164 @@ def create_average_file_qualitative(all_data):
     
     return df
 
+def calculate_icc_approximate(all_ratings):
+    """Calculate approximate ICC (Intraclass Correlation Coefficient)
+    
+    For Likert scale data (1-5), we use a simplified ICC(2,1) calculation
+    This measures absolute agreement for single raters
+    """
+    if not all_ratings or len(all_ratings) < 2:
+        return None
+    
+    # Convert to numpy array for easier calculation
+    ratings_array = np.array(all_ratings)
+    
+    # Calculate between-case variance and within-case variance
+    grand_mean = np.mean(ratings_array)
+    
+    # Between-case variance (BMS)
+    case_means = np.mean(ratings_array, axis=1)
+    n_raters = ratings_array.shape[1]
+    bms = n_raters * np.var(case_means, ddof=1)
+    
+    # Within-case variance (WMS)
+    case_variances = np.var(ratings_array, axis=1, ddof=1)
+    wms = np.mean(case_variances)
+    
+    # ICC(2,1) calculation
+    if (bms + wms) == 0:
+        return None
+    
+    icc = (bms - wms) / (bms + wms)
+    return max(0, min(1, icc))  # Constrain to [0, 1]
+
+
+def calculate_qualitative_reliability(all_data):
+    """Calculate reliability for qualitative Likert scale ratings
+    
+    Returns:
+        dict: Reliability metrics for Likert scale data
+    """
+    reliability_stats = {}
+    
+    # Find repeated cases
+    repeated_cases = {}
+    for client_num in set(client for _, client in SP_SEQUENCE):
+        pages = [page for page, client in SP_SEQUENCE if client == client_num]
+        if len(pages) == 2:
+            repeated_cases[client_num] = pages
+    
+    # ===== INTRA-OBSERVER RELIABILITY =====
+    # For Likert scale, we use Weighted Kappa or ICC
+    intra_agreements = []
+    intra_weighted_agreements = []
+    
+    for expert, expert_data in all_data.items():
+        for client_num, pages in repeated_cases.items():
+            if len(pages) == 2:
+                page1, page2 = pages
+                if (page1, client_num) in expert_data and (page2, client_num) in expert_data:
+                    qual1 = expert_data[(page1, client_num)]
+                    qual2 = expert_data[(page2, client_num)]
+                    
+                    # Compare ratings for each element
+                    exact_matches = []
+                    weighted_diffs = []
+                    
+                    for elem_key in ELEMENT_KEYS:
+                        rating1 = qual1.get(elem_key, {}).get('rating')
+                        rating2 = qual2.get(elem_key, {}).get('rating')
+                        
+                        if rating1 is not None and rating2 is not None:
+                            # Exact match
+                            exact_matches.append(1 if rating1 == rating2 else 0)
+                            # Weighted agreement (closer ratings = higher agreement)
+                            diff = abs(rating1 - rating2)
+                            # Weight: 1 for exact match, 0.75 for 1-off, 0.5 for 2-off, etc.
+                            weighted_score = max(0, 1 - (diff * 0.25))
+                            weighted_diffs.append(weighted_score)
+                    
+                    if exact_matches:
+                        intra_agreements.append(np.mean(exact_matches))
+                    if weighted_diffs:
+                        intra_weighted_agreements.append(np.mean(weighted_diffs))
+    
+    reliability_stats['intra_observer_agreement'] = np.mean(intra_agreements) if intra_agreements else None
+    reliability_stats['intra_observer_weighted_agreement'] = np.mean(intra_weighted_agreements) if intra_weighted_agreements else None
+    reliability_stats['intra_observer_n'] = len(intra_agreements)
+    
+    # ===== INTER-OBSERVER RELIABILITY =====
+    # Collect all ratings by case and element for ICC calculation
+    inter_agreements = []
+    inter_weighted_agreements = []
+    
+    # For ICC: organize ratings by case-element pairs
+    case_element_ratings = {}  # {(page, client, element): [ratings]}
+    
+    for page_num, client_num in SP_SEQUENCE:
+        experts_with_data = [expert for expert in all_data.keys() 
+                            if (page_num, client_num) in all_data[expert]]
+        
+        if len(experts_with_data) >= 2:
+            # Collect ratings for ICC
+            for elem_key in ELEMENT_KEYS:
+                ratings_for_element = []
+                for expert in experts_with_data:
+                    rating = all_data[expert][(page_num, client_num)].get(elem_key, {}).get('rating')
+                    if rating is not None:
+                        ratings_for_element.append(rating)
+                
+                if len(ratings_for_element) >= 2:
+                    key = (page_num, client_num, elem_key)
+                    case_element_ratings[key] = ratings_for_element
+            
+            # Pairwise comparisons
+            for i, expert1 in enumerate(experts_with_data):
+                for expert2 in experts_with_data[i+1:]:
+                    qual1 = all_data[expert1][(page_num, client_num)]
+                    qual2 = all_data[expert2][(page_num, client_num)]
+                    
+                    exact_matches = []
+                    weighted_diffs = []
+                    
+                    for elem_key in ELEMENT_KEYS:
+                        rating1 = qual1.get(elem_key, {}).get('rating')
+                        rating2 = qual2.get(elem_key, {}).get('rating')
+                        
+                        if rating1 is not None and rating2 is not None:
+                            exact_matches.append(1 if rating1 == rating2 else 0)
+                            diff = abs(rating1 - rating2)
+                            weighted_score = max(0, 1 - (diff * 0.25))
+                            weighted_diffs.append(weighted_score)
+                    
+                    if exact_matches:
+                        inter_agreements.append(np.mean(exact_matches))
+                    if weighted_diffs:
+                        inter_weighted_agreements.append(np.mean(weighted_diffs))
+    
+    reliability_stats['inter_observer_agreement'] = np.mean(inter_agreements) if inter_agreements else None
+    reliability_stats['inter_observer_weighted_agreement'] = np.mean(inter_weighted_agreements) if inter_weighted_agreements else None
+    reliability_stats['inter_observer_n'] = len(inter_agreements)
+    
+    # Calculate ICC if we have enough data
+    if case_element_ratings:
+        # Prepare data for ICC: rows = cases, columns = raters
+        # We'll calculate ICC across all elements combined
+        icc_data = []
+        for key, ratings in case_element_ratings.items():
+            if len(ratings) >= 2:
+                icc_data.append(ratings[:2])  # Take first 2 raters for consistency
+        
+        if len(icc_data) >= 3:  # Need at least 3 cases for meaningful ICC
+            reliability_stats['inter_observer_icc'] = calculate_icc_approximate(icc_data)
+        else:
+            reliability_stats['inter_observer_icc'] = None
+    else:
+        reliability_stats['inter_observer_icc'] = None
+    
+    return reliability_stats
+
+
 def create_text_summary_file(all_data):
     """Create text summary CSV file
     
@@ -343,7 +501,7 @@ def main():
     st.markdown("---")
     
     # Tab layout
-    tab1, tab2, tab3 = st.tabs(["📄 Raw Files", "📊 평균 파일", "📝 텍스트 정리"])
+    tab1, tab2, tab3, tab4 = st.tabs(["📄 Raw Files", "📊 평균 파일", "📈 Reliability", "📝 텍스트 정리"])
     
     # ===== TAB 1: Raw Files =====
     with tab1:
@@ -447,8 +605,76 @@ def main():
         else:
             st.warning("평균 파일을 생성할 수 없습니다.")
     
-    # ===== TAB 3: 텍스트 정리 =====
+    # ===== TAB 3: Reliability =====
     with tab3:
+        st.markdown("### 📈 Reliability Analysis (Likert Scale)")
+        
+        reliability = calculate_qualitative_reliability(all_data)
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("#### Intra-Observer Reliability")
+            st.caption("같은 평가자가 같은 case를 두 번 평가한 결과의 일치도 (Likert 1-5)")
+            
+            if reliability['intra_observer_agreement'] is not None:
+                st.metric(
+                    "Exact Agreement",
+                    f"{reliability['intra_observer_agreement']:.4f}",
+                    help="Proportion of ratings that exactly matched"
+                )
+                
+                if reliability['intra_observer_weighted_agreement'] is not None:
+                    st.metric(
+                        "Weighted Agreement",
+                        f"{reliability['intra_observer_weighted_agreement']:.4f}",
+                        help="Agreement weighted by distance (1-off = 0.75, 2-off = 0.5, etc.)"
+                    )
+                
+                st.info(f"**n = {reliability['intra_observer_n']}** comparisons")
+            else:
+                st.warning("데이터 부족")
+        
+        with col2:
+            st.markdown("#### Inter-Observer Reliability")
+            st.caption("다른 평가자들 간의 평가 일치도 (Likert 1-5)")
+            
+            if reliability['inter_observer_agreement'] is not None:
+                st.metric(
+                    "Exact Agreement",
+                    f"{reliability['inter_observer_agreement']:.4f}",
+                    help="Proportion of ratings that exactly matched"
+                )
+                
+                if reliability['inter_observer_weighted_agreement'] is not None:
+                    st.metric(
+                        "Weighted Agreement",
+                        f"{reliability['inter_observer_weighted_agreement']:.4f}",
+                        help="Agreement weighted by distance"
+                    )
+                
+                if reliability['inter_observer_icc'] is not None:
+                    st.metric(
+                        "ICC (approx)",
+                        f"{reliability['inter_observer_icc']:.4f}",
+                        help="Intraclass Correlation Coefficient - measures absolute agreement"
+                    )
+                
+                st.info(f"**n = {reliability['inter_observer_n']}** comparisons")
+            else:
+                st.warning("데이터 부족")
+        
+        st.markdown("---")
+        st.caption("""
+        **Note (Likert Scale):** 
+        - **Exact Agreement**: Proportion of identical ratings
+        - **Weighted Agreement**: Closer ratings receive higher agreement scores (1-off = 0.75, 2-off = 0.5)
+        - **ICC**: Intraclass Correlation Coefficient for continuous-like data, measures consistency across raters
+        - Likert scale (1-5) requires different reliability measures than binary data
+        """)
+    
+    # ===== TAB 4: 텍스트 정리 =====
+    with tab4:
         st.markdown("### 📝 텍스트 정리 파일")
         st.caption("평가자별 자유 응답 텍스트 정리 (질문별/Case별)")
         
