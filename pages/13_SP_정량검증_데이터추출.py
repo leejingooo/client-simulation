@@ -56,6 +56,9 @@ CLIENT_TO_CASE = {
     6207: 'Case 7'
 }
 
+# 검증자 목록 (12번 페이지와 동일)
+VALIDATORS = ["이강토", "김태환", "김광현", "김주오", "허율", "장재용"]
+
 # Elements to validate (24 elements)
 VALIDATION_ELEMENTS = [
     "Chief complaint",
@@ -130,6 +133,10 @@ def load_all_sp_validations(firebase_ref):
                 page_num = page_num or parsed_page
 
             if client_num is None or page_num is None:
+                continue
+
+            # Filter: only load data from specified validators
+            if expert_name not in VALIDATORS:
                 continue
 
             if expert_name not in all_data:

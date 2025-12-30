@@ -348,6 +348,108 @@ def main():
     
     st.markdown("---")
     
+    # Individual validator correlation plots
+    st.markdown("### 👥 검증자별 Correlation Plot")
+    st.caption("각 검증자의 Expert Score와 PSYCHE Score의 상관관계 분석")
+    
+    # Create 2x3 grid for 6 validators
+    cols_per_row = 3
+    validator_rows = [VALIDATORS[i:i+cols_per_row] for i in range(0, len(VALIDATORS), cols_per_row)]
+    
+    for row_validators in validator_rows:
+        cols = st.columns(cols_per_row)
+        
+        for idx, validator in enumerate(row_validators):
+            with cols[idx]:
+                # Collect data points for this validator
+                validator_x, validator_y = [], []
+                
+                for exp in EXPERIMENT_NUMBERS:
+                    expert_score = expert_data[validator].get(exp)
+                    psyche_score = psyche_scores.get(exp)
+                    
+                    if expert_score is not None and psyche_score is not None:
+                        validator_x.append(psyche_score)
+                        validator_y.append(expert_score)
+                
+                # Create mini plot
+                fig_validator, ax_validator = plt.subplots(figsize=(5, 4))
+                
+                if len(validator_x) >= 2:
+                    # Plot points
+                    ax_validator.scatter(validator_x, validator_y, c='steelblue', 
+                                        s=50, alpha=0.6, edgecolors='black')
+                    
+                    # Calculate correlation
+                    pearson_r, pearson_p = stats.pearsonr(validator_x, validator_y)
+                    
+                    # Regression line
+                    z = np.polyfit(validator_x, validator_y, 1)
+                    p = np.poly1d(z)
+                    x_line = np.linspace(min(validator_x), max(validator_x), 100)
+                    ax_validator.plot(x_line, p(x_line), "r--", alpha=0.8, linewidth=2)
+                    
+                    # Add correlation info
+                    ax_validator.text(0.05, 0.95, 
+                                     f"r = {pearson_r:.3f}\np = {pearson_p:.4f}\nn = {len(validator_x)}",
+                                     transform=ax_validator.transAxes, fontsize=9,
+                                     verticalalignment='top',
+                                     bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+                else:
+                    ax_validator.text(0.5, 0.5, 'Insufficient Data', 
+                                     ha='center', va='center', fontsize=10)
+                
+                ax_validator.set_xlabel('PSYCHE Score', fontsize=10)
+                ax_validator.set_ylabel('Expert Score', fontsize=10)
+                ax_validator.set_title(validator, fontsize=11, fontweight='bold')
+                ax_validator.grid(True, alpha=0.3)
+                plt.tight_layout()
+                
+                st.pyplot(fig_validator)
+                plt.close(fig_validator)
+    
+    # Summary table of correlations
+    st.markdown("#### 📊 검증자별 Correlation 요약")
+    
+    correlation_summary = []
+    for validator in VALIDATORS:
+        validator_x, validator_y = [], []
+        
+        for exp in EXPERIMENT_NUMBERS:
+            expert_score = expert_data[validator].get(exp)
+            psyche_score = psyche_scores.get(exp)
+            
+            if expert_score is not None and psyche_score is not None:
+                validator_x.append(psyche_score)
+                validator_y.append(expert_score)
+        
+        if len(validator_x) >= 2:
+            pearson_r, pearson_p = stats.pearsonr(validator_x, validator_y)
+            spearman_r, spearman_p = stats.spearmanr(validator_x, validator_y)
+            
+            correlation_summary.append({
+                '검증자': validator,
+                'n': len(validator_x),
+                "Pearson's r": f"{pearson_r:.4f}",
+                "Pearson's p": f"{pearson_p:.4f}",
+                "Spearman's ρ": f"{spearman_r:.4f}",
+                "Spearman's p": f"{spearman_p:.4f}"
+            })
+        else:
+            correlation_summary.append({
+                '검증자': validator,
+                'n': len(validator_x),
+                "Pearson's r": 'N/A',
+                "Pearson's p": 'N/A',
+                "Spearman's ρ": 'N/A',
+                "Spearman's p": 'N/A'
+            })
+    
+    df_corr_summary = pd.DataFrame(correlation_summary)
+    st.dataframe(df_corr_summary, use_container_width=True)
+    
+    st.markdown("---")
+    
     # Detailed data table
     st.markdown("### 📋 상세 데이터")
     
