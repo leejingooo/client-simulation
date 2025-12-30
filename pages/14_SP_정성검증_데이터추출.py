@@ -270,10 +270,17 @@ def calculate_weighted_kappa(all_data):
             if len(ratings1) >= 2:  # Need at least 2 ratings
                 try:
                     # Quadratic weights for ordinal data (penalizes large disagreements more)
-                    kappa = cohen_kappa_score(ratings1, ratings2, weights='quadratic')
-                    kappa_scores.append(kappa)
-                except:
-                    pass
+                    # Explicitly specify labels to handle cases where not all values are present
+                    kappa = cohen_kappa_score(
+                        ratings1, ratings2, 
+                        labels=[1, 2, 3, 4, 5],
+                        weights='quadratic'
+                    )
+                    if not np.isnan(kappa):
+                        kappa_scores.append(kappa)
+                except Exception as e:
+                    # Skip this comparison if error occurs
+                    continue
     
     if not kappa_scores:
         return None
@@ -324,9 +331,6 @@ def calculate_krippendorff_alpha_ordinal(all_data):
     
     matrix = np.array(matrix, dtype=float)
     
-    # Calculate Krippendorff's Alpha for ordinal data
-    n_units, n_coders = matrix.shape
-    
     # Remove units with less than 2 valid ratings
     valid_counts = np.sum(~np.isnan(matrix), axis=1)
     matrix = matrix[valid_counts >= 2]
@@ -334,57 +338,69 @@ def calculate_krippendorff_alpha_ordinal(all_data):
     if len(matrix) < 2:
         return None
     
-    # Compute coincidence matrix for ordinal metric
-    values = np.array([1, 2, 3, 4, 5])  # Likert scale values
-    n_values = len(values)
+    # Krippendorff's Alpha calculation for ordinal data
+    # Using simplified formula for ordinal metric
     
-    coincidence_matrix = np.zeros((n_values, n_values))
+    values = [1, 2, 3, 4, 5]  # Likert scale
     
-    for unit_ratings in matrix:
-        valid_ratings = unit_ratings[~np.isnan(unit_ratings)]
-        if len(valid_ratings) < 2:
+    # Build coincidence matrix
+    coincidence_matrix = np.zeros((5, 5))
+    
+    for row in matrix:
+        valid = row[~np.isnan(row)]
+        m_u = len(valid)  # number of coders for this unit
+        
+        if m_u < 2:
             continue
         
-        for i, val1 in enumerate(values):
-            for j, val2 in enumerate(values):
-                count1 = np.sum(valid_ratings == val1)
-                count2 = np.sum(valid_ratings == val2)
-                
-                if i == j:
-                    coincidence_matrix[i, j] += count1 * (count1 - 1)
-                else:
-                    coincidence_matrix[i, j] += count1 * count2
+        # Count pairs
+        for c in range(len(valid)):
+            for k in range(len(valid)):
+                if c != k:
+                    val_c = int(valid[c]) - 1  # 0-indexed
+                    val_k = int(valid[k]) - 1
+                    coincidence_matrix[val_c, val_k] += 1.0 / (m_u - 1)
     
-    # Observed disagreement (ordinal metric)
-    total_comparisons = np.sum(coincidence_matrix)
-    if total_comparisons == 0:
+    # Calculate observed disagreement with ordinal metric
+    n_total = np.sum(coincidence_matrix)
+    
+    if n_total == 0:
         return None
     
-    observed_disagreement = 0
-    for i in range(n_values):
-        for j in range(n_values):
-            # Ordinal distance: sum of categories between i and j
-            distance = abs(i - j)
-            observed_disagreement += coincidence_matrix[i, j] * distance
+    # Ordinal distance metric (squared distance for ordinal scale)
+    delta = np.zeros((5, 5))
+    for c in range(5):
+        for k in range(5):
+            # Sum of differences between c and k
+            delta[c, k] = sum((values[g] - values[g-1])**2 for g in range(min(c, k) + 1, max(c, k) + 1))
     
-    observed_disagreement /= total_comparisons
+    # Normalize delta by maximum possible distance
+    max_delta = np.max(delta)
+    if max_delta > 0:
+        delta = delta / max_delta
+    
+    # Observed disagreement
+    D_o = 0
+    for c in range(5):
+        for k in range(5):
+            D_o += coincidence_matrix[c, k] * delta[c, k]
+    D_o = D_o / n_total
     
     # Expected disagreement
-    marginals = np.sum(coincidence_matrix, axis=1)
-    total = np.sum(marginals)
+    n_c = np.sum(coincidence_matrix, axis=1)  # marginals
     
-    expected_disagreement = 0
-    for i in range(n_values):
-        for j in range(n_values):
-            distance = abs(i - j)
-            expected_disagreement += (marginals[i] * marginals[j] * distance)
+    D_e = 0
+    for c in range(5):
+        for k in range(5):
+            D_e += n_c[c] * n_c[k] * delta[c, k]
     
-    expected_disagreement /= (total * (total - 1))
+    D_e = D_e / (n_total * (n_total - 1))
     
-    if expected_disagreement == 0:
+    if D_e == 0:
         return None
     
-    alpha = 1 - (observed_disagreement / expected_disagreement)
+    alpha = 1 - (D_o / D_e)
+    
     return alpha
 
 
@@ -861,20 +877,31 @@ def main():
                 st.markdown("##### 🎯 Likert Scale에 적합한 지표")
                 
                 if reliability.get('inter_observer_weighted_kappa') is not None:
-                    st.metric(
-                        "Weighted Kappa (Cohen's)",
-                        f"{reliability['inter_observer_weighted_kappa']:.4f}",
-                        help="Quadratic weighted kappa for ordinal data - standard for Likert scales"
-                    )
-                    if reliability.get('inter_observer_weighted_kappa_std') is not None:
-                        st.caption(f"SD: {reliability['inter_observer_weighted_kappa_std']:.4f} | n={reliability.get('weighted_kappa_n', 0)} comparisons")
+                    wk_value = reliability['inter_observer_weighted_kappa']
+                    if np.isnan(wk_value):
+                        st.warning("⚠️ Weighted Kappa 계산 불가 (데이터 부족)")
+                    else:
+                        st.metric(
+                            "Weighted Kappa (Cohen's)",
+                            f"{wk_value:.4f}",
+                            help="Quadratic weighted kappa for ordinal data - standard for Likert scales"
+                        )
+                        if reliability.get('inter_observer_weighted_kappa_std') is not None:
+                            st.caption(f"SD: {reliability['inter_observer_weighted_kappa_std']:.4f} | n={reliability.get('weighted_kappa_n', 0)} comparisons")
+                else:
+                    st.warning("⚠️ Weighted Kappa 계산 불가")
                 
                 if reliability.get('inter_observer_krippendorff') is not None:
+                    ka_value = reliability['inter_observer_krippendorff']
                     st.metric(
                         "Krippendorff's Alpha (ordinal)",
-                        f"{reliability['inter_observer_krippendorff']:.4f}",
+                        f"{ka_value:.4f}",
                         help="Robust reliability for ordinal data with multiple raters - handles missing data well"
                     )
+                    if ka_value < 0.4:
+                        st.caption("⚠️ Alpha < 0.4: Fair 이하 수준")
+                else:
+                    st.warning("⚠️ Krippendorff's Alpha 계산 불가")
                 
                 st.markdown("##### 참고: ICC (Continuous Data Metric)")
                 
@@ -904,12 +931,19 @@ def main():
         
         # Debugging information
         if 'icc_debug_df' in st.session_state:
-            with st.expander("🔍 ICC 계산 상세 정보 (디버깅)"):
+            with st.expander("🔍 신뢰도 계산 상세 정보 (디버깅)"):
                 st.markdown("#### 평가자별 평균 점수")
                 debug_df = st.session_state['icc_debug_df']
                 rater_means = debug_df.groupby('raters')['ratings'].agg(['mean', 'std', 'count'])
                 rater_means.columns = ['평균 점수', '표준편차', '평가 수']
                 st.dataframe(rater_means.round(3))
+                
+                st.markdown("#### 점수 분포")
+                st.write("평가자별 Likert scale 사용 패턴:")
+                for rater in sorted(debug_df['raters'].unique()):
+                    rater_data = debug_df[debug_df['raters'] == rater]['ratings']
+                    dist = rater_data.value_counts().sort_index()
+                    st.write(f"**{rater}**: {dict(dist)}")
                 
                 st.markdown("#### Case별 변동성 vs 평가자 간 변동성")
                 target_variance = debug_df.groupby('targets')['ratings'].var().mean()
@@ -922,11 +956,11 @@ def main():
                     st.dataframe(st.session_state['icc_full_results'])
                 
                 st.caption("""
-                **ICC가 낮은 이유 진단:**
-                - ICC2 (Absolute Agreement)는 평가자들이 동일한 절대 점수를 주는지 측정
-                - ICC3 (Consistency)는 평가자 간 체계적 차이를 허용하고 상대적 순서만 측정
-                - ICC가 낮다 = Case 간 차이보다 평가자 간 차이가 더 크다
-                - Weighted Agreement는 "가까운 점수"를 부분적으로 인정하므로 ICC보다 높을 수 있음
+                **지표별 특성:**
+                - **Weighted Kappa**: 평가자 쌍별로 계산, quadratic weights 사용
+                - **Krippendorff's Alpha**: 모든 평가자 통합 계산, ordinal distance metric
+                - **ICC**: 연속형 데이터 가정, 평가자 간 체계적 차이에 민감
+                - **Weighted Agreement**: 거리 기반 부분 점수 (1-off=0.75, 2-off=0.5)
                 """)
         
         st.markdown("---")
