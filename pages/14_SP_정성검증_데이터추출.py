@@ -81,49 +81,70 @@ TEXT_QUESTIONS = {
 # Data Loading Functions
 # ================================
 def load_all_sp_qualitative(firebase_ref):
-    """Load all SP qualitative validation data from Firebase
+    """Load SP qualitative validation data using stored ratings and text.
     
     Returns:
         dict: {expert_name: {(page, client): {element: {rating, plausible, less_plausible}, ...}, ...}, ...}
     """
     all_data = {}
-    
+
+    def _parse_meta_from_key(raw_key):
+        # Expected pattern: sp_validation_<name>_<client>_<page>
+        parts = raw_key.split('_')
+        if len(parts) >= 5:
+            try:
+                client_val = int(parts[-2])
+                page_val = int(parts[-1])
+            except ValueError:
+                client_val, page_val = None, None
+            name_val = '_'.join(parts[2:-2])
+            return name_val, client_val, page_val
+        return None, None, None
+
     try:
         all_keys = firebase_ref.get()
         if not all_keys:
             return all_data
-        
-        # Filter for sp_validation keys
+
         for key in all_keys.keys():
-            if key.startswith('sp_validation_'):
-                data = firebase_ref.child(key).get()
-                
-                if data and 'qualitative' in data:
-                    expert_name = data.get('expert_name', 'Unknown')
-                    client_num = data.get('client_number')
-                    page_num = data.get('page_number')
-                    
-                    if expert_name not in all_data:
-                        all_data[expert_name] = {}
-                    
-                    # Extract qualitative data
-                    qual_data = {}
-                    for elem_key in ELEMENT_KEYS:
-                        if elem_key in data['qualitative']:
-                            elem_data = data['qualitative'][elem_key]
-                            qual_data[elem_key] = {
-                                'rating': elem_data.get('rating'),
-                                'plausible_aspects': elem_data.get('plausible_aspects', ''),
-                                'less_plausible_aspects': elem_data.get('less_plausible_aspects', '')
-                            }
-                    
-                    # Add additional impressions
-                    qual_data['additional_impressions'] = data.get('additional_impressions', '')
-                    
-                    all_data[expert_name][(page_num, client_num)] = qual_data
-        
+            if not key.startswith('sp_validation_'):
+                continue
+
+            data = all_keys.get(key) or {}
+            expert_name = data.get('expert_name')
+            client_num = data.get('client_number')
+            page_num = data.get('page_number')
+
+            # Fallback: parse from key name if metadata missing
+            if expert_name is None or client_num is None or page_num is None:
+                parsed_name, parsed_client, parsed_page = _parse_meta_from_key(key)
+                expert_name = expert_name or parsed_name or 'Unknown'
+                client_num = client_num or parsed_client
+                page_num = page_num or parsed_page
+
+            if client_num is None or page_num is None:
+                continue
+
+            if expert_name not in all_data:
+                all_data[expert_name] = {}
+
+            qual_data = {}
+            qualitative_block = data.get('qualitative', {})
+            for elem_key in ELEMENT_KEYS:
+                if elem_key in qualitative_block:
+                    elem_data = qualitative_block.get(elem_key, {})
+                    qual_data[elem_key] = {
+                        'rating': elem_data.get('rating'),
+                        'plausible_aspects': elem_data.get('plausible_aspects', ''),
+                        'less_plausible_aspects': elem_data.get('less_plausible_aspects', '')
+                    }
+
+            qual_data['additional_impressions'] = data.get('additional_impressions', '')
+
+            all_data[expert_name][(page_num, client_num)] = qual_data
+
         return all_data
-    
+
     except Exception as e:
         st.error(f"데이터 로딩 오류: {e}")
         return {}

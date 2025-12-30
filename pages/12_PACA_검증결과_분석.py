@@ -113,50 +113,60 @@ def get_model_from_exp(exp_num):
 # ================================
 # Data Loading Functions
 # ================================
-def load_expert_scores(firebase_ref):
-    """Load expert scores for all validators and experiments"""
+def _possible_model_tags(base_model):
+    # Support both old (smaller/large) and guided/basic naming seen in Firebase
+    mapping = {
+        'gptsmaller': ['gptsmaller', 'gptbasic'],
+        'gptlarge': ['gptlarge', 'gptguided'],
+        'claudesmaller': ['claudesmaller', 'claudebasic'],
+        'claudelarge': ['claudelarge', 'claudeguided']
+    }
+    return mapping.get(base_model, [base_model])
+
+
+def load_expert_scores(root_data):
+    """Load expert scores for all validators and experiments from root snapshot."""
     expert_data = {}
-    
+
     for validator in VALIDATORS:
         sanitized_name = sanitize_firebase_key(validator)
         validator_scores = {}
-        
+
         for client_num, exp_num in EXPERIMENT_NUMBERS:
             key = f"expert_{sanitized_name}_{client_num}_{exp_num}"
-            data = firebase_ref.child(key).get()
-            
-            if data and 'psyche_score' in data:
+            data = (root_data or {}).get(key, {}) or {}
+
+            if 'expert_score' in data:
+                validator_scores[(client_num, exp_num)] = data['expert_score']
+            elif 'psyche_score' in data:  # backward compatibility
                 validator_scores[(client_num, exp_num)] = data['psyche_score']
             else:
                 validator_scores[(client_num, exp_num)] = None
-        
+
         expert_data[validator] = validator_scores
-    
+
     return expert_data
 
-def load_psyche_scores(firebase_ref):
-    """Load automated PSYCHE scores"""
+
+def load_psyche_scores(root_data):
+    """Load automated PSYCHE scores from root snapshot."""
     psyche_data = {}
-    
+
     for client_num, exp_num in EXPERIMENT_NUMBERS:
         disorder = DISORDER_MAP[client_num]
-        model = get_model_from_exp(exp_num)
-        
-        # Try different key formats
-        possible_keys = [
-            f"clients_{client_num}/psyche_{disorder}_{model}_{exp_num}",
-            f"clients/{client_num}/psyche_{disorder}_{model}_{exp_num}",
-            f"psyche_{disorder}_{model}_{exp_num}"
-        ]
-        
-        for key in possible_keys:
-            data = firebase_ref.child(key).get()
-            if data and 'psyche_score' in data:
-                psyche_data[(client_num, exp_num)] = data['psyche_score']
+        base_model = get_model_from_exp(exp_num)
+        model_candidates = _possible_model_tags(base_model)
+
+        value = None
+        for model_tag in model_candidates:
+            key = f"clients_{client_num}_psyche_{disorder}_{model_tag}_{exp_num}"
+            data = (root_data or {}).get(key, {}) or {}
+            if 'psyche_score' in data:
+                value = data['psyche_score']
                 break
-        else:
-            psyche_data[(client_num, exp_num)] = None
-    
+
+        psyche_data[(client_num, exp_num)] = value
+
     return psyche_data
 
 def calculate_average_expert_scores(expert_data):
@@ -271,8 +281,9 @@ def main():
     # Load data
     with st.spinner("데이터 로딩 중..."):
         firebase_ref = get_firebase_ref()
-        expert_data = load_expert_scores(firebase_ref)
-        psyche_scores = load_psyche_scores(firebase_ref)
+        root_snapshot = firebase_ref.get() or {}
+        expert_data = load_expert_scores(root_snapshot)
+        psyche_scores = load_psyche_scores(root_snapshot)
         avg_expert_scores = calculate_average_expert_scores(expert_data)
     
     st.success("✅ 데이터 로딩 완료")

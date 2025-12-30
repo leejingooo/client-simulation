@@ -88,47 +88,68 @@ VALIDATION_ELEMENTS = [
 # Data Loading Functions
 # ================================
 def load_all_sp_validations(firebase_ref):
-    """Load all SP validation data from Firebase
+    """Load all SP validation data from Firebase using stored expert_choice values.
     
     Returns:
         dict: {expert_name: {(page, client): {element: score, ...}, ...}, ...}
     """
     all_data = {}
-    
-    # Get all validation keys from Firebase
+
+    def _parse_meta_from_key(raw_key):
+        # Expected pattern: sp_validation_<name>_<client>_<page>
+        parts = raw_key.split('_')
+        if len(parts) >= 5:
+            try:
+                client_val = int(parts[-2])
+                page_val = int(parts[-1])
+            except ValueError:
+                client_val, page_val = None, None
+            name_val = '_'.join(parts[2:-2])
+            return name_val, client_val, page_val
+        return None, None, None
+
     try:
         all_keys = firebase_ref.get()
         if not all_keys:
             return all_data
-        
-        # Filter for sp_validation keys
+
         for key in all_keys.keys():
-            if key.startswith('sp_validation_'):
-                data = firebase_ref.child(key).get()
-                
-                if data and 'elements' in data:
-                    expert_name = data.get('expert_name', 'Unknown')
-                    client_num = data.get('client_number')
-                    page_num = data.get('page_number')
-                    
-                    if expert_name not in all_data:
-                        all_data[expert_name] = {}
-                    
-                    # Extract element scores (적절함=1, 적절하지 않음=0)
-                    element_scores = {}
-                    for element, elem_data in data['elements'].items():
-                        choice = elem_data.get('expert_choice', '')
-                        if choice == '적절함':
-                            element_scores[element] = 1
-                        elif choice == '적절하지 않음':
-                            element_scores[element] = 0
-                        else:
-                            element_scores[element] = None
-                    
-                    all_data[expert_name][(page_num, client_num)] = element_scores
-        
+            if not key.startswith('sp_validation_'):
+                continue
+
+            data = all_keys.get(key) or {}
+            expert_name = data.get('expert_name')
+            client_num = data.get('client_number')
+            page_num = data.get('page_number')
+
+            # Fallback to parsing from key name if metadata is missing
+            if expert_name is None or client_num is None or page_num is None:
+                parsed_name, parsed_client, parsed_page = _parse_meta_from_key(key)
+                expert_name = expert_name or parsed_name or 'Unknown'
+                client_num = client_num or parsed_client
+                page_num = page_num or parsed_page
+
+            if client_num is None or page_num is None:
+                continue
+
+            if expert_name not in all_data:
+                all_data[expert_name] = {}
+
+            element_scores = {}
+            elements_block = data.get('elements', {})
+            for element, elem_data in elements_block.items():
+                choice = (elem_data or {}).get('expert_choice', '')
+                if choice == '적절함':
+                    element_scores[element] = 1
+                elif choice == '적절하지 않음':
+                    element_scores[element] = 0
+                else:
+                    element_scores[element] = None
+
+            all_data[expert_name][(page_num, client_num)] = element_scores
+
         return all_data
-    
+
     except Exception as e:
         st.error(f"데이터 로딩 오류: {e}")
         return {}
