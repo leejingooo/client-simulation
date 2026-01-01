@@ -51,8 +51,8 @@ This codebase implements the **PSYCHE (Patient Simulation for Yielding psyCHiatr
 ├── paca_construct_generator.py      # PACA construct generation post-conversation
 ├── pages/                           # Streamlit pages (auto-discovered by framework)
 │   ├── 00_진행상태_확인.py          # Experiment progress dashboard
-│   ├── 01_experiment*_*.py         # Experiment pages per disorder/model (MDD/BD/OCD)
-│   ├── 01_에이전트에_대한_전문가_검증.py  # Expert validation of PACA agents (4.3)
+│   ├── 01_experiment*_*.py         # Experiment pages per disorder/model (MDD/BD/OCD) - currently in research folder
+│   ├── 01_가상면담가에_대한_전문가_검증.py  # Expert validation of PACA agents (4.3)
 │   ├── 02_가상환자에_대한_전문가_검증.py  # SP authenticity validation (4.1, 4.2)
 │   ├── 05_json2csv.py              # Utility for converting Firebase JSON exports to CSV
 │   ├── 08_sp_validation_viewer.py  # View SP validation results
@@ -60,7 +60,7 @@ This codebase implements the **PSYCHE (Patient Simulation for Yielding psyCHiatr
 │   ├── 10_plot2.py                 # Alternative visualization (5 experiments per model)
 │   ├── 10_plot3.py                 # Scatter plot for smaller vs large model comparison
 │   ├── 11_correlation_analysis.py  # Correlation analysis between expert and automated scores
-│   ├── 12_PACA_검증결과_분석.py     # Expert vs PSYCHE score comparison (6 validators × 24 experiments)
+│   ├── 12_PSYCHE-Expert_Correlation.py  # Expert vs PSYCHE score comparison (6 validators × 24 experiments)
 │   ├── 13_SP_정량검증_데이터추출.py  # SP quantitative validation data extraction
 │   ├── 14_SP_정성검증_데이터추출.py  # SP qualitative validation data extraction
 │   └── 연구자용 격리 폴더/          # Research-mode pages (hidden in production)
@@ -251,7 +251,7 @@ PSYCHE_RUBRIC = {
   - PTSD: Trauma-related nightmares, avoidance behaviors, emotional reactivity
 - **Integration**: Same page as 4.1, separate stage after construct validation
 
-#### 4.3 PACA Quantitative Validation (`pages/01_에이전트에_대한_전문가_검증.py`)
+#### 4.3 PACA Quantitative Validation (`pages/01_가상면담가에_대한_전문가_검증.py`)
 - **Purpose**: Validate PACA clinical assessment competence - does it accurately assess patients?
 - **Method**: Expert psychiatrists evaluate 24 experiments (3 disorders × 4 model variants × 2 reps)
 - **Evaluation**: Element-by-element Construct-PACA vs Construct-SP comparison using PSYCHE RUBRIC
@@ -460,7 +460,7 @@ for speaker, message in st.session_state.conversation_generator:
   - **Page cleanup pattern**: On page change, delete all agent/memory session state + set `force_paca_update=True`
 
 - `pages/00_진행상태_확인.py`: Experiment progress monitoring dashboard
-- `pages/01_에이전트에_대한_전문가_검증.py`: Expert validation interface for PACA agents (Section 4.3)
+- `pages/01_가상면담가에_대한_전문가_검증.py`: Expert validation interface for PACA agents (Section 4.3)
 - `pages/02_가상환자에_대한_전문가_검증.py`: SP authenticity validation by experts (Sections 4.1, 4.2)
 - `pages/05_json2csv.py`: Utility for converting Firebase JSON exports to CSV
 - `pages/08_sp_validation_viewer.py`: View SP validation results
@@ -488,7 +488,7 @@ for speaker, message in st.session_state.conversation_generator:
     - Automated evaluation results from `clients_{client_num}_psyche_{diagnosis}_{model}_{exp_num}` (ROOT level)
   - **PRESET configuration**: Uses same `EXPERIMENT_NUMBERS` list as expert validation (24 experiments across 3 disorders × 4 model variants × 2 reps)
   - **Key functions**: `calculate_correlation()`, `create_correlation_heatmap()`, element-level analysis
-- `pages/12_PACA_검증결과_분석.py`: Expert score aggregation and comparison page
+- `pages/12_PSYCHE-Expert_Correlation.py`: Expert score aggregation and comparison page
   - **Purpose**: Aggregate 6 expert validators' scores and compare with automated PSYCHE scores
   - **Validators**: 이강토, 김태환, 김광현, 김주오, 허율, 장재용
   - **Data loading**:
@@ -518,7 +518,7 @@ st.rerun()  # Trigger page refresh
 
 ### Expert Validation Workflow
 
-`pages/01_에이전트에_대한_전문가_검증.py` - **Multi-stage wizard** for psychiatric expert review:
+`pages/01_가상면담가에_대한_전문가_검증.py` - **Multi-stage wizard** for psychiatric expert review:
 
 1. **PRESET Configuration** (top of file):
    ```python
@@ -803,7 +803,8 @@ ref = get_firebase_ref()
 - `langchain`, `langchain_anthropic`, `langchain_openai`, `langchain-ollama`: LLM orchestration
 - `openai`, `anthropic`: AI model APIs
 - `firebase-admin`: Firebase Realtime Database integration
-- `pandas`, `matplotlib`: Data processing and visualization
+- `pandas`, `matplotlib`, `seaborn`: Data processing and visualization
+- `scipy`, `pingouin`: Statistical analysis (correlation, reliability)
 - `playwright`: Browser automation (Chromium installed via `packages.txt`)
 - `python-dotenv`: Environment variable management
 - `requests`, `pydantic`: HTTP and data validation
