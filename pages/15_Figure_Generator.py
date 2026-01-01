@@ -211,6 +211,8 @@ def create_correlation_plot_average(psyche_scores, avg_expert_scores, figsize=(8
     ax.set_title('PSYCHE SCORE vs. Expert score', fontsize=36, pad=20, family='Helvetica')
     ax.set_xlabel('PSYCHE SCORE', fontsize=36, family='Helvetica')
     ax.set_ylabel('Expert score', fontsize=36, family='Helvetica')
+    ax.set_yticks([0, 30, 60])
+    ax.set_xticks([10, 25, 40])
     ax.tick_params(labelsize=32)
     ax.legend(loc='upper left', prop={'size': 22, 'weight': 'bold', 'family': 'Helvetica'})
     
@@ -251,7 +253,7 @@ def create_correlation_plot_by_validator(psyche_scores, expert_data):
                 ax.scatter(x, y,
                           c=COLOR_MAP[model],
                           marker=MARKER_MAP[model]["marker"],
-                          s=150,
+                          s=MARKER_MAP[model]["size"],
                           alpha=0.7)
         
         # 회귀선 및 correlation
@@ -263,21 +265,21 @@ def create_correlation_plot_by_validator(psyche_scores, expert_data):
             
             correlation, p_value = stats.pearsonr(validator_x, validator_y)
             p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
-            ax.text(0.05, 0.95, f'r = {correlation:.3f}\n{p_text}\nn = {len(validator_x)}',
-                   transform=ax.transAxes, fontsize=14, verticalalignment='top',
-                   bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5),
-                   family='Helvetica')
+            ax.text(0.3, 0.10, f'r = {correlation:.4f}, {p_text}',
+                   transform=ax.transAxes, fontsize=20, family='Helvetica')
         
         # 스타일링
-        ax.set_title(VALIDATOR_INITIALS[validator], fontsize=18, fontweight='bold', family='Helvetica')
-        ax.set_xlabel('PSYCHE SCORE', fontsize=14, family='Helvetica')
-        ax.set_ylabel('Expert score', fontsize=14, family='Helvetica')
-        ax.tick_params(labelsize=12)
-        ax.grid(True, alpha=0.3)
+        ax.set_title(VALIDATOR_INITIALS[validator], fontsize=24, fontweight='bold', family='Helvetica')
+        ax.set_xlabel('PSYCHE SCORE', fontsize=22, family='Helvetica')
+        ax.set_ylabel('Expert score', fontsize=22, family='Helvetica')
+        ax.set_yticks([0, 30, 60])
+        ax.set_xticks([10, 25, 40])
+        ax.tick_params(labelsize=20)
+        ax.grid(False)
         
         for spine in ax.spines.values():
             spine.set_color('black')
-            spine.set_linewidth(1)
+            spine.set_linewidth(2)
     
     plt.tight_layout()
     return fig
