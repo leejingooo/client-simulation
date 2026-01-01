@@ -266,13 +266,13 @@ def create_correlation_plot_by_validator(psyche_scores, expert_data):
             correlation, p_value = stats.pearsonr(validator_x, validator_y)
             p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
             ax.text(0.3, 0.10, f'r = {correlation:.4f}, {p_text}',
-                   transform=ax.transAxes, fontsize=12, family='Helvetica')
+                   transform=ax.transAxes, fontsize=18, family='Helvetica')
         
         # 스타일링
         ax.set_title(VALIDATOR_INITIALS[validator], fontsize=24, fontweight='bold', family='Helvetica')
         ax.set_xlabel('PSYCHE SCORE', fontsize=22, family='Helvetica')
         ax.set_ylabel('Expert score', fontsize=22, family='Helvetica')
-        ax.set_yticks([10, 35, 60])
+        ax.set_yticks([0, 30, 60])
         ax.set_xticks([10, 35, 60])
         ax.tick_params(labelsize=20)
         ax.grid(False)
@@ -349,11 +349,17 @@ def create_correlation_plot_by_disorder(psyche_scores, avg_expert_scores):
 # Figure 2: Weight-Correlation Analysis
 # ================================
 def load_element_scores(root_data):
-    """Load element-level scores for weight analysis."""
-    element_scores = {}
+    """Load element-level scores for weight analysis.
     
+    Returns:
+    - psyche_element_scores: {(client_num, exp_num): {element_name: {score: float}}}
+    - expert_element_scores: {validator_name: {(client_num, exp_num): {element_name: {score: float}}}}
+    """
+    psyche_element_scores = {}
+    expert_element_scores = {validator: {} for validator in VALIDATORS}
+    
+    # Load PSYCHE element scores
     for client_num, exp_num in EXPERIMENT_NUMBERS:
-        # Load PSYCHE evaluation data
         target_prefix = f"clients_{client_num}_psyche_"
         target_suffix = f"_{exp_num}"
         
@@ -365,20 +371,33 @@ def load_element_scores(root_data):
             
             record = data or {}
             if 'elements' in record:
-                element_scores[(client_num, exp_num)] = record['elements']
+                psyche_element_scores[(client_num, exp_num)] = record['elements']
                 break
     
-    return element_scores
+    # Load Expert element scores
+    for validator in VALIDATORS:
+        sanitized_name = sanitize_firebase_key(validator)
+        for client_num, exp_num in EXPERIMENT_NUMBERS:
+            key = f"expert_{sanitized_name}_{client_num}_{exp_num}"
+            data = (root_data or {}).get(key, {}) or {}
+            if 'elements' in data:
+                expert_element_scores[validator][(client_num, exp_num)] = data['elements']
+    
+    return psyche_element_scores, expert_element_scores
 
-def calculate_weighted_correlation_from_elements(element_scores_psyche, element_scores_expert, 
-                                                  weight_impulsivity, weight_behavior, weight_subjective=1):
+def calculate_weighted_correlation_from_elements(element_scores_psyche, element_scores_expert_dict, 
+                                                  weight_impulsivity, weight_behavior, weight_subjective=1,
+                                                  expert_fixed_weights=None):
     """
     Element별 가중치를 변경하여 correlation 재계산
     
     Parameters:
+    - element_scores_psyche: {(client_num, exp_num): {element_name: {score: float}}}
+    - element_scores_expert_dict: {validator_name: {(client_num, exp_num): {element_name: {score: float}}}}
     - weight_impulsivity: Impulsivity category weight (default: 5)
     - weight_behavior: Behavior category weight (default: 2)
     - weight_subjective: Subjective category weight (fixed: 1)
+    - expert_fixed_weights: (imp, beh, subj) tuple for fixed expert weights, or None for variable
     """
     from evaluator import PSYCHE_RUBRIC
     
@@ -392,9 +411,17 @@ def calculate_weighted_correlation_from_elements(element_scores_psyche, element_
     
     for exp in EXPERIMENT_NUMBERS:
         psyche_elements = element_scores_psyche.get(exp, {})
-        expert_elements = element_scores_expert.get(exp, {})
+        if not psyche_elements:
+            continue
         
-        if not psyche_elements or not expert_elements:
+        # Average expert scores across validators
+        expert_elements_list = []
+        for validator in VALIDATORS:
+            expert_exp_data = element_scores_expert_dict.get(validator, {}).get(exp, {})
+            if expert_exp_data:
+                expert_elements_list.append(expert_exp_data)
+        
+        if not expert_elements_list:
             continue
         
         psyche_total = 0
@@ -402,28 +429,53 @@ def calculate_weighted_correlation_from_elements(element_scores_psyche, element_
         
         # Calculate weighted scores
         for element, rubric_info in PSYCHE_RUBRIC.items():
-            if element not in psyche_elements or element not in expert_elements:
+            if element not in psyche_elements:
                 continue
             
+            # Check if all experts have this element
+            expert_scores_for_element = []
+            for expert_elem_dict in expert_elements_list:
+                if element in expert_elem_dict:
+                    elem_data = expert_elem_dict[element]
+                    score = elem_data.get('score', 0) if isinstance(elem_data, dict) else 0
+                    expert_scores_for_element.append(score)
+            
+            if not expert_scores_for_element:
+                continue
+            
+            # Average expert score for this element
+            avg_expert_score = np.mean(expert_scores_for_element)
+            
+            # Get PSYCHE score
             psyche_elem = psyche_elements[element]
-            expert_elem = expert_elements[element]
-            
-            # Get scores (0-1 range)
             psyche_score = psyche_elem.get('score', 0) if isinstance(psyche_elem, dict) else 0
-            expert_score = expert_elem.get('score', 0) if isinstance(expert_elem, dict) else 0
             
-            # Apply weights
+            # Apply weights for PSYCHE
             if element in impulsivity_elements:
-                weight = weight_impulsivity
+                psyche_weight = weight_impulsivity
             elif element in behavior_elements:
-                weight = weight_behavior
+                psyche_weight = weight_behavior
             elif element in subjective_elements:
-                weight = weight_subjective
+                psyche_weight = weight_subjective
             else:
-                weight = rubric_info.get('weight', 1)
+                psyche_weight = rubric_info.get('weight', 1)
             
-            psyche_total += psyche_score * weight
-            expert_total += expert_score * weight
+            # Apply weights for Expert (fixed or variable)
+            if expert_fixed_weights:
+                if element in impulsivity_elements:
+                    expert_weight = expert_fixed_weights[0]
+                elif element in behavior_elements:
+                    expert_weight = expert_fixed_weights[1]
+                elif element in subjective_elements:
+                    expert_weight = expert_fixed_weights[2]
+                else:
+                    expert_weight = rubric_info.get('weight', 1)
+            else:
+                # Use same variable weights as PSYCHE
+                expert_weight = psyche_weight
+            
+            psyche_total += psyche_score * psyche_weight
+            expert_total += avg_expert_score * expert_weight
         
         weighted_psyche_scores.append(psyche_total)
         weighted_expert_scores.append(expert_total)
@@ -434,7 +486,7 @@ def calculate_weighted_correlation_from_elements(element_scores_psyche, element_
         return correlation
     return None
 
-def create_weight_correlation_heatmaps(element_scores_psyche, element_scores_expert):
+def create_weight_correlation_heatmaps(element_scores_psyche, element_scores_expert_dict):
     """Figure 2: Weight-correlation analysis heatmaps."""
     weight_range = range(1, 11)  # 1-10
     
@@ -443,7 +495,7 @@ def create_weight_correlation_heatmaps(element_scores_psyche, element_scores_exp
     for i, w_imp in enumerate(weight_range):
         for j, w_beh in enumerate(weight_range):
             corr = calculate_weighted_correlation_from_elements(
-                element_scores_psyche, element_scores_expert, w_imp, w_beh
+                element_scores_psyche, element_scores_expert_dict, w_imp, w_beh
             )
             correlation_equal[9-i, j] = corr if corr is not None else 0  # y축 반전 (top=10, bottom=1)
     
@@ -452,44 +504,11 @@ def create_weight_correlation_heatmaps(element_scores_psyche, element_scores_exp
     correlation_fixed = np.zeros((10, 10))
     for i, w_imp in enumerate(weight_range):
         for j, w_beh in enumerate(weight_range):
-            # Expert elements는 고정 가중치로 계산
-            expert_scores_fixed = {}
-            for exp in EXPERIMENT_NUMBERS:
-                expert_elem = element_scores_expert.get(exp, {})
-                if expert_elem:
-                    # Calculate with fixed weights (5, 2, 1)
-                    from evaluator import PSYCHE_RUBRIC
-                    total = sum(
-                        expert_elem.get(k, {}).get('score', 0) * (5 if PSYCHE_RUBRIC[k].get('type') == 'impulsivity' 
-                                                                   else 2 if PSYCHE_RUBRIC[k].get('type') == 'behavior' 
-                                                                   else 1)
-                        for k in expert_elem.keys() if k in PSYCHE_RUBRIC
-                    )
-                    expert_scores_fixed[exp] = total
-            
-            # PSYCHE elements는 변경된 가중치로 계산
-            psyche_scores_weighted = {}
-            for exp in EXPERIMENT_NUMBERS:
-                psyche_elem = element_scores_psyche.get(exp, {})
-                if psyche_elem:
-                    from evaluator import PSYCHE_RUBRIC
-                    total = sum(
-                        psyche_elem.get(k, {}).get('score', 0) * (w_imp if PSYCHE_RUBRIC[k].get('type') == 'impulsivity' 
-                                                                   else w_beh if PSYCHE_RUBRIC[k].get('type') == 'behavior' 
-                                                                   else 1)
-                        for k in psyche_elem.keys() if k in PSYCHE_RUBRIC
-                    )
-                    psyche_scores_weighted[exp] = total
-            
-            # Correlation 계산
-            x = [psyche_scores_weighted[exp] for exp in EXPERIMENT_NUMBERS if exp in psyche_scores_weighted and exp in expert_scores_fixed]
-            y = [expert_scores_fixed[exp] for exp in EXPERIMENT_NUMBERS if exp in psyche_scores_weighted and exp in expert_scores_fixed]
-            
-            if len(x) >= 2:
-                corr, _ = stats.pearsonr(x, y)
-                correlation_fixed[9-i, j] = corr  # y축 반전
-            else:
-                correlation_fixed[9-i, j] = 0
+            corr = calculate_weighted_correlation_from_elements(
+                element_scores_psyche, element_scores_expert_dict, w_imp, w_beh,
+                expert_fixed_weights=(5, 2, 1)  # Fixed expert weights
+            )
+            correlation_fixed[9-i, j] = corr if corr is not None else 0
     
     # Figure 생성
     fig, axes = plt.subplots(1, 2, figsize=(20, 8))
@@ -676,20 +695,7 @@ def main():
         avg_expert_scores = calculate_average_expert_scores(expert_data)
         
         # Element-level scores for weight analysis
-        element_scores_psyche = load_element_scores(root_snapshot)
-        # Element-level scores for expert (from validation data)
-        element_scores_expert = {}
-        for validator in VALIDATORS:
-            sanitized_name = sanitize_firebase_key(validator)
-            for client_num, exp_num in EXPERIMENT_NUMBERS:
-                key = f"expert_{sanitized_name}_{client_num}_{exp_num}"
-                data = (root_snapshot or {}).get(key, {}) or {}
-                if 'elements' in data:
-                    if (client_num, exp_num) not in element_scores_expert:
-                        element_scores_expert[(client_num, exp_num)] = {}
-                    # 첫 번째 validator 데이터 사용 (또는 평균 계산 가능)
-                    if not element_scores_expert[(client_num, exp_num)]:
-                        element_scores_expert[(client_num, exp_num)] = data['elements']
+        element_scores_psyche, element_scores_expert = load_element_scores(root_snapshot)
         
         # SP validation data
         sp_conformity_data = load_sp_validation_data(root_snapshot)
