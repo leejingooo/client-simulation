@@ -46,25 +46,26 @@ def load_mfc_data(firebase_ref, client_number, version="6_0"):
     """
     mfc_data = {}
     
+    # Use sanitize_key to convert paths (same as SP_utils.load_from_firebase)
     # Load Profile
-    profile_key = f"clients_{client_number}_profile_version{version}"
-    profile_data = firebase_ref.child(profile_key).get()
+    profile_path = sanitize_key(f"clients/{client_number}/profile_version{version}")
+    profile_data = firebase_ref.child(profile_path).get()
     if profile_data:
         mfc_data['profile'] = profile_data
     else:
         mfc_data['profile'] = None
     
     # Load History
-    history_key = f"clients_{client_number}_history_version{version}"
-    history_data = firebase_ref.child(history_key).get()
+    history_path = sanitize_key(f"clients/{client_number}/history_version{version}")
+    history_data = firebase_ref.child(history_path).get()
     if history_data:
         mfc_data['history'] = history_data
     else:
         mfc_data['history'] = None
     
     # Load Behavior (Behavioral Directive)
-    behavior_key = f"clients_{client_number}_beh_dir_version{version}"
-    behavior_data = firebase_ref.child(behavior_key).get()
+    behavior_path = sanitize_key(f"clients/{client_number}/beh_dir_version{version}")
+    behavior_data = firebase_ref.child(behavior_path).get()
     if behavior_data:
         mfc_data['behavior'] = behavior_data
     else:
@@ -83,9 +84,9 @@ def get_available_clients(firebase_ref):
     available = []
     
     for client_num in common_clients:
-        # Check if profile exists - use same format as viewer page
-        profile_key = f"clients_{client_num}_profile_version6_0"
-        data = firebase_ref.child(profile_key).get()
+        # Check if profile exists - use sanitize_key like SP_utils
+        profile_path = sanitize_key(f"clients/{client_num}/profile_version6_0")
+        data = firebase_ref.child(profile_path).get()
         if data:
             available.append(client_num)
     
