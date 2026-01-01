@@ -563,7 +563,7 @@ def create_weight_correlation_heatmaps(element_scores_psyche, element_scores_exp
 # ================================
 def load_sp_validation_data(root_data):
     """Load SP validation data for heatmap."""
-    # SP validation 데이터 구조: sp_quantitative_{validator_name}_{client}_{page}
+    # SP validation 데이터 구조: sp_validation_{validator_name}_{client}_{page}
     # VALIDATION_ELEMENTS 24개
     
     SP_SEQUENCE = [
@@ -583,30 +583,31 @@ def load_sp_validation_data(root_data):
     # Element별로 평가자들의 "Appropriate" 비율 계산
     element_conformity = {elem: [] for elem in VALIDATION_ELEMENTS}
     
-    # 모든 validator 데이터 수집
-    validators_found = set()
+    # 모든 sp_validation_ 키 수집
     for key in (root_data or {}).keys():
-        if key.startswith("sp_quantitative_"):
-            parts = key.split("_")
-            if len(parts) >= 4:
-                validators_found.add(parts[2])  # validator name
-    
-    # 각 SP case별로 데이터 수집
-    for page, client in SP_SEQUENCE:
-        for validator in validators_found:
-            key = f"sp_quantitative_{validator}_{client}_{page}"
-            data = (root_data or {}).get(key, {})
-            
-            if 'quantitative_responses' in data:
-                responses = data['quantitative_responses']
-                for elem in VALIDATION_ELEMENTS:
-                    if elem in responses:
-                        value = responses[elem]
-                        # "적절함" = 1, "부적절함" = 0
-                        if value == "적절함":
-                            element_conformity[elem].append(1)
-                        elif value == "부적절함":
-                            element_conformity[elem].append(0)
+        if not key.startswith("sp_validation_"):
+            continue
+        
+        data = (root_data or {}).get(key, {})
+        if not data:
+            continue
+        
+        # Get elements data
+        elements_block = data.get('elements', {})
+        if not elements_block:
+            continue
+        
+        # Process each element
+        for element in VALIDATION_ELEMENTS:
+            if element in elements_block:
+                elem_data = elements_block[element]
+                if elem_data:
+                    choice = elem_data.get('expert_choice', '')
+                    # "적절함" = 1, "적절하지 않음" = 0
+                    if choice == "적절함":
+                        element_conformity[element].append(1)
+                    elif choice == "적절하지 않음":
+                        element_conformity[element].append(0)
     
     # 평균 계산 (%)
     conformity_percent = {}
@@ -710,6 +711,26 @@ def main():
     
     st.success("✅ 데이터 로딩 완료")
     
+    # Debug info
+    with st.expander("🔍 데이터 로딩 상태 확인"):
+        st.write(f"PSYCHE scores: {len(psyche_scores)} experiments")
+        st.write(f"Expert data: {len(expert_data)} validators")
+        st.write(f"Element-level PSYCHE scores: {len(element_scores_psyche)} experiments")
+        st.write(f"Element-level Expert scores: {len(element_scores_expert)} validators")
+        if element_scores_expert:
+            for validator, data in element_scores_expert.items():
+                st.write(f"  - {validator}: {len(data)} experiments")
+        st.write(f"SP conformity data: {len(sp_conformity_data)} elements")
+        
+        # Show sample data
+        if element_scores_psyche:
+            st.write("Sample PSYCHE element data:", list(element_scores_psyche.keys())[:3])
+        if element_scores_expert:
+            sample_validator = list(element_scores_expert.keys())[0]
+            st.write(f"Sample Expert element data ({sample_validator}):", list(element_scores_expert[sample_validator].keys())[:3])
+        if sp_conformity_data:
+            st.write("Sample SP conformity:", list(sp_conformity_data.items())[:3])
+    
     # ================================
     # Figure 1: PSYCHE-Expert Correlation
     # ================================
@@ -792,6 +813,12 @@ def main():
     st.caption("가중치 변화에 따른 correlation 변화 분석")
     
     if element_scores_psyche and element_scores_expert:
+        # Check if there's actual data
+        psyche_count = len(element_scores_psyche)
+        expert_count = sum(len(v) for v in element_scores_expert.values())
+        
+        st.info(f"PSYCHE element data: {psyche_count} experiments, Expert element data: {expert_count} total entries")
+        
         fig2 = create_weight_correlation_heatmaps(element_scores_psyche, element_scores_expert)
         st.pyplot(fig2)
         
