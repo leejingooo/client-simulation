@@ -272,8 +272,8 @@ def create_correlation_plot_by_validator(psyche_scores, expert_data):
         ax.set_title(VALIDATOR_INITIALS[validator], fontsize=24, fontweight='bold', family='Helvetica')
         ax.set_xlabel('PSYCHE SCORE', fontsize=22, family='Helvetica')
         ax.set_ylabel('Expert score', fontsize=22, family='Helvetica')
-        ax.set_yticks([0, 30, 60])
-        ax.set_xticks([10, 35, 60])
+        ax.set_yticks([5, 35, 65])
+        ax.set_xticks([5, 30, 55])
         ax.tick_params(labelsize=20)
         ax.grid(False)
         
@@ -333,8 +333,8 @@ def create_correlation_plot_by_disorder(psyche_scores, avg_expert_scores):
         ax.set_title(DISORDER_NAMES[DISORDER_MAP[disorder_code]], fontsize=36, fontweight='bold', family='Helvetica', pad=20)
         ax.set_xlabel('PSYCHE SCORE', fontsize=36, family='Helvetica')
         ax.set_ylabel('Expert score', fontsize=36, family='Helvetica')
-        ax.set_yticks([0, 30, 60])
-        ax.set_xticks([10, 25, 40])
+        ax.set_yticks([5, 35, 65])
+        ax.set_xticks([5, 30, 55])
         ax.tick_params(labelsize=32)
         ax.grid(False)
         
