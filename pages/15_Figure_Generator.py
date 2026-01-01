@@ -355,8 +355,16 @@ def load_element_scores(root_data):
     - psyche_element_scores: {(client_num, exp_num): {element_name: {score: float}}}
     - expert_element_scores: {validator_name: {(client_num, exp_num): {element_name: {score: float}}}}
     """
+    from evaluator import PSYCHE_RUBRIC
+    
     psyche_element_scores = {}
     expert_element_scores = {validator: {} for validator in VALIDATORS}
+    
+    # Get valid element names from PSYCHE_RUBRIC
+    valid_elements = set(PSYCHE_RUBRIC.keys())
+    
+    # Debug: collect all matching keys
+    psyche_keys_found = []
     
     # Load PSYCHE element scores
     for client_num, exp_num in EXPERIMENT_NUMBERS:
@@ -369,12 +377,24 @@ def load_element_scores(root_data):
             if not key.endswith(target_suffix):
                 continue
             
+            psyche_keys_found.append(key)
             record = data or {}
-            if 'elements' in record:
-                psyche_element_scores[(client_num, exp_num)] = record['elements']
-                break
+            
+            # Extract element scores directly from record (no 'elements' layer)
+            # Filter out metadata fields like 'psyche_score', 'timestamp', etc.
+            element_data = {}
+            for field_name, field_value in record.items():
+                if field_name in valid_elements and isinstance(field_value, dict):
+                    element_data[field_name] = field_value
+            
+            if element_data:
+                psyche_element_scores[(client_num, exp_num)] = element_data
+            break
     
-    # Load Expert element scores
+    # Store found keys for debugging
+    psyche_element_scores['_debug_keys'] = psyche_keys_found
+    
+    # Load Expert element scores (still uses 'elements' layer)
     for validator in VALIDATORS:
         sanitized_name = sanitize_firebase_key(validator)
         for client_num, exp_num in EXPERIMENT_NUMBERS:
@@ -562,7 +582,11 @@ def create_weight_correlation_heatmaps(element_scores_psyche, element_scores_exp
 # Figure 3: SP Validation Heatmap
 # ================================
 def load_sp_validation_data(root_data):
-    """Load SP validation data for heatmap."""
+    """Load SP validation data for heatmap.
+    
+    Returns:
+    - dict: {case_name: {element: conformity_percent}}
+    """
     # SP validation 데이터 구조: sp_validation_{validator_name}_{client}_{page}
     # VALIDATION_ELEMENTS 24개
     
@@ -570,6 +594,16 @@ def load_sp_validation_data(root_data):
         (1, 6201), (2, 6202), (3, 6203), (4, 6204), (5, 6205), (6, 6206), (7, 6207),
         (8, 6203), (9, 6201), (10, 6204), (11, 6207), (12, 6202), (13, 6206), (14, 6205),
     ]
+    
+    CLIENT_TO_CASE = {
+        6201: 'MDD',
+        6202: 'BD',
+        6203: 'PD',
+        6204: 'GAD',
+        6205: 'SAD',
+        6206: 'OCD',
+        6207: 'PTSD'
+    }
     
     VALIDATION_ELEMENTS = [
         "Chief complaint", "Symptom name", "Alleviating factor", "Exacerbating factor",
@@ -580,8 +614,8 @@ def load_sp_validation_data(root_data):
         "Social judgement", "Reliability"
     ]
     
-    # Element별로 평가자들의 "Appropriate" 비율 계산
-    element_conformity = {elem: [] for elem in VALIDATION_ELEMENTS}
+    # Case별, Element별로 데이터 수집
+    case_element_data = {case: {elem: [] for elem in VALIDATION_ELEMENTS} for case in CLIENT_TO_CASE.values()}
     
     # 모든 sp_validation_ 키 수집
     for key in (root_data or {}).keys():
@@ -591,6 +625,13 @@ def load_sp_validation_data(root_data):
         data = (root_data or {}).get(key, {})
         if not data:
             continue
+        
+        # Get client number to determine case
+        client_num = data.get('client_number')
+        if client_num not in CLIENT_TO_CASE:
+            continue
+        
+        case_name = CLIENT_TO_CASE[client_num]
         
         # Get elements data
         elements_block = data.get('elements', {})
@@ -605,35 +646,48 @@ def load_sp_validation_data(root_data):
                     choice = elem_data.get('expert_choice', '')
                     # "적절함" = 1, "적절하지 않음" = 0
                     if choice == "적절함":
-                        element_conformity[element].append(1)
+                        case_element_data[case_name][element].append(1)
                     elif choice == "적절하지 않음":
-                        element_conformity[element].append(0)
+                        case_element_data[case_name][element].append(0)
     
-    # 평균 계산 (%)
-    conformity_percent = {}
-    for elem, values in element_conformity.items():
-        if values:
-            conformity_percent[elem] = (sum(values) / len(values)) * 100
-        else:
-            conformity_percent[elem] = 0
+    # Case별로 평균 계산 (%)
+    conformity_by_case = {}
+    for case, element_dict in case_element_data.items():
+        conformity_by_case[case] = {}
+        for elem, values in element_dict.items():
+            if values:
+                conformity_by_case[case][elem] = (sum(values) / len(values)) * 100
+            else:
+                conformity_by_case[case][elem] = 0
     
-    return conformity_percent
+    return conformity_by_case
 
-def create_sp_validation_heatmap(conformity_data):
-    """Figure 3: SP Validation conformity heatmap (Case × Element)."""
-    if not conformity_data:
+def create_sp_validation_heatmap(conformity_by_case):
+    """Figure 3: SP Validation conformity heatmap (Case × Element).
+    
+    Args:
+        conformity_by_case: {case_name: {element: conformity_percent}}
+    """
+    if not conformity_by_case:
         return None
     
-    # Case 7개 (MDD, BD, PD, GAD, SAD, OCD, PTSD)
+    # Case 7개 순서
     cases = ['MDD', 'BD', 'PD', 'GAD', 'SAD', 'OCD', 'PTSD']
     
     # DataFrame 생성 - 각 case가 row, 각 element가 column
-    # conformity_data는 전체 평균이므로 모든 case에 동일한 값 표시
+    # Get all elements from first case
+    first_case = list(conformity_by_case.values())[0]
+    elements = list(first_case.keys())
+    
+    # Build dataframe: index=elements, columns=cases
     df_data = {}
     for case in cases:
-        df_data[case] = [conformity_data.get(elem, 0) for elem in conformity_data.keys()]
+        if case in conformity_by_case:
+            df_data[case] = [conformity_by_case[case].get(elem, 0) for elem in elements]
+        else:
+            df_data[case] = [0] * len(elements)
     
-    df = pd.DataFrame(df_data, index=list(conformity_data.keys()))
+    df = pd.DataFrame(df_data, index=elements)
     
     # Figure 생성 (example code 스타일)
     fig, ax = plt.subplots(figsize=(16, 11))
@@ -715,21 +769,33 @@ def main():
     with st.expander("🔍 데이터 로딩 상태 확인"):
         st.write(f"PSYCHE scores: {len(psyche_scores)} experiments")
         st.write(f"Expert data: {len(expert_data)} validators")
-        st.write(f"Element-level PSYCHE scores: {len(element_scores_psyche)} experiments")
+        
+        # Check for debug keys
+        psyche_elem_count = len([k for k in element_scores_psyche.keys() if k != '_debug_keys'])
+        st.write(f"Element-level PSYCHE scores: {psyche_elem_count} experiments")
+        if '_debug_keys' in element_scores_psyche:
+            st.write(f"PSYCHE keys found: {element_scores_psyche['_debug_keys'][:5]}")
+        
         st.write(f"Element-level Expert scores: {len(element_scores_expert)} validators")
         if element_scores_expert:
             for validator, data in element_scores_expert.items():
                 st.write(f"  - {validator}: {len(data)} experiments")
-        st.write(f"SP conformity data: {len(sp_conformity_data)} elements")
+        
+        st.write(f"SP conformity data: {len(sp_conformity_data)} cases")
+        if sp_conformity_data:
+            for case, elem_dict in sp_conformity_data.items():
+                st.write(f"  - {case}: {len(elem_dict)} elements")
         
         # Show sample data
-        if element_scores_psyche:
-            st.write("Sample PSYCHE element data:", list(element_scores_psyche.keys())[:3])
+        if psyche_elem_count > 0:
+            sample_keys = [k for k in element_scores_psyche.keys() if k != '_debug_keys'][:3]
+            st.write("Sample PSYCHE element data:", sample_keys)
         if element_scores_expert:
             sample_validator = list(element_scores_expert.keys())[0]
             st.write(f"Sample Expert element data ({sample_validator}):", list(element_scores_expert[sample_validator].keys())[:3])
         if sp_conformity_data:
-            st.write("Sample SP conformity:", list(sp_conformity_data.items())[:3])
+            first_case = list(sp_conformity_data.keys())[0]
+            st.write(f"Sample SP conformity ({first_case}):", list(sp_conformity_data[first_case].items())[:3])
     
     # ================================
     # Figure 1: PSYCHE-Expert Correlation
