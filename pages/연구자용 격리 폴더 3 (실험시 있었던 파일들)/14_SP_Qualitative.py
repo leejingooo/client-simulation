@@ -1016,14 +1016,16 @@ def main():
         st.markdown("### 📝 텍스트 정리 파일")
         st.caption("평가자별 자유 응답 텍스트 정리 (질문별/Case별)")
         
-        # Create combined file for download
-        df_text_combined = create_text_summary_file(all_data)
+        df_text = create_text_summary_file(all_data)
         
-        if df_text_combined is not None and not df_text_combined.empty:
-            # Download button for combined file
-            csv_text = df_text_combined.to_csv(index=False).encode('utf-8-sig')
+        if df_text is not None and not df_text.empty:
+            # Display table with both vertical and horizontal scrolling
+            st.dataframe(df_text, use_container_width=False, height=600)
+            
+            # Download button
+            csv_text = df_text.to_csv(index=False).encode('utf-8-sig')
             st.download_button(
-                label="📥 전체 텍스트 정리 파일 다운로드 (CSV)",
+                label="📥 텍스트 정리 파일 다운로드 (CSV)",
                 data=csv_text,
                 file_name=f"sp_qualitative_text_summary_{datetime.now().strftime('%Y%m%d')}.csv",
                 mime="text/csv",
@@ -1031,92 +1033,14 @@ def main():
             )
             
             st.markdown("---")
-            
-            # Display by validator (6 sections)
             st.info("""
             **텍스트 정리 파일 구조:**
-            - 검증자별로 섹션 분리 (총 6명)
-            - 각 검증자가 평가한 14개 case의 자유 응답
-            - 각 psychiatric element마다 plausible/less plausible aspects 포함
+            - Case별로 구분 (총 14개 case)
+            - 각 psychiatric element마다:
+              - What aspects made this plausible?
+              - What aspects appeared less plausible?
+            - Additional clinically relevant impressions
             """)
-            
-            # Create sections for each validator
-            for validator in VALIDATORS:
-                if validator not in all_data:
-                    continue
-                
-                with st.expander(f"**{validator}**", expanded=False):
-                    # Create table for this validator
-                    validator_rows = []
-                    
-                    for page_num, client_num in SP_SEQUENCE:
-                        if (page_num, client_num) not in all_data[validator]:
-                            continue
-                        
-                        case_name = CLIENT_TO_CASE[client_num]
-                        qual_data = all_data[validator][(page_num, client_num)]
-                        
-                        # Case header
-                        validator_rows.append({
-                            'Case': f"Page {page_num} - {case_name} (Client {client_num})",
-                            'Element': '---',
-                            'Question': '---',
-                            'Response': '---'
-                        })
-                        
-                        # Each element
-                        for elem_key, elem_name in ELEMENT_KEY_MAP.items():
-                            # Plausible aspects
-                            plausible_text = qual_data.get(elem_key, {}).get('plausible_aspects', '')
-                            validator_rows.append({
-                                'Case': '',
-                                'Element': elem_name,
-                                'Question': TEXT_QUESTIONS['plausible_aspects'],
-                                'Response': plausible_text
-                            })
-                            
-                            # Less plausible aspects
-                            less_plausible_text = qual_data.get(elem_key, {}).get('less_plausible_aspects', '')
-                            validator_rows.append({
-                                'Case': '',
-                                'Element': elem_name,
-                                'Question': TEXT_QUESTIONS['less_plausible_aspects'],
-                                'Response': less_plausible_text
-                            })
-                        
-                        # Additional impressions
-                        additional_text = qual_data.get('additional_impressions', '')
-                        validator_rows.append({
-                            'Case': '',
-                            'Element': 'Additional',
-                            'Question': TEXT_QUESTIONS['additional_impressions'],
-                            'Response': additional_text
-                        })
-                        
-                        # Blank separator
-                        validator_rows.append({
-                            'Case': '',
-                            'Element': '',
-                            'Question': '',
-                            'Response': ''
-                        })
-                    
-                    if validator_rows:
-                        df_validator = pd.DataFrame(validator_rows)
-                        st.dataframe(df_validator, use_container_width=True, height=600)
-                        
-                        # Individual download button
-                        csv_validator = df_validator.to_csv(index=False).encode('utf-8-sig')
-                        st.download_button(
-                            label=f"📥 {validator} 응답 다운로드",
-                            data=csv_validator,
-                            file_name=f"sp_qualitative_{validator}_{datetime.now().strftime('%Y%m%d')}.csv",
-                            mime="text/csv",
-                            key=f"download_{validator}",
-                            use_container_width=True
-                        )
-                    else:
-                        st.warning(f"{validator}의 데이터가 없습니다.")
         else:
             st.warning("텍스트 정리 파일을 생성할 수 없습니다.")
 
