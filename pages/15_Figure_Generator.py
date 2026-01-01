@@ -205,14 +205,14 @@ def create_correlation_plot_average(psyche_scores, avg_expert_scores, figsize=(8
         correlation, p_value = stats.pearsonr(all_x, all_y)
         p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
         ax.text(0.3, 0.10, f'r = {correlation:.4f}, {p_text}',
-               transform=ax.transAxes, fontsize=18, family='Helvetica')
+               transform=ax.transAxes, fontsize=22, family='Helvetica')
     
     # 스타일링
     ax.set_title('PSYCHE SCORE vs. Expert score', fontsize=36, pad=20, family='Helvetica')
     ax.set_xlabel('PSYCHE SCORE', fontsize=36, family='Helvetica')
     ax.set_ylabel('Expert score', fontsize=36, family='Helvetica')
-    ax.set_yticks([0, 30, 60])
-    ax.set_xticks([10, 35, 60])
+    ax.set_yticks([5, 35, 65])
+    ax.set_xticks([5, 30, 55])
     ax.tick_params(labelsize=32)
     ax.legend(loc='upper left', prop={'size': 18, 'weight': 'bold', 'family': 'Helvetica'})
     
@@ -286,7 +286,7 @@ def create_correlation_plot_by_validator(psyche_scores, expert_data):
 
 def create_correlation_plot_by_disorder(psyche_scores, avg_expert_scores):
     """Figure 1-3: Disorder-specific correlation plots."""
-    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+    fig, axes = plt.subplots(1, 3, figsize=(24, 8))
     
     for idx, (disorder_code, disorder_name) in enumerate([(6201, "MDD"), (6202, "BD"), (6206, "OCD")]):
         ax = axes[idx]
@@ -314,7 +314,7 @@ def create_correlation_plot_by_disorder(psyche_scores, avg_expert_scores):
                 ax.scatter(x, y,
                           c=COLOR_MAP[model],
                           marker=MARKER_MAP[model]["marker"],
-                          s=200,
+                          s=MARKER_MAP[model]["size"],
                           alpha=0.7)
         
         # 회귀선
@@ -326,21 +326,21 @@ def create_correlation_plot_by_disorder(psyche_scores, avg_expert_scores):
             
             correlation, p_value = stats.pearsonr(all_x, all_y)
             p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
-            ax.text(0.05, 0.95, f'r = {correlation:.4f}\n{p_text}',
-                   transform=ax.transAxes, fontsize=14, verticalalignment='top',
-                   bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5),
-                   family='Helvetica')
+            ax.text(0.3, 0.10, f'r = {correlation:.4f}, {p_text}',
+                   transform=ax.transAxes, fontsize=32, family='Helvetica')
         
-        # 스타일링
-        ax.set_title(DISORDER_NAMES[DISORDER_MAP[disorder_code]], fontsize=18, fontweight='bold', family='Helvetica')
-        ax.set_xlabel('PSYCHE SCORE', fontsize=14, family='Helvetica')
-        ax.set_ylabel('Expert score', fontsize=14, family='Helvetica')
-        ax.tick_params(labelsize=12)
-        ax.grid(True, alpha=0.3)
+        # 스타일링 (1-1과 동일)
+        ax.set_title(DISORDER_NAMES[DISORDER_MAP[disorder_code]], fontsize=36, fontweight='bold', family='Helvetica', pad=20)
+        ax.set_xlabel('PSYCHE SCORE', fontsize=36, family='Helvetica')
+        ax.set_ylabel('Expert score', fontsize=36, family='Helvetica')
+        ax.set_yticks([0, 30, 60])
+        ax.set_xticks([10, 25, 40])
+        ax.tick_params(labelsize=32)
+        ax.grid(False)
         
         for spine in ax.spines.values():
             spine.set_color('black')
-            spine.set_linewidth(1)
+            spine.set_linewidth(2)
     
     plt.tight_layout()
     return fig
@@ -508,27 +508,29 @@ def calculate_weighted_correlation_from_elements(element_scores_psyche, element_
 
 def create_weight_correlation_heatmaps(element_scores_psyche, element_scores_expert_dict):
     """Figure 2: Weight-correlation analysis heatmaps."""
-    weight_range = range(1, 11)  # 1-10
+    # 0.1 간격으로 1부터 10까지 (총 91개 포인트)
+    weight_range = np.arange(1, 10.1, 0.1)
+    n_weights = len(weight_range)
     
     # Heatmap 1: Equal weights (PSYCHE와 Expert 모두 가중치 변경)
-    correlation_equal = np.zeros((10, 10))
+    correlation_equal = np.zeros((n_weights, n_weights))
     for i, w_imp in enumerate(weight_range):
         for j, w_beh in enumerate(weight_range):
             corr = calculate_weighted_correlation_from_elements(
                 element_scores_psyche, element_scores_expert_dict, w_imp, w_beh
             )
-            correlation_equal[9-i, j] = corr if corr is not None else 0  # y축 반전 (top=10, bottom=1)
+            correlation_equal[n_weights-1-i, j] = corr if corr is not None else 0  # y축 반전
     
     # Heatmap 2: Fixed expert weights at (5, 2, 1)
     # Expert는 (5,2,1) 고정, PSYCHE만 가중치 변경
-    correlation_fixed = np.zeros((10, 10))
+    correlation_fixed = np.zeros((n_weights, n_weights))
     for i, w_imp in enumerate(weight_range):
         for j, w_beh in enumerate(weight_range):
             corr = calculate_weighted_correlation_from_elements(
                 element_scores_psyche, element_scores_expert_dict, w_imp, w_beh,
                 expert_fixed_weights=(5, 2, 1)  # Fixed expert weights
             )
-            correlation_fixed[9-i, j] = corr if corr is not None else 0
+            correlation_fixed[n_weights-1-i, j] = corr if corr is not None else 0
     
     # Figure 생성
     fig, axes = plt.subplots(1, 2, figsize=(20, 8))
@@ -879,8 +881,8 @@ def main():
     st.caption("가중치 변화에 따른 correlation 변화 분석")
     
     if element_scores_psyche and element_scores_expert:
-        # Check if there's actual data
-        psyche_count = len(element_scores_psyche)
+        # Check if there's actual data (exclude _debug_keys)
+        psyche_count = len([k for k in element_scores_psyche.keys() if k != '_debug_keys'])
         expert_count = sum(len(v) for v in element_scores_expert.values())
         
         st.info(f"PSYCHE element data: {psyche_count} experiments, Expert element data: {expert_count} total entries")
