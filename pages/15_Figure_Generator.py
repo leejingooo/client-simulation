@@ -104,9 +104,9 @@ MARKER_MAP = {
 }
 
 LABEL_MAP = {
-    "gptsmaller": "GPT-Smaller",
+    "gptsmaller": "GPT-Small",
     "gptlarge": "GPT-Large",
-    "claudesmaller": "Claude-Smaller",
+    "claudesmaller": "Claude-Small",
     "claudelarge": "Claude-Large"
 }
 
@@ -205,16 +205,16 @@ def create_correlation_plot_average(psyche_scores, avg_expert_scores, figsize=(8
         correlation, p_value = stats.pearsonr(all_x, all_y)
         p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
         ax.text(0.3, 0.10, f'r = {correlation:.4f}, {p_text}',
-               transform=ax.transAxes, fontsize=32, family='Helvetica')
+               transform=ax.transAxes, fontsize=12, family='Helvetica')
     
     # 스타일링
     ax.set_title('PSYCHE SCORE vs. Expert score', fontsize=36, pad=20, family='Helvetica')
     ax.set_xlabel('PSYCHE SCORE', fontsize=36, family='Helvetica')
     ax.set_ylabel('Expert score', fontsize=36, family='Helvetica')
-    ax.set_yticks([0, 30, 60])
-    ax.set_xticks([10, 25, 40])
+    ax.set_yticks([10, 35, 60])
+    ax.set_xticks([10, 35, 60])
     ax.tick_params(labelsize=32)
-    ax.legend(loc='upper left', prop={'size': 22, 'weight': 'bold', 'family': 'Helvetica'})
+    ax.legend(loc='upper left', prop={'size': 12, 'weight': 'bold', 'family': 'Helvetica'})
     
     # 테두리
     for spine in ax.spines.values():
@@ -266,14 +266,14 @@ def create_correlation_plot_by_validator(psyche_scores, expert_data):
             correlation, p_value = stats.pearsonr(validator_x, validator_y)
             p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
             ax.text(0.3, 0.10, f'r = {correlation:.4f}, {p_text}',
-                   transform=ax.transAxes, fontsize=20, family='Helvetica')
+                   transform=ax.transAxes, fontsize=12, family='Helvetica')
         
         # 스타일링
         ax.set_title(VALIDATOR_INITIALS[validator], fontsize=24, fontweight='bold', family='Helvetica')
         ax.set_xlabel('PSYCHE SCORE', fontsize=22, family='Helvetica')
         ax.set_ylabel('Expert score', fontsize=22, family='Helvetica')
-        ax.set_yticks([0, 30, 60])
-        ax.set_xticks([10, 25, 40])
+        ax.set_yticks([10, 35, 60])
+        ax.set_xticks([10, 35, 60])
         ax.tick_params(labelsize=20)
         ax.grid(False)
         
