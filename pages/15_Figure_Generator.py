@@ -535,13 +535,14 @@ def create_weight_correlation_heatmaps(element_scores_psyche, element_scores_exp
     # Figure 생성
     fig, axes = plt.subplots(1, 2, figsize=(20, 8))
     
-    # Heatmap 1
+    # Heatmap 1 - Equal weights
     ax1 = axes[0]
     im1 = ax1.imshow(correlation_equal, cmap='Greens', aspect='auto',
                      extent=[1, 10, 1, 10], origin='lower')
     cbar1 = plt.colorbar(im1, ax=ax1)
     cbar1.ax.set_ylabel('Correlation', fontsize=24, family='Helvetica')
     cbar1.ax.tick_params(labelsize=24)
+    cbar1.set_ticks([0.78, 0.88])  # Example code 스타일: 2개만 표기
     
     ax1.set_xlabel('$w_{Behavior}$', fontsize=32, family='Helvetica')
     ax1.set_ylabel('$w_{Impulsivity}$', fontsize=32, family='Helvetica')
@@ -556,13 +557,14 @@ def create_weight_correlation_heatmaps(element_scores_psyche, element_scores_exp
         spine.set_color('black')
         spine.set_linewidth(1)
     
-    # Heatmap 2
+    # Heatmap 2 - Expert weights fixed at (5,2,1)
     ax2 = axes[1]
     im2 = ax2.imshow(correlation_fixed, cmap='Greens', aspect='auto',
                      extent=[1, 10, 1, 10], origin='lower')
     cbar2 = plt.colorbar(im2, ax=ax2)
     cbar2.ax.set_ylabel('Correlation', fontsize=24, family='Helvetica')
     cbar2.ax.tick_params(labelsize=24)
+    cbar2.set_ticks([0.84, 0.91])  # Example code 스타일: 2개만 표기
     
     ax2.set_xlabel('$w_{Behavior}$', fontsize=32, family='Helvetica')
     ax2.set_ylabel('$w_{Impulsivity}$', fontsize=32, family='Helvetica')
