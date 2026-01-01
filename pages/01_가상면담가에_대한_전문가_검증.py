@@ -791,46 +791,39 @@ def display_validation_interface(conversation_data, construct_data, exp_item, fi
                 if criterion_name not in quality_responses_check or not quality_responses_check[criterion_name]:
                     missing_items.append(f"면담 품질 평가 - {criterion_name}")
             
-            # If there are missing items, show error and don't proceed
-            if missing_items:
-                st.error(
-                    f"⚠️ 다음 항목이 선택되지 않았습니다. 모든 항목을 선택한 후 다시 시도해주세요:\n\n" +
-                    "\n".join([f"- {item}" for item in missing_items])
-                )
-            else:
-                # Calculate and save final validation result
-                validation_result = create_validation_result(
-                    construct_data,
-                    current_responses,
-                    exp_item  # Pass (client_number, exp_number) tuple
-                )
-                # Add quality assessment
-                validation_result['quality_assessment'] = expert_state['validation_responses'].get(quality_key, {})
+            # Calculate and save final validation result
+            validation_result = create_validation_result(
+                construct_data,
+                current_responses,
+                exp_item  # Pass (client_number, exp_number) tuple
+            )
+            # Add quality assessment
+            validation_result['quality_assessment'] = expert_state['validation_responses'].get(quality_key, {})
+            
+            # Save to Firebase
+            success = save_validation_to_firebase(
+                firebase_ref,
+                expert_name,
+                exp_item,  # Pass (client_number, exp_number) tuple
+                validation_result
+            )
+            
+            if success:
+                st.success(f"검증 결과가 저장되었습니다! (Client {client_number}, Exp {exp_number})")
                 
-                # Save to Firebase
-                success = save_validation_to_firebase(
-                    firebase_ref,
-                    expert_name,
-                    exp_item,  # Pass (client_number, exp_number) tuple
-                    validation_result
-                )
-                
-                if success:
-                    st.success(f"검증 결과가 저장되었습니다! (Client {client_number}, Exp {exp_number})")
-                    
-                    # If all completed, just save (don't move forward)
-                    if all_completed:
-                        st.rerun()
-                    else:
-                        expert_state['current_experiment_index'] += 1
-                        
-                        # Also save progress
-                        save_validation_progress(firebase_ref, expert_name,
-                                               expert_state['current_experiment_index'],
-                                               expert_state['validation_responses'])
-                        st.rerun()
+                # If all completed, just save (don't move forward)
+                if all_completed:
+                    st.rerun()
                 else:
-                    st.error("저장 중 오류가 발생했습니다. 다시 시도해주세요. 반복하여 실패할 경우 연구진에게 문의해주세요.")
+                    expert_state['current_experiment_index'] += 1
+                    
+                    # Also save progress
+                    save_validation_progress(firebase_ref, expert_name,
+                                           expert_state['current_experiment_index'],
+                                           expert_state['validation_responses'])
+                    st.rerun()
+            else:
+                st.error("저장 중 오류가 발생했습니다. 다시 시도해주세요. 반복하여 실패할 경우 연구진에게 문의해주세요.")
 
 def save_validation_progress(firebase_ref, expert_name, current_index, responses):
     """Save validation progress to Firebase"""

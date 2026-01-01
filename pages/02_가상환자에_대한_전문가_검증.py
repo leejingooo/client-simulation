@@ -786,67 +786,26 @@ def show_validation_page():
                                 missing_items.append(f"Qualitative Evaluation - {elem_key} (rating)")
                             # Text fields are optional, only rating is required
                 
-                # If there are missing items, show error and don't proceed
-                if missing_items:
-                    # Separate required vs recommended
-                    required_missing = [item for item in missing_items if item != "총평 (권장 사항)"]
-                    recommended_missing = [item for item in missing_items if item == "총평 (권장 사항)"]
-                    
-                    error_msg = ""
-                    if required_missing:
-                        error_msg += f"⚠️ 다음 필수 항목이 선택되지 않았습니다:\n\n" + "\n".join([f"- {item}" for item in required_missing])
-                    
-                    if recommended_missing:
-                        if error_msg:
-                            error_msg += "\n\n"
-                        error_msg += f"💡 다음 권장 항목이 비어있습니다:\n\n" + "\n".join([f"- {item}" for item in recommended_missing])
-                    
-                    # Only block if required items are missing
-                    if required_missing:
-                        st.error(error_msg + "\n\n모든 필수 항목을 선택한 후 다시 시도해주세요.")
-                    else:
-                        # Only recommended items missing - show warning but allow proceeding
-                        st.warning(error_msg + "\n\n계속 진행하려면 다시 버튼을 클릭해주세요.")
-                        # Set a flag to allow next click to proceed
-                        if 'allow_skip_comment' not in st.session_state:
-                            st.session_state.allow_skip_comment = True
-                        elif st.session_state.allow_skip_comment:
-                            # Second click - proceed
-                            del st.session_state.allow_skip_comment
-                            # Final save
-                            save_sp_validation(firebase_ref, page_number, client_number, responses, memory, is_final=True)
-                            
-                            # Move to next SP
-                            st.session_state.current_sp_index += 1
-                            
-                            # Clear session for this SP
-                            if session_key in st.session_state:
-                                del st.session_state[session_key]
-                            
-                            st.success("검증이 완료되었습니다! 다음 가상환자로 이동합니다.")
-                            st.rerun()
+                # Final save
+                save_sp_validation(firebase_ref, page_number, client_number, responses, memory, is_final=True)
+                
+                # If all completed, just save (don't move forward)
+                if all_completed:
+                    st.success("검증이 저장되었습니다!")
+                    st.rerun()
                 else:
-                    # All items selected - proceed
-                    # Final save
-                    save_sp_validation(firebase_ref, page_number, client_number, responses, memory, is_final=True)
+                    # Move to next SP
+                    st.session_state.current_sp_index += 1
                     
-                    # If all completed, just save (don't move forward)
-                    if all_completed:
-                        st.success("검증이 저장되었습니다!")
-                        st.rerun()
-                    else:
-                        # Move to next SP
-                        st.session_state.current_sp_index += 1
-                        
-                        # Save progress to Firebase
-                        save_sp_validation_progress(firebase_ref, st.session_state.expert_name, st.session_state.current_sp_index)
-                        
-                        # Clear session for this SP
-                        if session_key in st.session_state:
-                            del st.session_state[session_key]
-                        
-                        st.success("검증이 완료되었습니다! 다음 가상환자로 이동합니다.")
-                        st.rerun()
+                    # Save progress to Firebase
+                    save_sp_validation_progress(firebase_ref, st.session_state.expert_name, st.session_state.current_sp_index)
+                    
+                    # Clear session for this SP
+                    if session_key in st.session_state:
+                        del st.session_state[session_key]
+                    
+                    st.success("검증이 완료되었습니다! 다음 가상환자로 이동합니다.")
+                    st.rerun()
 
 
 def save_sp_validation(firebase_ref, page_number, client_number, responses, memory, is_final=True):

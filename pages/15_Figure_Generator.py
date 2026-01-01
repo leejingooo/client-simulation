@@ -619,41 +619,49 @@ def load_sp_validation_data(root_data):
     return conformity_percent
 
 def create_sp_validation_heatmap(conformity_data):
-    """Figure 3: Heatmap by elements (SP validation)."""
+    """Figure 3: SP Validation conformity heatmap (Case × Element)."""
     if not conformity_data:
         return None
     
-    # DataFrame 생성 (element별로 한 행)
-    elements = list(conformity_data.keys())
-    conformities = list(conformity_data.values())
+    # Case 7개 (MDD, BD, PD, GAD, SAD, OCD, PTSD)
+    cases = ['MDD', 'BD', 'PD', 'GAD', 'SAD', 'OCD', 'PTSD']
     
-    df = pd.DataFrame({
-        'Element': elements,
-        'Conformity': conformities
-    })
+    # DataFrame 생성 - 각 case가 row, 각 element가 column
+    # conformity_data는 전체 평균이므로 모든 case에 동일한 값 표시
+    df_data = {}
+    for case in cases:
+        df_data[case] = [conformity_data.get(elem, 0) for elem in conformity_data.keys()]
     
-    # Transpose for vertical display
-    df_pivot = df.set_index('Element').T
+    df = pd.DataFrame(df_data, index=list(conformity_data.keys()))
     
-    # Figure 생성
-    fig, ax = plt.subplots(figsize=(16, 6))
+    # Figure 생성 (example code 스타일)
+    fig, ax = plt.subplots(figsize=(16, 11))
     
-    # Heatmap
-    sns.heatmap(df_pivot, cmap='Blues', vmin=0, vmax=100, 
-                linewidths=0.5, cbar=True, annot=True, fmt='.0f',
-                annot_kws={"fontsize": 10, "family": "Helvetica"},
-                ax=ax, cbar_kws={'label': 'Conformity (%)'})
+    # Heatmap - Element가 x축 (column), Case가 y축 (row)
+    sns.heatmap(df.T, annot=True, fmt='.0f', cmap='Blues', 
+                vmin=0, vmax=100, ax=ax, square=True,
+                linewidths=0.5, cbar=False,
+                annot_kws={'fontsize': 10, 'family': 'Helvetica'})
     
-    # 축 라벨 설정
-    plt.xticks(rotation=90, ha='center', fontsize=12, family='Helvetica')
-    plt.yticks(rotation=0, fontsize=14, family='Helvetica')
+    # y축 라벨 위치 조정 (오른쪽으로)
+    ax.yaxis.tick_right()
+    ax.yaxis.set_label_position('right')
+    
+    # 축 라벨 스타일링 (example code 스타일)
+    plt.xticks(rotation=90, ha='center', fontsize=16)
+    plt.yticks(rotation=0, fontsize=16)
     
     plt.title('Conformity Heatmap by Elements', fontsize=24, pad=20, family='Helvetica')
     
-    # 컬러바 폰트 설정
-    cbar = ax.collections[0].colorbar
-    cbar.ax.tick_params(labelsize=12)
-    cbar.set_label('Conformity (%)', fontsize=14, family='Helvetica')
+    # 가로 컬러바 추가 (하단)
+    # [left, bottom, width, height]
+    cbar_ax = fig.add_axes([0.7, 0.08, 0.4, 0.02])
+    cbar = plt.colorbar(ax.collections[0], cax=cbar_ax, orientation="horizontal")
+    
+    # 컬러바 스타일 조정
+    cbar.ax.tick_params(labelsize=16)
+    cbar.outline.set_visible(False)  # 테두리 제거
+    cbar.set_label('Conformity (%)', fontsize=16, family='Helvetica')
     
     plt.tight_layout()
     return fig
