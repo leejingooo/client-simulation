@@ -292,6 +292,7 @@ PSYCHE_RUBRIC = {
 
 **Dev Container Setup** (`.devcontainer/devcontainer.json`):
 - **Base image**: `mcr.microsoft.com/devcontainers/python:1-3.11-bullseye`
+- **Python version**: 3.11 required (enforced by dev container, critical for dependencies)
 - **Auto-installs** on container creation via `updateContentCommand`:
   - System packages from `packages.txt` (apt install - includes chromium)
   - Python packages from `requirements.txt` + streamlit (pip3 install --user)
@@ -302,6 +303,7 @@ PSYCHE_RUBRIC = {
 - **Extensions**: `ms-python.python`, `ms-python.vscode-pylance`
 - **Auto-opens**: `README.md` and `Home.py` on container start
 - **Ready state**: Container is fully operational when Streamlit shows `You can now view your Streamlit app in your browser.`
+- **Virtual environment**: A `.venv` directory exists but dev container uses system Python (packages installed with `--user` flag)
 
 **Manual start** (if needed):
 ```bash
@@ -812,7 +814,7 @@ ref = get_firebase_ref()
 **System Packages** (`packages.txt`):
 - `chromium`: Required for Playwright browser automation
 
-**Python Version**: 3.11 (enforced by dev container)
+**Python Version**: 3.11 (enforced by dev container - do NOT use other versions)
 
 **Critical Setup Requirements**:
 1. Firebase service account JSON in `st.secrets["firebase"]`

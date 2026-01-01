@@ -786,23 +786,52 @@ def main():
                 use_container_width=True
             )
             
-            # Heatmap visualization
+            # Heatmap visualization (15페이지 conformity 스타일)
             st.markdown("#### 📈 Heatmap 미리보기")
             
             import matplotlib.pyplot as plt
             import seaborn as sns
+            from matplotlib import rcParams
             
-            # Prepare data for heatmap
+            # Helvetica 폰트 설정 (15페이지와 동일)
+            rcParams['font.family'] = 'Helvetica'
+            rcParams['axes.unicode_minus'] = False
+            
+            # Prepare data for heatmap - Case가 row, Element가 column
             heatmap_data = df_avg.set_index('Case')
             
-            # Create heatmap
-            fig, ax = plt.subplots(figsize=(14, 6))
-            sns.heatmap(heatmap_data.T, annot=True, fmt='.2f', cmap='RdYlGn', 
-                       vmin=1, vmax=5, ax=ax, cbar_kws={'label': 'Average Likert Rating'})
-            ax.set_title('SP Qualitative Validation Heatmap (Element × Case)', 
-                        fontsize=14, fontweight='bold')
-            ax.set_xlabel('Case', fontsize=12)
-            ax.set_ylabel('Psychiatric Element', fontsize=12)
+            # Case 순서 정렬 (7개 disorder)
+            cases_order = ['MDD', 'BD', 'PD', 'GAD', 'SAD', 'OCD', 'PTSD']
+            heatmap_data = heatmap_data.reindex(cases_order)
+            
+            # Create heatmap (15페이지 스타일 적용)
+            fig, ax = plt.subplots(figsize=(16, 11))
+            
+            # Heatmap - Element가 x축, Case(Disorder)가 y축
+            sns.heatmap(heatmap_data, annot=True, fmt='.2f', cmap='Blues', 
+                       vmin=1, vmax=5, ax=ax, square=True,
+                       linewidths=0.5, cbar=False,
+                       annot_kws={'fontsize': 10, 'family': 'Helvetica'})
+            
+            # y축 라벨 위치 조정 (오른쪽으로)
+            ax.yaxis.tick_right()
+            ax.yaxis.set_label_position('right')
+            
+            # 축 라벨 스타일링
+            plt.xticks(rotation=90, ha='center', fontsize=16)
+            plt.yticks(rotation=0, fontsize=16)
+            
+            plt.title('Average Likert Rating Heatmap by Elements', fontsize=24, pad=20, family='Helvetica')
+            
+            # 가로 컬러바 추가 (하단)
+            cbar_ax = fig.add_axes([0.7, 0.08, 0.4, 0.02])
+            cbar = plt.colorbar(ax.collections[0], cax=cbar_ax, orientation="horizontal")
+            
+            # 컬러바 스타일 조정
+            cbar.ax.tick_params(labelsize=16)
+            cbar.outline.set_visible(False)  # 테두리 제거
+            cbar.set_label('Average Likert Rating (1-5)', fontsize=16, family='Helvetica')
+            
             plt.tight_layout()
             st.pyplot(fig)
             plt.close(fig)
@@ -990,8 +1019,8 @@ def main():
         df_text = create_text_summary_file(all_data)
         
         if df_text is not None and not df_text.empty:
-            # Display table (with scrollable height)
-            st.dataframe(df_text, use_container_width=True, height=600)
+            # Display table with both vertical and horizontal scrolling
+            st.dataframe(df_text, use_container_width=False, height=600)
             
             # Download button
             csv_text = df_text.to_csv(index=False).encode('utf-8-sig')
