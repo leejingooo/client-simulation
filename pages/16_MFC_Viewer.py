@@ -83,9 +83,9 @@ def get_available_clients(firebase_ref):
     available = []
     
     for client_num in common_clients:
-        # Check if profile exists
-        profile_key = f"clients/{client_num}/profile_version6_0"
-        data = firebase_ref.child(profile_key).get()
+        # Check if profile exists - use same format as load_mfc_data
+        profile_key = f"clients_{client_num}_profile_version6_0"
+        data = firebase_ref.child(profile_key.replace('_', '/')).get()
         if data:
             available.append(client_num)
     
