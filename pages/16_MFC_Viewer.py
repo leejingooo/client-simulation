@@ -48,7 +48,7 @@ def load_mfc_data(firebase_ref, client_number, version="6_0"):
     
     # Load Profile
     profile_key = f"clients_{client_number}_profile_version{version}"
-    profile_data = firebase_ref.child(profile_key.replace('_', '/')).get()
+    profile_data = firebase_ref.child(profile_key).get()
     if profile_data:
         mfc_data['profile'] = profile_data
     else:
@@ -56,7 +56,7 @@ def load_mfc_data(firebase_ref, client_number, version="6_0"):
     
     # Load History
     history_key = f"clients_{client_number}_history_version{version}"
-    history_data = firebase_ref.child(history_key.replace('_', '/')).get()
+    history_data = firebase_ref.child(history_key).get()
     if history_data:
         mfc_data['history'] = history_data
     else:
@@ -64,7 +64,7 @@ def load_mfc_data(firebase_ref, client_number, version="6_0"):
     
     # Load Behavior (Behavioral Directive)
     behavior_key = f"clients_{client_number}_beh_dir_version{version}"
-    behavior_data = firebase_ref.child(behavior_key.replace('_', '/')).get()
+    behavior_data = firebase_ref.child(behavior_key).get()
     if behavior_data:
         mfc_data['behavior'] = behavior_data
     else:
@@ -83,9 +83,9 @@ def get_available_clients(firebase_ref):
     available = []
     
     for client_num in common_clients:
-        # Check if profile exists - use same format as load_mfc_data
+        # Check if profile exists - use same format as viewer page
         profile_key = f"clients_{client_num}_profile_version6_0"
-        data = firebase_ref.child(profile_key.replace('_', '/')).get()
+        data = firebase_ref.child(profile_key).get()
         if data:
             available.append(client_num)
     
