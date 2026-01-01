@@ -46,30 +46,21 @@ def load_mfc_data(firebase_ref, client_number, version="6_0"):
     """
     mfc_data = {}
     
-    # Use sanitize_key to convert paths (same as SP_utils.load_from_firebase)
-    # Load Profile
-    profile_path = sanitize_key(f"clients/{client_number}/profile_version{version}")
-    profile_data = firebase_ref.child(profile_path).get()
-    if profile_data:
-        mfc_data['profile'] = profile_data
-    else:
-        mfc_data['profile'] = None
+    # Get all data
+    all_data = firebase_ref.get()
     
-    # Load History
-    history_path = sanitize_key(f"clients/{client_number}/history_version{version}")
-    history_data = firebase_ref.child(history_path).get()
-    if history_data:
-        mfc_data['history'] = history_data
-    else:
-        mfc_data['history'] = None
+    if not all_data:
+        return {'profile': None, 'history': None, 'behavior': None}
     
-    # Load Behavior (Behavioral Directive)
-    behavior_path = sanitize_key(f"clients/{client_number}/beh_dir_version{version}")
-    behavior_data = firebase_ref.child(behavior_path).get()
-    if behavior_data:
-        mfc_data['behavior'] = behavior_data
-    else:
-        mfc_data['behavior'] = None
+    # Build keys with underscores (Firebase storage format)
+    profile_key = f"clients_{client_number}_profile_version{version}"
+    history_key = f"clients_{client_number}_history_version{version}"
+    behavior_key = f"clients_{client_number}_beh_dir_version{version}"
+    
+    # Load from all_data
+    mfc_data['profile'] = all_data.get(profile_key)
+    mfc_data['history'] = all_data.get(history_key)
+    mfc_data['behavior'] = all_data.get(behavior_key)
     
     return mfc_data
 
@@ -79,16 +70,30 @@ def get_available_clients(firebase_ref):
     Returns:
         list: Available client numbers (6201-6207 only)
     """
-    # Current research cohort: 6201-6207
-    common_clients = list(range(6201, 6208))
     available = []
     
-    for client_num in common_clients:
-        # Check if profile exists - use sanitize_key like SP_utils
-        profile_path = sanitize_key(f"clients/{client_num}/profile_version6_0")
-        data = firebase_ref.child(profile_path).get()
-        if data:
-            available.append(client_num)
+    # Get all data from Firebase
+    all_data = firebase_ref.get()
+    
+    if not all_data:
+        return []
+    
+    # Current research cohort: 6201-6207
+    target_clients = list(range(6201, 6208))
+    
+    # Scan for profile keys
+    for key in all_data.keys():
+        # Look for pattern: clients_6201_profile_version6_0
+        if "_profile_version6_0" in key:
+            # Extract client number
+            try:
+                parts = key.split('_')
+                if len(parts) >= 2 and parts[0] == "clients":
+                    client_num = int(parts[1])
+                    if client_num in target_clients and client_num not in available:
+                        available.append(client_num)
+            except (ValueError, IndexError):
+                continue
     
     return sorted(available)
 
