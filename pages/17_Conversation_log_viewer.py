@@ -107,19 +107,32 @@ def load_conversation(firebase_ref, key):
     conversation = data['conversation']
     messages = []
     
-    # Sort by numeric keys
-    sorted_indices = sorted([int(k) for k in conversation.keys()])
-    
-    for idx in sorted_indices:
-        msg = conversation[str(idx)]
-        if 'content' in msg:
-            # Determine role based on position (even=Expert, odd=SP)
-            role = "Expert" if idx % 2 == 0 else "SP"
-            messages.append({
-                'index': idx,
-                'role': role,
-                'content': msg['content']
-            })
+    # Handle both list and dict formats
+    if isinstance(conversation, list):
+        # Conversation is a list
+        for idx, msg in enumerate(conversation):
+            if msg and isinstance(msg, dict) and 'content' in msg:
+                # Determine role based on position (even=Expert, odd=SP)
+                role = "Expert" if idx % 2 == 0 else "SP"
+                messages.append({
+                    'index': idx,
+                    'role': role,
+                    'content': msg['content']
+                })
+    elif isinstance(conversation, dict):
+        # Conversation is a dict with numeric string keys
+        sorted_indices = sorted([int(k) for k in conversation.keys()])
+        
+        for idx in sorted_indices:
+            msg = conversation[str(idx)]
+            if 'content' in msg:
+                # Determine role based on position (even=Expert, odd=SP)
+                role = "Expert" if idx % 2 == 0 else "SP"
+                messages.append({
+                    'index': idx,
+                    'role': role,
+                    'content': msg['content']
+                })
     
     return messages
 
