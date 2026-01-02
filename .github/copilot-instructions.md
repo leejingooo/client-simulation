@@ -63,6 +63,9 @@ This codebase implements the **PSYCHE (Patient Simulation for Yielding psyCHiatr
 │   ├── 12_PSYCHE-Expert_Correlation.py  # Expert vs PSYCHE score comparison (6 validators × 24 experiments)
 │   ├── 13_SP_정량검증_데이터추출.py  # SP quantitative validation data extraction
 │   ├── 14_SP_정성검증_데이터추출.py  # SP qualitative validation data extraction
+│   ├── 15_Figure_Generator.py      # Publication-quality figure generation (Helvetica font, paper figures)
+│   ├── 16_MFC_Viewer.py            # MFC data viewer (Profile, History, Behavior inspection tool)
+│   ├── 17_Conversation_log_viewer.py  # SP-Expert conversation log viewer (validation studies)
 │   └── 연구자용 격리 폴더/          # Research-mode pages (hidden in production)
 │       └── 04_evaluation.py        # Automated PACA evaluation tool (4.4)
 ├── data/
@@ -506,6 +509,42 @@ for speaker, message in st.session_state.conversation_generator:
     - 1143, 1145 → claudelarge (pattern: 114x)
     - BD: 32xx series (3211/3212=gpt, 1221/1222=gpt, 3231/3234=claude, 1241/1242=claude)
     - OCD: 36xx series (3611/3612=gpt, 1621/1622=gpt, 3631/3632=claude, 1641/1642=claude)
+- `pages/15_Figure_Generator.py`: Publication-quality figure generation for research paper
+  - **Purpose**: Generate publication-ready figures with consistent styling (Helvetica font, IEEE/academic standards)
+  - **Features**: 
+    - Automated figure generation from Firebase data
+    - Consistent styling: Helvetica font family, seaborn "ticks" style
+    - Multiple figure types: scatter plots, box plots, correlation matrices, bar charts
+    - Export options: PNG, PDF, SVG (high-resolution, 300 DPI minimum)
+  - **EXPERIMENT_NUMBERS preset**: Same 24 experiments as expert validation (3 disorders × 4 models × 2 reps)
+  - **Usage**: Select figure type → configure parameters → generate → download
+  - **Critical**: All matplotlib/seaborn plots use `rcParams['font.family'] = 'Helvetica'` for consistency
+- `pages/16_MFC_Viewer.py`: MFC (Multi-faceted Construct) inspection and verification tool
+  - **Purpose**: View and verify MFC components (Profile, History, Behavior) stored in Firebase
+  - **Client-Disorder mapping**:
+    - 6201: MDD, 6202: BD, 6203: PD, 6204: GAD, 6205: SAD, 6206: OCD, 6207: PTSD
+  - **Features**:
+    - Load and display all three MFC components side-by-side
+    - Version selection (default: 6.0 → `version6_0` in Firebase)
+    - JSON export for manual inspection or backup
+    - Structured display with expandable sections per MFC category
+  - **Data loading**: `load_mfc_data(firebase_ref, client_number, version="6_0")`
+    - Returns: `{'profile': {...}, 'history': str, 'behavior': str}`
+  - **Usage**: Select client number → choose version → view/export MFC data
+  - **Critical for**: Debugging MFC generation, verifying prompt outputs, validating construct consistency
+- `pages/17_Conversation_log_viewer.py`: SP-Expert conversation log viewer for validation studies
+  - **Purpose**: View and analyze conversation logs between Expert validators and SP from validation studies (Sections 4.1-4.2)
+  - **Data source**: `sp_conversation_{validator_name}_{client_num}_{page_num}` keys in Firebase
+  - **Features**:
+    - Filter by validator, client number, or disorder
+    - Display conversation with alternating Expert/SP messages
+    - Export conversations as TXT files
+    - Statistics dashboard (conversations by validator/disorder)
+  - **Message structure**: 
+    - Even indices (0, 2, 4...) = Expert messages
+    - Odd indices (1, 3, 5...) = SP responses
+  - **Usage**: Select filters → choose conversation → review dialogue → export if needed
+  - **Related pages**: Page 13 (SP Quantitative), Page 14 (SP Qualitative), Page 16 (MFC Viewer)
 - `pages/연구자용 격리 폴더 (연구모드시 페이지 복원)/`: Research-mode pages
   - Contains disorder-specific experiment pages with guided variants (MDD, BD, OCD)
   - Contains unified experiment pages allowing client selection via dropdown
@@ -890,4 +929,21 @@ for exp_num in test_exp_nums:
     model = get_model_from_exp(exp_num)
     print(f"{exp_num} → {model}")
 # Should output: gptsmaller, gptlarge, claudesmaller, claudelarge, etc.
+```
+**Inspect MFC data for a client**:
+```python
+# Using MFC Viewer page (16_MFC_Viewer.py) or directly:
+from firebase_config import get_firebase_ref
+from SP_utils import sanitize_key
+
+firebase_ref = get_firebase_ref()
+client_num = 6201  # MDD patient
+version = "6_0"
+
+# Load all three components
+profile = firebase_ref.child(f"clients/{client_num}/profile_version{version}").get()
+history = firebase_ref.child(f"clients/{client_num}/history_version{version}").get()
+behavior = firebase_ref.child(f"clients/{client_num}/beh_dir_version{version}").get()
+
+# Or use the MFC Viewer page UI for browsing
 ```
