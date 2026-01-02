@@ -21,6 +21,11 @@ st.set_page_config(
 )
 
 # ================================
+# Validators
+# ================================
+VALIDATORS = ["이강토", "김태환", "김광현", "김주오", "허율", "장재용"]
+
+# ================================
 # Client to Disorder Mapping
 # ================================
 CLIENT_DISORDER_MAP = {
@@ -156,6 +161,10 @@ def filter_conversations(conversation_keys, validator_filter=None, client_filter
         if not parsed:
             continue
         
+        # Only include conversations from the 6 validators
+        if parsed['validator'] not in VALIDATORS:
+            continue
+        
         # Apply filters
         if validator_filter and parsed['validator'] != validator_filter:
             continue
@@ -170,11 +179,11 @@ def filter_conversations(conversation_keys, validator_filter=None, client_filter
 
 
 def get_unique_validators(conversation_keys):
-    """Extract unique validator names from conversation keys."""
+    """Extract unique validator names from conversation keys (only from VALIDATORS list)."""
     validators = set()
     for key in conversation_keys:
         parsed = parse_conversation_key(key)
-        if parsed:
+        if parsed and parsed['validator'] in VALIDATORS:
             validators.add(parsed['validator'])
     return sorted(list(validators))
 
