@@ -16,6 +16,19 @@ from typing import Tuple
 from firebase_config import get_firebase_ref
 import time
 from collections import OrderedDict
+import random
+from typing import Optional
+
+# Patch note 20260103
+#Removed memory.add_user_message(human_input) from before the LLM call.
+#Added memory.add_user_message(human_input) after the LLM response is generated.
+#Added the “recall-failure state machine” inside create_conversational_agent(...)
+    # A regex/keyword detector decides if the clinician question is a past-detail question (onset, duration, stressor, alleviating/exacerbating, recall, etc.).
+    # If the question is not past-detail, recall failure mode is immediately turned off (“topic change → default”).
+    # If diagnosis is MDD and the question is past-detail, then with probability 0.6 it turns on “recall-failure mode” for 2 turns.
+    # The mode is injected into your system prompt through the placeholder {recall_failure_mode}.
+#Added the question topic detector (is_past_detail_question) to activate “recall-failure state machine”
+
 
 # Initialize the language models
 llm = ChatOpenAI(
@@ -58,8 +71,7 @@ def save_to_firebase(firebase_ref, client_number, data_type, content):
                 formatted_version = version_part.replace(".", "_")
                 data_type = f"{data_type.split('version')[0]}version{formatted_version}"
 
-            sanitized_path = sanitize_key(
-                f"clients/{client_number}/{data_type}")
+            sanitized_path = sanitize_key(f"clients/{client_number}/{data_type}")
             sanitized_content = sanitize_dict(content)
             firebase_ref.child(sanitized_path).set(sanitized_content)
         except Exception as e:
@@ -76,8 +88,7 @@ def load_from_firebase(firebase_ref, client_number, data_type):
                 formatted_version = version_part.replace(".", "_")
                 data_type = f"{data_type.split('version')[0]}version{formatted_version}"
 
-            sanitized_path = sanitize_key(
-                f"clients/{client_number}/{data_type}")
+            sanitized_path = sanitize_key(f"clients/{client_number}/{data_type}")
             return firebase_ref.child(sanitized_path).get()
         except Exception as e:
             st.error(f"Error loading data from Firebase: {str(e)}")
@@ -154,7 +165,6 @@ def load_prompt_and_get_version(module_name: str, version: float, diagnosis: str
     # If no diagnosis-specific file found, fall back to the general file
     matching_files = [
         f for f in file_list if f"{module_name}_system_prompt_version{formatted_version}" in f
-        # Exclude diagnosis-specific files
         and not f.endswith(f"_{diagnosis}.txt")
     ]
 
@@ -164,8 +174,7 @@ def load_prompt_and_get_version(module_name: str, version: float, diagnosis: str
         actual_version = extract_version(matching_files[0])
         return prompt_content, actual_version
     else:
-        st.error(
-            f"No matching {module_name} prompt file found for version {formatted_version}")
+        st.error(f"No matching {module_name} prompt file found for version {formatted_version}")
         return None, None
 
 
@@ -201,8 +210,7 @@ def profile_maker(profile_version, given_information, client_number, prompt):
 
     profile_form_path_dsa = f"data/profile_form/profile_form_version{format_version(profile_version)}_{diag}.json"
     if not os.path.exists(profile_form_path_dsa):
-        st.error(
-            f"Profile form version {format_version(profile_version)} not found.")
+        st.error(f"Profile form version {format_version(profile_version)} not found.")
         return None
 
     try:
@@ -235,49 +243,35 @@ def profile_maker(profile_version, given_information, client_number, prompt):
 
     try:
         # Remove any prefix before the actual JSON content
-        result_content = re.sub(
-            r'^.*?(\{)', r'\1', result.content, flags=re.DOTALL)
+        result_content = re.sub(r'^.*?(\{)', r'\1', result.content, flags=re.DOTALL)
         # Remove any suffix after the JSON content
-        result_content = re.sub(
-            r'(\})[^}]*$', r'\1', result_content, flags=re.DOTALL)
+        result_content = re.sub(r'(\})[^}]*$', r'\1', result_content, flags=re.DOTALL)
 
-        # Parse the JSON content
         parsed_json = json.loads(result_content, object_pairs_hook=OrderedDict)
-
-        # Clean the data
         cleaned_result = clean_data(parsed_json)
-
-        # Convert back to JSON string
         json_string = json.dumps(cleaned_result, indent=2)
-
-        # Parse again to ensure it's valid JSON
         parsed_result = json.loads(json_string, object_pairs_hook=OrderedDict)
     except json.JSONDecodeError as e:
         st.error(f"Error parsing JSON: {str(e)}")
         st.error(f"Problematic content: {result_content}")
         return None
     except Exception as e:
-        st.error(
-            f"An unexpected error occurred while processing the result: {str(e)}")
+        st.error(f"An unexpected error occurred while processing the result: {str(e)}")
         return None
 
-    save_to_firebase(firebase_ref, client_number,
-                     f"profile_version{profile_version}", parsed_result)
+    save_to_firebase(firebase_ref, client_number, f"profile_version{profile_version}", parsed_result)
     return parsed_result
 
 
 @st.cache_data
 def history_maker(profile_version, client_number, prompt):
-    profile_json = load_from_firebase(
-        firebase_ref, client_number, f"profile_version{profile_version}")
+    profile_json = load_from_firebase(firebase_ref, client_number, f"profile_version{profile_version}")
 
     if profile_json is None:
-        st.error(
-            "Failed to load profile data from Firebase. Unable to generate history.")
+        st.error("Failed to load profile data from Firebase. Unable to generate history.")
         return None
 
     chat_prompt = PromptTemplate.from_template(prompt)
-
     chain = chat_prompt | llm
 
     result = chain.invoke({
@@ -285,21 +279,16 @@ def history_maker(profile_version, client_number, prompt):
         "profile_json": json.dumps(profile_json, indent=2)
     })
 
-    save_to_firebase(firebase_ref, client_number,
-                     f"history_version{profile_version}", result.content)
-
+    save_to_firebase(firebase_ref, client_number, f"history_version{profile_version}", result.content)
     return result.content
 
 
 @st.cache_data
 def beh_dir_maker(profile_version, beh_dir_version, client_number, prompt, given_information):
-    profile_json = load_from_firebase(
-        firebase_ref, client_number, f"profile_version{profile_version}")
-    history = load_from_firebase(
-        firebase_ref, client_number, f"history_version{profile_version}")
+    profile_json = load_from_firebase(firebase_ref, client_number, f"profile_version{profile_version}")
+    history = load_from_firebase(firebase_ref, client_number, f"history_version{profile_version}")
 
     chat_prompt = PromptTemplate.from_template(prompt)
-
     chain = chat_prompt | llm
 
     diag = get_diag_from_given_information(given_information)
@@ -308,7 +297,6 @@ def beh_dir_maker(profile_version, beh_dir_version, client_number, prompt, given
         return None
 
     mse_few_shot_path = f"data/prompts/mse_few_shot/mse_{diag}.txt"
-
     instruction_form_path = f"data/prompts/instruction_form/instruction_form_{diag}.txt"
 
     try:
@@ -331,21 +319,52 @@ def beh_dir_maker(profile_version, beh_dir_version, client_number, prompt, given
         "instruction_form": instruction_form_content
     })
 
-    save_to_firebase(firebase_ref, client_number,
-                     f"beh_dir_version{beh_dir_version}", result.content)
-
+    save_to_firebase(firebase_ref, client_number, f"beh_dir_version{beh_dir_version}", result.content)
     return result.content
 
 
+# -------------------------------
+# NEW: keyword/regex detector
+# -------------------------------
+_PAST_DETAIL_PATTERNS = [
+    # Onset / timeline
+    r"\bwhen\b", r"\bsince when\b", r"\bhow long\b", r"\bduration\b", r"\bonset\b", r"\bstarted\b",
+    r"\bfirst time\b", r"\bago\b", r"\blast (week|month|year)\b", r"\bprevious\b", r"\bbefore\b",
+    # Stressors / triggers / context
+    r"\bstressor\b", r"\btrigger\b", r"\bcause\b", r"\bwhy did\b", r"\bwhat happened\b",
+    r"\bat that time\b", r"\bback then\b",
+    # Alleviating / exacerbating
+    r"\bbetter\b", r"\bworse\b", r"\balleviat", r"\bexacerbat", r"\brelieve\b", r"\bimprove\b",
+    # Memory / recall
+    r"\bremember\b", r"\brecall\b", r"\bcan you tell me about\b",
+    # Korean equivalents (common clinical prompts)
+    r"언제부터", r"얼마나 오래", r"기간", r"발병", r"시작", r"계기", r"원인", r"스트레스",
+    r"악화", r"호전", r"완화", r"기억", r"떠올"
+]
+_PAST_DETAIL_RE = re.compile("|".join(f"(?:{p})" for p in _PAST_DETAIL_PATTERNS), re.IGNORECASE)
+
+
+def is_past_detail_question(text: str) -> bool:
+    """Heuristic: returns True if the clinician question is likely about past detail/timeline/context."""
+    if not text:
+        return False
+    t = text.strip()
+    return bool(_PAST_DETAIL_RE.search(t))
+
+
 def create_conversational_agent(profile_version, beh_dir_version, client_number, system_prompt):
-    given_information = load_from_firebase(
-        firebase_ref, client_number, "given_information")
-    profile_json = load_from_firebase(
-        firebase_ref, client_number, f"profile_version{profile_version}")
-    history = load_from_firebase(
-        firebase_ref, client_number, f"history_version{profile_version}")
-    behavioral_instruction = load_from_firebase(
-        firebase_ref, client_number, f"beh_dir_version{beh_dir_version}")
+    given_information = load_from_firebase(firebase_ref, client_number, "given_information")
+    profile_json = load_from_firebase(firebase_ref, client_number, f"profile_version{profile_version}")
+    history = load_from_firebase(firebase_ref, client_number, f"history_version{profile_version}")
+    behavioral_instruction = load_from_firebase(firebase_ref, client_number, f"beh_dir_version{beh_dir_version}")
+
+    # NEW: diagnosis extracted once and used to gate recall-failure mode
+    diag = get_diag_from_given_information(given_information or "")
+
+    # IMPORTANT: system_prompt MUST contain {recall_failure_mode} placeholder.
+    # If it doesn't, we safely append it at the end (so the code doesn't crash).
+    if "{recall_failure_mode}" not in system_prompt:
+        system_prompt = system_prompt + "\n\n{recall_failure_mode}\n"
 
     chat_prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
@@ -353,31 +372,70 @@ def create_conversational_agent(profile_version, beh_dir_version, client_number,
         ("human", "{human_input}")
     ])
 
-    # Use InMemoryChatMessageHistory for proper message history management
-    # This memory object will persist across Streamlit reruns because of @st.cache_resource
     memory = InMemoryChatMessageHistory()
-
     chain = chat_prompt | chat_llm
 
-    def agent(human_input):
-        # Add the user message to memory FIRST
-        memory.add_user_message(human_input)
-        
-        # Create a list to pass to the chain with current memory state
-        # This ensures the LLM receives the actual message history including the latest user input
+    # -------------------------------
+    # NEW: recall-failure state machine
+    # -------------------------------
+    RECALL_FAILURE_PROB = 0.6      # user requested ~0.5-0.6
+    RECALL_FAILURE_TURNS = 2        # "Use 2 turns by default"
+    recall_failure_turns_left = 0   # state: how many future turns remain in failure mode
+
+    RECALL_FAILURE_TEXT = (
+        "RECALL-FAILURE MODE (apply only if relevant to the clinician's question):\n"
+        "Although the following information defines your background, you experience difficulty "
+        "spontaneously recalling or articulating parts of it due to your current depressive state. "
+        "If asked about past events, symptom onset, stressors, or factors that worsen or relieve symptoms, "
+        "you may respond vaguely or say you are not sure. If the clinician asks again with more specific "
+        "questions, you may recall partially and disclose reluctantly.\n"
+    )
+
+    def agent(human_input: str):
+        nonlocal recall_failure_turns_left
+
+        # 1) Decide whether we are in a "past detail" topic
+        past_detail = is_past_detail_question(human_input)
+
+        # 2) Topic-change rule: if NOT past-detail, deactivate immediately
+        if not past_detail:
+            recall_failure_turns_left = 0
+
+        # 3) If diagnosis is MDD and this is a past-detail question, probabilistically activate
+        if diag == "MDD" and past_detail and recall_failure_turns_left <= 0:
+            if random.random() < RECALL_FAILURE_PROB:
+                recall_failure_turns_left = RECALL_FAILURE_TURNS
+
+        # 4) Construct recall_failure_mode string for this turn
+        recall_failure_mode = RECALL_FAILURE_TEXT if recall_failure_turns_left > 0 else ""
+
+        # 5) Decrement after deciding for this turn (so it lasts exactly N turns)
+        if recall_failure_turns_left > 0:
+            recall_failure_turns_left -= 1
+
+        # -------------------------------
+        # FIX 1: Duplicate-last-user-message issue
+        # -------------------------------
+        # We DO NOT add the current human_input to memory before calling the chain,
+        # because the prompt already includes ("human", "{human_input}").
+        # If we add it first, the same question appears twice: once in chat_history and once as human_input.
         messages = list(memory.messages) if memory.messages else []
-        
+
         response = chain.invoke({
             "given_information": given_information,
             "current_date": FIXED_DATE,
             "profile_json": json.dumps(profile_json, indent=2),
             "history": history,
             "behavioral_instruction": behavioral_instruction,
+            "recall_failure_mode": recall_failure_mode,
             "chat_history": messages,
             "human_input": human_input
         })
-        # Add the AI response to memory
+
+        # Now append the turn to memory AFTER receiving the model response
+        memory.add_user_message(human_input)
         memory.add_ai_message(response.content)
+
         return response.content
 
     return agent, memory
@@ -390,9 +448,6 @@ def reset_agent_memory(agent_and_memory):
     """
     if agent_and_memory:
         agent, memory = agent_and_memory
-        # Clear all messages from memory by creating a new list without them
-        # Since InMemoryChatMessageHistory stores messages in an internal list,
-        # we need to clear it properly
         memory.messages.clear()
         return agent, memory
     return None
@@ -409,7 +464,6 @@ def save_conversation_to_firebase(firebase_ref, client_number, messages, con_age
         })
 
     timestamp = int(time.time())
-
     conversation_id = f"conversation_{con_agent_version}_{participant_name}_{timestamp}"
 
     content = {
@@ -420,6 +474,5 @@ def save_conversation_to_firebase(firebase_ref, client_number, messages, con_age
     }
 
     save_to_firebase(firebase_ref, client_number, conversation_id, content)
-
     st.success(f"Conversation saved with ID: {conversation_id}")
     return conversation_id
