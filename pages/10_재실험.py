@@ -80,7 +80,7 @@ def init_session_state():
 # ================================
 def show_intro_page():
     """Display introduction page with instructions"""
-    st.title("🔬 재실험 - MDD 가상환자 검증")
+    st.title("🔬 재실험")
     st.markdown("---")
     
     st.markdown("""
@@ -489,7 +489,7 @@ def show_validation_page():
                     st.info("자동으로 '적절함'으로 처리됩니다.")
                     responses[element] = "적절함"
                 else:
-                    st.caption(f"**SP 내용:** {sp_content}")
+                    st.caption(f"**SP 내용:** \n{sp_content}")
                     if help_text:
                         st.caption(help_text)
                     
