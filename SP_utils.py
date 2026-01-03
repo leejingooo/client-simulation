@@ -352,6 +352,43 @@ def is_past_detail_question(text: str) -> bool:
     return bool(_PAST_DETAIL_RE.search(t))
 
 
+def remove_detailed_examples_from_profile(profile_json):
+    """
+    Remove detailed examples from specific profile elements for UI display.
+    Elements with format "value (detailed example)" will be shown as just "value".
+    
+    Specifically handles:
+    - Impulsivity.self mutilating behavior risk: "high (Persistent thoughts of wanting to cut wrists with a knife)" -> "high"
+    - Impulsivity.suicidal attempt: "presence (Has put a handful of Tylenol in mouth but spit it out)" -> "presence"
+    """
+    if not profile_json:
+        return profile_json
+    
+    import copy
+    cleaned_profile = copy.deepcopy(profile_json)
+    
+    # Target fields that may have detailed examples
+    target_fields = [
+        ("Impulsivity", "self mutilating behavior risk"),
+        ("Impulsivity", "suicidal attempt"),
+        ("Impulsivity", "suicidal ideation"),
+        ("Impulsivity", "suicidal plan"),
+        ("Impulsivity", "homicide risk")
+    ]
+    
+    for section, field in target_fields:
+        if section in cleaned_profile and isinstance(cleaned_profile[section], dict):
+            if field in cleaned_profile[section]:
+                value = str(cleaned_profile[section][field])
+                # Extract only the part before the parenthesis
+                # e.g., "high (detailed example)" -> "high"
+                if "(" in value:
+                    cleaned_value = value.split("(")[0].strip()
+                    cleaned_profile[section][field] = cleaned_value
+    
+    return cleaned_profile
+
+
 def create_conversational_agent(profile_version, beh_dir_version, client_number, system_prompt):
     given_information = load_from_firebase(firebase_ref, client_number, "given_information")
     profile_json = load_from_firebase(firebase_ref, client_number, f"profile_version{profile_version}")

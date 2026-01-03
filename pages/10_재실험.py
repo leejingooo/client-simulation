@@ -7,7 +7,8 @@ from SP_utils import (
     create_conversational_agent, 
     get_diag_from_given_information,
     load_prompt_and_get_version,
-    sanitize_key
+    sanitize_key,
+    remove_detailed_examples_from_profile
 )
 from sp_construct_generator import create_sp_construct
 from langchain_core.messages import HumanMessage, AIMessage
@@ -333,13 +334,20 @@ def show_validation_page():
         st.warning("18_MDD_MFC_Editor 페이지에서 MFC 데이터를 확인하거나, 19_MFC_Copier 페이지에서 데이터를 복제해주세요.")
         return
     
-    # Get SP construct
+    # Get SP construct for UI display
+    # The construct will automatically use remove_detailed_examples for UI display
     given_form_path = f"data/prompts/paca_system_prompt/given_form_version{con_agent_version}.json"
+    
+    # Create a cleaned profile for construct generation (for UI display)
+    profile_for_construct = remove_detailed_examples_from_profile(profile)
+    
+    # Create SP construct - this uses cleaned profile without detailed examples
     sp_construct = create_sp_construct(
         client_number,
         f"{profile_version:.1f}",
         f"{beh_dir_version:.1f}",
-        given_form_path
+        given_form_path,
+        profile_override=profile_for_construct  # Pass cleaned profile
     )
     
     # Get diagnosis for system prompt

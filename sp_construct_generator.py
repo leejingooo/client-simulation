@@ -113,10 +113,17 @@ def get_nested_value(obj: Any, path: str) -> Any:
     return current
 
 
-def create_sp_construct(client_number: str, profile_version: str, instruction_version: str, given_form_path: str) -> Dict[str, Any]:
+def create_sp_construct(client_number: str, profile_version: str, instruction_version: str, given_form_path: str, profile_override: Any = None) -> Dict[str, Any]:
     """
     Create an SP construct with PSYCHE RUBRIC structure.
     Ensures all PSYCHE RUBRIC fields are present.
+    
+    Args:
+        client_number: Client number
+        profile_version: Profile version string
+        instruction_version: Instruction version string
+        given_form_path: Path to given form
+        profile_override: If provided, use this profile instead of loading from Firebase
     """
     
     # Normalize versions
@@ -149,7 +156,12 @@ def create_sp_construct(client_number: str, profile_version: str, instruction_ve
     if firebase_ref is None:
         raise RuntimeError("Firebase reference not available. Ensure the app provides Firebase configuration.")
 
-    profile = load_from_firebase(firebase_ref, client_number, firebase_profile_key)
+    # Use profile_override if provided, otherwise load from Firebase
+    if profile_override is not None:
+        profile = profile_override
+    else:
+        profile = load_from_firebase(firebase_ref, client_number, firebase_profile_key)
+    
     instruction = load_from_firebase(firebase_ref, client_number, firebase_beh_key)
 
     if profile is None and instruction is None:
