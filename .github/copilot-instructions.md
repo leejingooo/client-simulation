@@ -50,24 +50,19 @@ This codebase implements the **PSYCHE (Patient Simulation for Yielding psyCHiatr
 ├── sp_construct_generator.py        # SP construct generation post-conversation
 ├── paca_construct_generator.py      # PACA construct generation post-conversation
 ├── pages/                           # Streamlit pages (auto-discovered by framework)
-│   ├── 00_진행상태_확인.py          # Experiment progress dashboard
-│   ├── 01_experiment*_*.py         # Experiment pages per disorder/model (MDD/BD/OCD) - currently in research folder
-│   ├── 01_가상면담가에_대한_전문가_검증.py  # Expert validation of PACA agents (4.3)
-│   ├── 02_가상환자에_대한_전문가_검증.py  # SP authenticity validation (4.1, 4.2)
-│   ├── 05_json2csv.py              # Utility for converting Firebase JSON exports to CSV
-│   ├── 08_sp_validation_viewer.py  # View SP validation results
-│   ├── 09_plot.py                  # PSYCHE score visualization (uses evaluation data)
-│   ├── 10_plot2.py                 # Alternative visualization (5 experiments per model)
-│   ├── 10_plot3.py                 # Scatter plot for smaller vs large model comparison
-│   ├── 11_correlation_analysis.py  # Correlation analysis between expert and automated scores
 │   ├── 12_PSYCHE-Expert_Correlation.py  # Expert vs PSYCHE score comparison (6 validators × 24 experiments)
-│   ├── 13_SP_정량검증_데이터추출.py  # SP quantitative validation data extraction
-│   ├── 14_SP_정성검증_데이터추출.py  # SP qualitative validation data extraction
+│   ├── 13_SP_Quantitative.py       # SP quantitative validation data extraction (renamed from 13_SP_정량검증_데이터추출.py)
+│   ├── 14_SP_Qualitative.py        # SP qualitative validation data extraction (renamed from 14_SP_정성검증_데이터추출.py)
 │   ├── 15_Figure_Generator.py      # Publication-quality figure generation (Helvetica font, paper figures)
 │   ├── 16_MFC_Viewer.py            # MFC data viewer (Profile, History, Behavior inspection tool)
 │   ├── 17_Conversation_log_viewer.py  # SP-Expert conversation log viewer (validation studies)
-│   └── 연구자용 격리 폴더/          # Research-mode pages (hidden in production)
-│       └── 04_evaluation.py        # Automated PACA evaluation tool (4.4)
+│   ├── SP_validation/              # SP validation page subfolder
+│   ├── deprecated/                 # Deprecated pages (archived)
+│   └── 연구자용 격리 폴더 (연구모드시 페이지 복원)/  # Research-mode pages (hidden in production)
+│       ├── 01_experiment(MDD|BD|OCD)_<model>_<type>.py  # Experiment pages per disorder/model
+│       ├── 01_unified_<model>_<type>.py  # Unified experiment pages with client selection
+│       ├── 04_evaluation.py        # Automated PACA evaluation tool (4.4)
+│       └── 02_generation, 02_viewer, 03_ai_ai_viewer (접근제한).py  # Other research tools
 ├── data/
 │   ├── prompts/                    # Agent system prompts (versioned)
 │   │   ├── con-agent_system_prompt/  # SP system prompts (SP-Prompt-1/2/3)
@@ -546,10 +541,11 @@ for speaker, message in st.session_state.conversation_generator:
   - **Usage**: Select filters → choose conversation → review dialogue → export if needed
   - **Related pages**: Page 13 (SP Quantitative), Page 14 (SP Qualitative), Page 16 (MFC Viewer)
 - `pages/연구자용 격리 폴더 (연구모드시 페이지 복원)/`: Research-mode pages
-  - Contains disorder-specific experiment pages with guided variants (MDD, BD, OCD)
-  - Contains unified experiment pages allowing client selection via dropdown
+  - Contains disorder-specific experiment pages: `01_experiment(MDD|BD|OCD)_<model>_<type>.py`
+  - Contains unified experiment pages with client selection: `01_unified_<model>_<type>.py`
   - Contains `04_evaluation.py`: Automated PACA evaluation tool (generates PSYCHE scores by comparing SP vs PACA constructs)
-  - Historical experiment pages for various client profiles
+  - Contains access-restricted tools: `02_generation.py`, `02_viewer.py`, `03_ai_ai_viewer.py`
+  - Historical experiment pages: `01_환자_*.py`
 
 **Navigation pattern**:
 ```python
