@@ -57,6 +57,8 @@ if 'recall_failure_keywords' not in st.session_state:
         "악화", "worsen", "exacerbate", "완화", "relieve", "allevia",
         "스트레스", "stressor", "유발", "provoke", "기억", "recall", "remember"
     ]
+if 'recall_failure_states' not in st.session_state:
+    st.session_state.recall_failure_states = []  # Store state for each SP message
 
 # ================================
 # Configuration
@@ -332,7 +334,9 @@ elif st.session_state.sp_test_mode == 'chat':
                     recall_failure_turns_left[0] = RECALL_FAILURE_TURNS
             
             recall_failure_mode = RECALL_FAILURE_TEXT if recall_failure_turns_left[0] > 0 else ""
-            recall_failure_active[0] = recall_failure_turns_left[0] > 0
+            # Store the state BEFORE decrementing (this is the state for THIS turn)
+            is_active_this_turn = recall_failure_turns_left[0] > 0
+            recall_failure_active[0] = is_active_this_turn
             
             if recall_failure_turns_left[0] > 0:
                 recall_failure_turns_left[0] -= 1
@@ -353,11 +357,12 @@ elif st.session_state.sp_test_mode == 'chat':
             memory.add_user_message(human_input)
             memory.add_ai_message(response.content)
             
-            return response.content, recall_failure_active[0]
+            return response.content, is_active_this_turn
         
         st.session_state.sp_test_agent = agent
         st.session_state.sp_test_memory = memory
         st.session_state.recall_failure_active = recall_failure_active
+        st.session_state.recall_failure_states = []  # Reset states for new agent
         
         st.success("✅ SP 에이전트가 생성되었습니다!")
     
@@ -406,6 +411,7 @@ elif st.session_state.sp_test_mode == 'chat':
     st.caption("안녕하세요, 저는 정신과 의사 000입니다. 오늘 어떤 일로 오셨나요? 로 면담을 시작해주세요.")
     
     # Display conversation history
+    sp_message_idx = 0  # Track SP message index for recall_failure_states
     for idx, message in enumerate(memory.messages):
         if isinstance(message, HumanMessage):
             with st.chat_message("user"):
@@ -413,15 +419,14 @@ elif st.session_state.sp_test_mode == 'chat':
         else:
             with st.chat_message("assistant"):
                 st.markdown(message.content)
-                # Show recall failure status only for SP messages
-                # Note: We show the status from when this message was generated
-                # For the last message, we use the current state
-                if idx == len(memory.messages) - 1 and hasattr(st.session_state, 'recall_failure_active'):
-                    is_active = st.session_state.recall_failure_active[0]
+                # Show recall failure status for this specific SP message
+                if sp_message_idx < len(st.session_state.recall_failure_states):
+                    is_active = st.session_state.recall_failure_states[sp_message_idx]
                     if is_active:
                         st.caption("🔴 **Recall Failure Mode: ON**")
                     else:
                         st.caption("🟢 **Recall Failure Mode: OFF**")
+                sp_message_idx += 1
     
     # Chat input
     if prompt := st.chat_input("면담 내용을 입력하세요"):
@@ -433,6 +438,10 @@ elif st.session_state.sp_test_mode == 'chat':
             status_placeholder = st.empty()
             full_response, is_recall_active = agent(prompt)
             message_placeholder.markdown(full_response)
+            
+            # Store the state for this message
+            st.session_state.recall_failure_states.append(is_recall_active)
+            
             if is_recall_active:
                 status_placeholder.caption("🔴 **Recall Failure Mode: ON**")
             else:
@@ -449,6 +458,7 @@ elif st.session_state.sp_test_mode == 'chat':
         if st.button("🔄 대화 초기화", use_container_width=True):
             st.session_state.sp_test_agent = None
             st.session_state.sp_test_memory = None
+            st.session_state.recall_failure_states = []  # Clear stored states
             st.success("대화가 초기화되었습니다.")
             st.rerun()
     
