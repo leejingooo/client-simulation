@@ -794,10 +794,27 @@ def save_sp_validation(firebase_ref, page_number, client_number, responses, memo
         'additional_impressions': responses.get('additional_impressions', '')
     }
     
+    # Generate SP construct to get sp_content for each element
+    profile_version = 6.0
+    beh_dir_version = 6.0
+    con_agent_version = 6.0
+    given_form_path = f"data/prompts/paca_system_prompt/given_form_version{con_agent_version:.1f}.json"
+    sp_construct = create_sp_construct(
+        client_number,
+        f"{profile_version:.1f}",
+        f"{beh_dir_version:.1f}",
+        given_form_path
+    )
+    from evaluator import get_value_from_construct
+    
     # Add element validations
     for element in VALIDATION_ELEMENTS:
         if element in responses:
+            # Get SP content for this element
+            sp_content = get_value_from_construct(sp_construct, element)
+            
             validation_result['elements'][element] = {
+                'sp_content': str(sp_content) if sp_content else '',
                 'expert_choice': responses[element],
                 'is_appropriate': responses[element] == "적절함"
             }
