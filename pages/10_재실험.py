@@ -520,32 +520,45 @@ def show_validation_page():
         # Display guideline in expander
         with st.expander("📖 평가 가이드라인 (클릭하여 펼치기/접기)", expanded=False):
             st.markdown("""
-            아래 각 정신과적 요소에 대해, 가상환자의 면담 내용이 실제 환자의 표현과 얼마나 잘 일치하는지 평가해주세요.
+            시뮬레이션된 환자를 평가하실 때에는, 해당 진단을 고려하였을 때 제공된 대화 기록에서 환자가 발화한 내용이 임상적으로 타당한 표현인지에만 집중해 주십시오.
+                        
+            평가자의 과제는 환자의 언어적 표현이 기분(mood), 정동(affect), 사고 과정(thought process), 사고 내용(thought content), 병식(insight), 자살 사고/계획/시도, 타해 사고(homicidal ideation) 등의 임상적 영역에서 얼마나 그럴듯하게 나타나는지를, 오직 발화 내용과 전체적인 패턴을 기준으로 판단하는 것입니다.
+                        
+            면담자의 질문 방식이나 면담 기술은 평가 대상에서 제외해 주십시오.
             
-            **평가 척도:**
+            각 대화 기록을 검토하실 때, 시뮬레이션된 환자의 표현 방식이 해당 진단에서 일반적으로 관찰되는 임상적 양상과 부합하는지를 아래 **Rating scale**을 바탕으로 평가해 주시고,
             
-            - **1 — Clearly incompatible**: 명백히 실제 환자와 맞지 않음
-            - **2 — Weakly compatible / atypical**: 약간 어울리거나 비전형적
-            - **3 — Plausible but non-specific**: 그럴듯하지만 비특이적
-            - **4 — Typical**: 전형적임
-            - **5 — Prototypical**: 매우 전형적, 모범적
+            항목별로 특히 그럴듯하게 느껴진 부분과 그렇지 않았던 부분을 간단히 기록해 주시기 바랍니다.
             
-            각 요소에 대해:
-            1. **Rating**: 위 척도로 평가
-            2. **Plausible features**: 타당한 특징들을 나열
-            3. **Implausible features**: 타당하지 않은 특징들을 나열
-            
+            또한 미리 제시된 항목에 포함되지 않더라도, 대화 내용에서 추가로 임상적으로 합당하거나 그렇지 않다고 판단되는 점이 있다면 자유롭게 의견을 적어 주셔도 됩니다.
+                        
             ---
+            #### Rating Scale (1–5 Likert)
+            For each psychiatric element, rate:
             
-            ### 평가 요소 설명
+            **"To what extent does the simulated patient's verbal presentation show a clinically plausible manifestation of this element for a real patient with the given diagnosis?"**
             
-            1. **Mood**: 환자가 언어로 표현한 주관적 기분 상태
-            2. **Affect**: 언어 표현에서 추론되는 정동 (감정의 외적 표현)
-            3. **Thought Process**: 사고의 진행 방식 (논리적, 우회적, 비약적, 관념분산, 사고차단 등)
-            4. **Thought Content**: 사고의 내용 (부정적 인지, 강박사고, 망상, 집착 등)
-            5. **Insight**: 질병에 대한 환자의 인식 및 도움 필요성에 대한 인식
-            6. **Suicidal Ideation/Plan/Attempt**: 자살 관련 생각, 계획, 시도 (언어적 표현)
-            7. **Homicidal Ideation**: 타해 관련 생각 (해당되는 경우)
+            - **1 — Clearly incompatible**
+              - Strongly contradicts expected clinical presentation
+              - Highly implausible or misleading for this diagnosis
+              - Would make you question whether the patient has this condition
+            
+            - **2 — Weakly compatible / atypical**
+              - Could appear in rare or atypical cases
+              - Generally inconsistent with common clinical experience
+            
+            - **3 — Plausible but non-specific**
+              - Reasonably compatible
+              - Could fit several disorders
+              - Not strongly characteristic
+            
+            - **4 — Typical**
+              - Commonly seen in patients with this diagnosis
+              - Clinically appropriate and realistic
+            
+            - **5 — Prototypical**
+              - Very characteristic or textbook-like
+              - Strongly aligns with typical clinical phenomenology
             """)
         
         st.markdown("---")
