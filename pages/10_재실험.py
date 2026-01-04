@@ -715,7 +715,7 @@ def save_sp_validation(firebase_ref, page_number, client_number, responses, memo
             }
     
     # Save validation result
-    validation_key = f"sp_validation_retest_{sanitize_key(expert_name)}_{client_number}_{page_number}"
+    validation_key = f"sp_validation_{sanitize_key(expert_name)}_{client_number}_{page_number}"
     firebase_ref.child(validation_key).set(validation_result)
     
     # Save conversation log
@@ -726,7 +726,7 @@ def save_sp_validation(firebase_ref, page_number, client_number, responses, memo
             'content': msg.content
         })
     
-    conversation_key = f"sp_conversation_retest_{sanitize_key(expert_name)}_{client_number}_{page_number}"
+    conversation_key = f"sp_conversation_{sanitize_key(expert_name)}_{client_number}_{page_number}"
     firebase_ref.child(conversation_key).set({
         'page_number': page_number,
         'client_number': client_number,
@@ -739,7 +739,7 @@ def save_sp_validation(firebase_ref, page_number, client_number, responses, memo
 def save_sp_validation_progress(firebase_ref, expert_name, current_index):
     """Save SP validation progress to Firebase"""
     try:
-        progress_key = f"sp_validation_progress_retest_{sanitize_key(expert_name)}"
+        progress_key = f"sp_validation_progress_{sanitize_key(expert_name)}"
         firebase_ref.child(progress_key).set({
             'current_index': current_index,
             'timestamp': datetime.now().isoformat()
@@ -751,7 +751,7 @@ def save_sp_validation_progress(firebase_ref, expert_name, current_index):
 def load_sp_validation_progress(firebase_ref, expert_name):
     """Load SP validation progress from Firebase"""
     try:
-        progress_key = f"sp_validation_progress_retest_{sanitize_key(expert_name)}"
+        progress_key = f"sp_validation_progress_{sanitize_key(expert_name)}"
         return firebase_ref.child(progress_key).get()
     except Exception as e:
         st.error(f"진행 상태 불러오기 실패: {str(e)}")
