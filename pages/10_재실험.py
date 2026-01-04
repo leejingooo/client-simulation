@@ -332,20 +332,18 @@ def show_validation_page():
         st.warning("18_MDD_MFC_Editor 페이지에서 MFC 데이터를 확인하거나, 19_MFC_Copier 페이지에서 데이터를 복제해주세요.")
         return
     
-    # Get SP construct for UI display
-    # The construct will automatically use remove_detailed_examples for UI display
+    # Get SP construct
     given_form_path = f"data/prompts/paca_system_prompt/given_form_version{con_agent_version}.json"
     
-    # Create a cleaned profile for construct generation (for UI display)
+    # Remove detailed examples from profile for UI display (e.g., impulsivity explanations)
     profile_for_construct = remove_detailed_examples_from_profile(profile)
     
-    # Create SP construct - this uses cleaned profile without detailed examples
     sp_construct = create_sp_construct(
         client_number,
         f"{profile_version:.1f}",
         f"{beh_dir_version:.1f}",
         given_form_path,
-        profile_override=profile_for_construct  # Pass cleaned profile
+        profile_override=profile_for_construct
     )
     
     # Get diagnosis for system prompt
@@ -491,21 +489,28 @@ def show_validation_page():
             # Display element with SP content
             with st.expander(f"**{display_title}**", expanded=False):
                 if is_empty:
-                    st.caption("⚠️ 이 항목은 N/A입니다 (평가 불필요)")
-                    st.info("자동으로 '적절함'으로 처리됩니다.")
+                    st.info("ℹ️ 지시된 내용이 없어 자동으로 '적절함' 처리되었습니다.")
+                    st.markdown(f"**가상환자에게 지시된 내용:** (없음)")
+                    # Auto-set to '적절함'
                     responses[element] = "적절함"
                 else:
-                    st.caption(f"**SP 내용:** \n{sp_content}")
+                    st.markdown(f"**가상환자에게 지시된 내용:**\n{sp_content}")
+                    
+                    # Display help text if available
                     if help_text:
                         st.caption(help_text)
                     
+                    # Radio button for validation (only if content exists)
+                    current_value = responses.get(element, "선택 안함")
+                    if current_value not in ["선택 안함", "적절함", "적절하지 않음"]:
+                        current_value = "선택 안함"
+                    
                     choice = st.radio(
-                        "평가",
-                        options=["적절함", "적절하지 않음"],
-                        key=f"{response_key}_{element}",
-                        index=0 if responses.get(element) == "적절함" else (1 if responses.get(element) == "적절하지 않음" else 0),
-                        horizontal=True,
-                        label_visibility="collapsed"
+                        "가상환자는 위 내용을 적절히 시뮬레이션 하였습니까?",
+                        options=["선택 안함", "적절함", "적절하지 않음"],
+                        key=f"validation_{response_key}_{element}",
+                        index=["선택 안함", "적절함", "적절하지 않음"].index(current_value),
+                        horizontal=True
                     )
                     responses[element] = choice
         
