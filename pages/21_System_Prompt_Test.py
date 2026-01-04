@@ -37,6 +37,10 @@ if 'edited_prompt' not in st.session_state:
     st.session_state.edited_prompt = None
 if 'prompt_reset_counter' not in st.session_state:
     st.session_state.prompt_reset_counter = 0
+if 'show_message' not in st.session_state:
+    st.session_state.show_message = None
+if 'recall_failure_prob' not in st.session_state:
+    st.session_state.recall_failure_prob = 1.0
 
 # ================================
 # Configuration
@@ -48,6 +52,19 @@ BEH_DIR_VERSION = "6_0"
 st.title("🧪 System Prompt Test")
 st.markdown("System Prompt를 수정하고 즉시 가상환자(SP)를 테스트할 수 있습니다.")
 st.markdown("---")
+
+# Display any pending messages
+if st.session_state.show_message:
+    msg_type, msg_text = st.session_state.show_message
+    if msg_type == "success":
+        st.success(msg_text)
+    elif msg_type == "info":
+        st.info(msg_text)
+    elif msg_type == "warning":
+        st.warning(msg_text)
+    elif msg_type == "error":
+        st.error(msg_text)
+    st.session_state.show_message = None
 
 # ================================
 # Mode: Edit System Prompt
@@ -95,6 +112,23 @@ if st.session_state.sp_test_mode == 'edit':
     
     st.markdown("---")
     
+    # Recall Failure Probability Setting
+    st.subheader("⚙️ 설정")
+    st.markdown("**Recall Failure 확률 (MDD 환자 전용)**")
+    st.caption("MDD 환자가 과거 상세 질문에 대해 기억 회상 실패 모드를 활성화할 확률입니다.")
+    
+    recall_prob = st.slider(
+        "확률 설정",
+        min_value=0.0,
+        max_value=1.0,
+        value=st.session_state.recall_failure_prob,
+        step=0.1,
+        help="0.0 = 회상 실패 없음, 1.0 = 항상 회상 실패 모드 활성화"
+    )
+    st.session_state.recall_failure_prob = recall_prob
+    
+    st.markdown("---")
+    
     # Validation
     required_placeholders = [
         "{given_information}",
@@ -132,16 +166,15 @@ if st.session_state.sp_test_mode == 'edit':
         if st.button("🔄 수정 취소", use_container_width=True):
             st.session_state.edited_prompt = current_prompt
             st.session_state.prompt_reset_counter += 1  # Force widget recreation
-            st.success("수정 내용이 취소되었습니다.")
+            st.session_state.show_message = ("success", "수정 내용이 취소되었습니다.")
             st.rerun()
     
     with col_btn3:
         if st.button("💾 Firebase에 저장", type="secondary", use_container_width=True):
             try:
                 firebase_ref.child("system_prompts/con-agent_version6_0").set(st.session_state.edited_prompt)
-                st.balloons()
-                st.success("✅ System Prompt가 Firebase에 저장되었습니다!")
-                st.info("💡 참고: 10_재실험 페이지는 아직 로컬 파일을 사용하므로 이 변경사항이 적용되지 않습니다.")
+                st.session_state.prompt_reset_counter += 1  # Force widget recreation to sync
+                st.session_state.show_message = ("success", "✅ System Prompt가 Firebase에 저장되었습니다!\n\n💡 참고: 10_재실험 페이지는 아직 로컬 파일을 사용하므로 이 변경사항이 적용되지 않습니다.")
                 st.rerun()
             except Exception as e:
                 st.error(f"저장 실패: {str(e)}")
@@ -149,9 +182,9 @@ if st.session_state.sp_test_mode == 'edit':
     # Button explanations
     st.info("""
     **📌 버튼 설명**
-    - **테스트만 하기**: 임시 경로(`con-agent_version6_0_test`)에 저장하고 테스트. 다른 페이지에 영향 없음.
+    - **테스트만 하기**: 임시 경로에 저장하고 테스트
     - **수정 취소**: 우측의 수정 내용을 좌측의 원본으로 되돌림
-    - **Firebase에 저장**: Firebase 원본 경로(`con-agent_version6_0`)에 저장. 
+    - **Firebase에 저장**: Firebase 원본 경로에 저장. 테스트 완료하고 성능이 괜찮으면 저장하시면 됩니다.
       현재는 다른 페이지들(10_재실험 등)은 로컬 파일을 사용하므로 이 곳의 수정 사항은 반영되지 않음.
     """)
 
@@ -223,8 +256,8 @@ elif st.session_state.sp_test_mode == 'chat':
         memory = InMemoryChatMessageHistory()
         chain = chat_prompt | chat_llm
         
-        # Recall failure state machine
-        RECALL_FAILURE_PROB = 1.0
+        # Recall failure state machine - Use user-configured probability
+        RECALL_FAILURE_PROB = st.session_state.recall_failure_prob
         RECALL_FAILURE_TURNS = 2
         recall_failure_turns_left = [0]  # Use list for nonlocal mutation
         
@@ -287,6 +320,18 @@ elif st.session_state.sp_test_mode == 'chat':
     
     agent = st.session_state.sp_test_agent
     memory = st.session_state.sp_test_memory
+    
+    # Display test configuration in expandable section
+    with st.expander("🔍 현재 테스트 설정", expanded=False):
+        st.markdown("**System Prompt (처음 100자)**")
+        test_prompt_preview = firebase_ref.child("system_prompts/con-agent_version6_0_test").get()
+        if test_prompt_preview:
+            st.code(test_prompt_preview[:100] + "...")
+        
+        st.markdown("**Recall Failure 확률**")
+        st.info(f"현재 설정: **{st.session_state.recall_failure_prob:.1f}** (0.0 = 회상 실패 없음, 1.0 = 항상 활성화)")
+    
+    st.markdown("---")
     
     # Display info
     col_info1, col_info2, col_info3 = st.columns(3)
