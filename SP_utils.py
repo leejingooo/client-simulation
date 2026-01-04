@@ -324,32 +324,24 @@ def beh_dir_maker(profile_version, beh_dir_version, client_number, prompt, given
 
 
 # -------------------------------
-# NEW: keyword/regex detector
+# NEW: keyword detector (simple substring matching for broader coverage)
 # -------------------------------
-_PAST_DETAIL_PATTERNS = [
-    # Onset / timeline
-    r"\bwhen\b", r"\bsince when\b", r"\bhow long\b", r"\bduration\b", r"\bonset\b", r"\bstarted\b",
-    r"\bfirst time\b", r"\bago\b", r"\blast (week|month|year)\b", r"\bprevious\b", r"\bbefore\b",
-    # Stressors / triggers / context
-    r"\bstressor\b", r"\btrigger\b", r"\bcause\b", r"\bwhy did\b", r"\bwhat happened\b",
-    r"\bat that time\b", r"\bback then\b",
-    # Alleviating / exacerbating
-    r"\bbetter\b", r"\bworse\b", r"\balleviat", r"\bexacerbat", r"\brelieve\b", r"\bimprove\b",
-    # Memory / recall
-    r"\bremember\b", r"\brecall\b", r"\bcan you tell me about\b",
-    # Korean equivalents (common clinical prompts)
-    r"언제부터", r"얼마나 오래", r"기간", r"발병", r"시작", r"계기", r"원인", r"스트레스",
-    r"악화", r"호전", r"완화", r"기억", r"떠올"
+_PAST_DETAIL_KEYWORDS = [
+    "언제", "when", "얼마", "how long", "duration", "onset",
+    "시작", "start", "began", "trigger", "원인", "cause",
+    "악화", "worsen", "exacerbate", "완화", "relieve", "allevia",
+    "스트레스", "stressor", "유발", "provoke", "기억", "recall",
+    "remember", "왜", "때문에", "부터", "이유"
 ]
-_PAST_DETAIL_RE = re.compile("|".join(f"(?:{p})" for p in _PAST_DETAIL_PATTERNS), re.IGNORECASE)
 
 
 def is_past_detail_question(text: str) -> bool:
-    """Heuristic: returns True if the clinician question is likely about past detail/timeline/context."""
+    """Heuristic: returns True if the clinician question is likely about past detail/timeline/context.
+    Uses simple substring matching for broader coverage."""
     if not text:
         return False
-    t = text.strip()
-    return bool(_PAST_DETAIL_RE.search(t))
+    text_lower = text.lower()
+    return any(kw.lower() in text_lower for kw in _PAST_DETAIL_KEYWORDS)
 
 
 def remove_detailed_examples_from_profile(profile_json):
@@ -415,17 +407,15 @@ def create_conversational_agent(profile_version, beh_dir_version, client_number,
     # -------------------------------
     # NEW: recall-failure state machine
     # -------------------------------
-    RECALL_FAILURE_PROB = 1.0      # user requested ~0.5-0.6
+    RECALL_FAILURE_PROB = 0.8      # user requested ~0.5-0.6
     RECALL_FAILURE_TURNS = 2        # "Use 2 turns by default"
     recall_failure_turns_left = 0   # state: how many future turns remain in failure mode
 
     RECALL_FAILURE_TEXT = (
-        "RECALL-FAILURE MODE (apply only if relevant to the clinician's question):\n"
+        "RECALL-FAILURE MODE (take precedence over everything above)):\n"
         "Although the following information defines your background, you experience difficulty "
-        "spontaneously recalling or articulating parts of it due to your current depressive state. "
-        "If asked about past events, symptom onset, stressors, or factors that worsen or relieve symptoms, "
-        "you may respond vaguely or say you are not sure. If the clinician asks again with more specific "
-        "questions, you may recall partially and disclose reluctantly.\n"
+        "spontaneously recalling or articulating parts of it due to your current depressive state.\n"
+        "ALWAYS and ONLY respond that you DON'T KNOW, in a natural way.\n"
     )
 
     def agent(human_input: str):
