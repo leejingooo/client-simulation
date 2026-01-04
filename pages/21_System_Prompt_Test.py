@@ -129,6 +129,9 @@ if st.session_state.sp_test_mode == 'edit':
     with col_btn2:
         if st.button("🔄 수정 취소", use_container_width=True):
             st.session_state.edited_prompt = current_prompt
+            # Delete widget key to force refresh
+            if 'edit_prompt_area' in st.session_state:
+                del st.session_state['edit_prompt_area']
             st.success("수정 내용이 취소되었습니다.")
             st.rerun()
     
