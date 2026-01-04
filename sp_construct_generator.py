@@ -205,29 +205,33 @@ def create_sp_construct(client_number: str, profile_version: str, instruction_ve
     # Collect all diagnosis_1, diagnosis_2, etc.
     family_history = get_nested_value(profile, "Family history")
     if family_history and isinstance(family_history, dict):
-        # Collect diagnosis_n entries
+        # Collect diagnosis_n entries (they are direct values, not nested)
         diagnosis_values = []
         for key in sorted(family_history.keys()):
             if key.startswith("diagnosis_"):
                 val = family_history[key]
-                if val and str(val).strip() and str(val).lower() not in ['none', 'n/a', 'null']:
-                    diagnosis_values.append(str(val))
+                if val:
+                    val_str = str(val).strip()
+                    if val_str.lower() not in ['none', 'n/a', 'null', '']:
+                        diagnosis_values.append(val_str)
         
         if diagnosis_values:
-            sp_construct["Family history"]["diagnosis"] = " ".join(diagnosis_values)
+            sp_construct["Family history"]["diagnosis"] = " | ".join(diagnosis_values)
         else:
             sp_construct["Family history"]["diagnosis"] = ""
         
-        # Collect substance_use_n entries
+        # Collect substance_use_n entries (they are also direct values)
         substance_values = []
         for key in sorted(family_history.keys()):
             if key.startswith("substance_use_") or key.startswith("substance use_"):
                 val = family_history[key]
-                if val and str(val).strip() and str(val).lower() not in ['none', 'n/a', 'null']:
-                    substance_values.append(str(val))
+                if val:
+                    val_str = str(val).strip()
+                    if val_str.lower() not in ['none', 'n/a', 'null', '']:
+                        substance_values.append(val_str)
         
         if substance_values:
-            sp_construct["Family history"]["substance use"] = " ".join(substance_values)
+            sp_construct["Family history"]["substance use"] = " | ".join(substance_values)
         else:
             sp_construct["Family history"]["substance use"] = ""
     else:
@@ -281,13 +285,23 @@ def create_sp_construct(client_number: str, profile_version: str, instruction_ve
         if field not in mse_candidates:
             return raw_value
         
-        raw_lower = raw_value.lower()
+        raw_lower = raw_value.lower().strip()
         candidates = mse_candidates[field]
         
         # Exact match (case-insensitive)
         for candidate in candidates:
             if raw_lower == candidate.lower():
                 return candidate
+        
+        # Special handling for Spontaneity with parentheses
+        # Extract only "(+)" or "(-)" from strings like "(+) explanation" or "(-) explanation"
+        if field == "Spontaneity":
+            # Check for (+) pattern
+            if "(+)" in raw_value or "( +)" in raw_value or "(+ )" in raw_value or "+" in raw_value:
+                return "(+)"
+            # Check for (-) pattern
+            elif "(-)" in raw_value or "( -)" in raw_value or "(- )" in raw_value or "-" in raw_value:
+                return "(-)"
         
         # For Affect: allow multiple selections (comma-separated)
         if field == "Affect":
@@ -318,8 +332,9 @@ def create_sp_construct(client_number: str, profile_version: str, instruction_ve
             if candidate.lower() in raw_lower or raw_lower in candidate.lower():
                 return candidate
         
-        # Default: return first candidate if no match found
-        return candidates[0] if candidates else raw_value
+        # Default: return original value if no match found
+        # Don't fallback to first candidate as it may be incorrect
+        return raw_value
     
     mse_fields = [
         "Mood",
