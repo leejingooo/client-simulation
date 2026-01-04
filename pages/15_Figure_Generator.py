@@ -224,6 +224,206 @@ def create_correlation_plot_average(psyche_scores, avg_expert_scores, figsize=(8
     plt.tight_layout()
     return fig
 
+def create_correlation_plot_average_with_errors(psyche_scores, avg_expert_scores, figsize=(8, 8)):
+    """Figure 1-1b: Average expert score correlation plot with top 3 error highlighting."""
+    fig, ax = plt.subplots(figsize=figsize)
+    
+    # 데이터 준비 및 error 계산
+    data_by_model = {model: [] for model in COLOR_MAP.keys()}
+    errors = []  # List of (abs_error, error, exp, psyche, expert, model)
+    
+    for exp in EXPERIMENT_NUMBERS:
+        psyche = psyche_scores.get(exp)
+        expert = avg_expert_scores.get(exp)
+        if psyche is not None and expert is not None:
+            model = get_model_from_exp(exp[1])
+            data_by_model[model].append((psyche, expert))
+            
+            # Calculate error (Expert - PSYCHE)
+            error = expert - psyche
+            abs_error = abs(error)
+            errors.append((abs_error, error, exp, psyche, expert, model))
+    
+    # Sort by absolute error and get top 3
+    errors.sort(reverse=True, key=lambda x: x[0])
+    top_3_errors = errors[:3]
+    top_3_exps = {err[2] for err in top_3_errors}
+    
+    # Scatter plot - regular points
+    all_x, all_y = [], []
+    for model, points in data_by_model.items():
+        if points:
+            x_vals = [p[0] for p in points]
+            y_vals = [p[1] for p in points]
+            ax.scatter(x_vals, y_vals, 
+                      color=COLOR_MAP[model],
+                      label=LABEL_MAP[model],
+                      s=MARKER_MAP[model]['size'],
+                      marker=MARKER_MAP[model]['marker'],
+                      alpha=0.7,
+                      edgecolors='black',
+                      linewidths=1.5,
+                      zorder=2)
+            all_x.extend(x_vals)
+            all_y.extend(y_vals)
+    
+    # Highlight top 3 errors with red circles and labels
+    for rank, (abs_err, err, exp, psyche, expert, model) in enumerate(top_3_errors, 1):
+        # Large red circle
+        ax.scatter([psyche], [expert], 
+                  s=800, 
+                  facecolors='none',
+                  edgecolors='red',
+                  linewidths=3,
+                  zorder=3)
+        
+        # Rank label
+        ax.text(psyche, expert, str(rank),
+               fontsize=28, fontweight='bold',
+               ha='center', va='center',
+               color='red',
+               family='Helvetica',
+               zorder=4)
+    
+    # 회귀선
+    if len(all_x) >= 2:
+        z = np.polyfit(all_x, all_y, 1)
+        p = np.poly1d(z)
+        x_line = np.linspace(min(all_x), max(all_x), 100)
+        ax.plot(x_line, p(x_line), '#3498db', linestyle='-', linewidth=2, zorder=1)
+        
+        # Correlation
+        correlation, p_value = stats.pearsonr(all_x, all_y)
+        p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
+        ax.text(0.3, 0.10, f'r = {correlation:.4f}, {p_text}',
+               transform=ax.transAxes, fontsize=22, family='Helvetica')
+    
+    # 스타일링
+    ax.set_title('PSYCHE SCORE vs. Expert score\n(Top 3 Errors Highlighted)', 
+                fontsize=32, pad=20, family='Helvetica')
+    ax.set_xlabel('PSYCHE SCORE', fontsize=36, family='Helvetica')
+    ax.set_ylabel('Expert score', fontsize=36, family='Helvetica')
+    ax.set_yticks([5, 35, 65])
+    ax.set_xticks([5, 30, 55])
+    ax.tick_params(labelsize=32)
+    ax.legend(loc='upper left', prop={'size': 18, 'weight': 'bold', 'family': 'Helvetica'})
+    
+    # 테두리
+    for spine in ax.spines.values():
+        spine.set_color('black')
+        spine.set_linewidth(2)
+    
+    plt.tight_layout()
+    return fig, top_3_errors
+
+def create_correlation_plot_average_with_residuals(psyche_scores, avg_expert_scores, figsize=(8, 8)):
+    """Figure 1-1c: Average expert score correlation plot with top 3 residual errors highlighted.
+    
+    Residual = distance from regression line (more statistically meaningful outlier detection)
+    """
+    fig, ax = plt.subplots(figsize=figsize)
+    
+    # 데이터 준비
+    data_by_model = {model: [] for model in COLOR_MAP.keys()}
+    all_data = []  # (psyche, expert, exp, model)
+    
+    for exp in EXPERIMENT_NUMBERS:
+        psyche = psyche_scores.get(exp)
+        expert = avg_expert_scores.get(exp)
+        if psyche is not None and expert is not None:
+            model = get_model_from_exp(exp[1])
+            data_by_model[model].append((psyche, expert))
+            all_data.append((psyche, expert, exp, model))
+    
+    # 회귀선 계산
+    all_x = [d[0] for d in all_data]
+    all_y = [d[1] for d in all_data]
+    
+    if len(all_x) < 2:
+        return None, []
+    
+    # Linear regression: y = ax + b
+    z = np.polyfit(all_x, all_y, 1)
+    p = np.poly1d(z)
+    
+    # Calculate residuals for each point
+    residuals = []  # (abs_residual, residual, exp, psyche, expert, model, predicted)
+    for psyche, expert, exp, model in all_data:
+        predicted = p(psyche)
+        residual = expert - predicted  # Actual - Predicted
+        abs_residual = abs(residual)
+        residuals.append((abs_residual, residual, exp, psyche, expert, model, predicted))
+    
+    # Sort by absolute residual and get top 3
+    residuals.sort(reverse=True, key=lambda x: x[0])
+    top_3_residuals = residuals[:3]
+    top_3_exps = {res[2] for res in top_3_residuals}
+    
+    # Scatter plot - regular points
+    for model, points in data_by_model.items():
+        if points:
+            x_vals = [p[0] for p in points]
+            y_vals = [p[1] for p in points]
+            ax.scatter(x_vals, y_vals, 
+                      color=COLOR_MAP[model],
+                      label=LABEL_MAP[model],
+                      s=MARKER_MAP[model]['size'],
+                      marker=MARKER_MAP[model]['marker'],
+                      alpha=0.7,
+                      edgecolors='black',
+                      linewidths=1.5,
+                      zorder=2)
+    
+    # 회귀선
+    x_line = np.linspace(min(all_x), max(all_x), 100)
+    ax.plot(x_line, p(x_line), '#3498db', linestyle='-', linewidth=2, zorder=1)
+    
+    # Highlight top 3 residuals with red circles and labels
+    for rank, (abs_res, res, exp, psyche, expert, model, predicted) in enumerate(top_3_residuals, 1):
+        # Large red circle
+        ax.scatter([psyche], [expert], 
+                  s=800, 
+                  facecolors='none',
+                  edgecolors='red',
+                  linewidths=3,
+                  zorder=3)
+        
+        # Rank label
+        ax.text(psyche, expert, str(rank),
+               fontsize=28, fontweight='bold',
+               ha='center', va='center',
+               color='red',
+               family='Helvetica',
+               zorder=4)
+        
+        # Draw residual line (vertical line to regression)
+        ax.plot([psyche, psyche], [expert, predicted],
+               color='red', linestyle='--', linewidth=2, alpha=0.6, zorder=1)
+    
+    # Correlation info
+    correlation, p_value = stats.pearsonr(all_x, all_y)
+    p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
+    ax.text(0.3, 0.10, f'r = {correlation:.4f}, {p_text}',
+           transform=ax.transAxes, fontsize=22, family='Helvetica')
+    
+    # 스타일링
+    ax.set_title('PSYCHE SCORE vs. Expert score\n(Top 3 Residual Errors Highlighted)', 
+                fontsize=32, pad=20, family='Helvetica')
+    ax.set_xlabel('PSYCHE SCORE', fontsize=36, family='Helvetica')
+    ax.set_ylabel('Expert score', fontsize=36, family='Helvetica')
+    ax.set_yticks([5, 35, 65])
+    ax.set_xticks([5, 30, 55])
+    ax.tick_params(labelsize=32)
+    ax.legend(loc='upper left', prop={'size': 18, 'weight': 'bold', 'family': 'Helvetica'})
+    
+    # 테두리
+    for spine in ax.spines.values():
+        spine.set_color('black')
+        spine.set_linewidth(2)
+    
+    plt.tight_layout()
+    return fig, top_3_residuals
+
 def create_correlation_plot_by_validator(psyche_scores, expert_data):
     """Figure 1-2: Individual validator correlation plots."""
     fig, axes = plt.subplots(2, 3, figsize=(18, 12))
@@ -987,7 +1187,14 @@ def main():
     # ================================
     st.markdown("## 📈 Figure 1: PSYCHE-Expert Correlation")
     
-    tab1, tab2, tab3, tab4 = st.tabs(["Average Expert", "Individual Validators", "By Disorder", "By Category"])
+    tab1, tab1b, tab1c, tab2, tab3, tab4 = st.tabs([
+        "1-1: Average Expert", 
+        "1-1b: Error Analysis (Raw)", 
+        "1-1c: Error Analysis (Residual)",
+        "1-2: Individual Validators", 
+        "1-3: By Disorder", 
+        "1-4: By Category"
+    ])
     
     with tab1:
         st.markdown("### Figure 1-1: Average Expert Score")
@@ -1010,6 +1217,140 @@ def main():
                 mime="image/png"
             )
         plt.close(fig1_1)
+    
+    with tab1b:
+        st.markdown("### Figure 1-1b: Error Analysis (Top 3 Largest Errors)")
+        st.caption("Expert score - PSYCHE SCORE 차이가 가장 큰 실험들을 빨간색으로 표시")
+        
+        if psyche_scores and avg_expert_scores:
+            fig1_1b, top_3_errors = create_correlation_plot_average_with_errors(psyche_scores, avg_expert_scores)
+            st.pyplot(fig1_1b)
+            
+            # Display top 3 error information
+            st.markdown("#### 🔴 Top 3 Largest Errors")
+            st.markdown("**Error = Expert score - PSYCHE SCORE**")
+            
+            for rank, (abs_err, err, exp, psyche, expert, model) in enumerate(top_3_errors, 1):
+                client_num, exp_num = exp
+                
+                # Determine disorder
+                disorder = DISORDER_MAP.get(client_num, "Unknown")
+                disorder_name = DISORDER_NAMES.get(disorder, "Unknown")
+                
+                # Create detailed info
+                with st.expander(f"**Rank {rank}: Error = {err:+.2f}** (|Error| = {abs_err:.2f})"):
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.metric("Client Number", f"{client_num}")
+                        st.metric("Disorder", disorder_name)
+                        st.metric("Model", LABEL_MAP.get(model, model))
+                    with col2:
+                        st.metric("Experiment Number", f"{exp_num}")
+                        st.metric("PSYCHE SCORE", f"{psyche:.2f}")
+                        st.metric("Expert score", f"{expert:.2f}")
+                    
+                    # Error interpretation
+                    if err > 0:
+                        st.info(f"✅ Expert scored **higher** than PSYCHE by {err:.2f} points → PSYCHE may have underestimated")
+                    else:
+                        st.warning(f"⚠️ Expert scored **lower** than PSYCHE by {abs(err):.2f} points → PSYCHE may have overestimated")
+            
+            # Download buttons
+            col1, col2 = st.columns(2)
+            with col1:
+                st.download_button(
+                    label="📥 Download PNG (300 DPI)",
+                    data=fig_to_bytes(fig1_1b),
+                    file_name="Fig1-1b_Error_Analysis.png",
+                    mime="image/png"
+                )
+            with col2:
+                st.download_button(
+                    label="📥 Download PNG (600 DPI)",
+                    data=fig_to_bytes(fig1_1b, dpi=600),
+                    file_name="Fig1-1b_Error_Analysis_600dpi.png",
+                    mime="image/png"
+                )
+            plt.close(fig1_1b)
+        else:
+            st.warning("데이터가 없습니다.")
+    
+    with tab1c:
+        st.markdown("### Figure 1-1c: Residual Error Analysis (Top 3 Outliers)")
+        st.caption("추세선에서 가장 멀리 떨어진 점들을 빨간색으로 표시 (통계적 outlier detection)")
+        
+        if psyche_scores and avg_expert_scores:
+            fig1_1c, top_3_residuals = create_correlation_plot_average_with_residuals(psyche_scores, avg_expert_scores)
+            
+            if fig1_1c:
+                st.pyplot(fig1_1c)
+                
+                # Display top 3 residual error information
+                st.markdown("#### 🔴 Top 3 Largest Residual Errors")
+                st.markdown("**Residual = Actual Expert score - Predicted Expert score (from regression line)**")
+                st.info("💡 **Residual error는 전체 데이터의 경향성을 고려한 편차로, 통계적으로 더 의미있는 outlier입니다.**")
+                
+                for rank, (abs_res, res, exp, psyche, expert, model, predicted) in enumerate(top_3_residuals, 1):
+                    client_num, exp_num = exp
+                    
+                    # Determine disorder
+                    disorder = DISORDER_MAP.get(client_num, "Unknown")
+                    disorder_name = DISORDER_NAMES.get(disorder, "Unknown")
+                    
+                    # Create detailed info
+                    with st.expander(f"**Rank {rank}: Residual = {res:+.2f}** (|Residual| = {abs_res:.2f})"):
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            st.metric("Client Number", f"{client_num}")
+                            st.metric("Disorder", disorder_name)
+                        with col2:
+                            st.metric("Experiment Number", f"{exp_num}")
+                            st.metric("Model", LABEL_MAP.get(model, model))
+                        with col3:
+                            st.metric("PSYCHE SCORE", f"{psyche:.2f}")
+                            st.metric("Expert score", f"{expert:.2f}")
+                        
+                        st.markdown("---")
+                        st.markdown("**📊 Residual Analysis**")
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.metric("Predicted Expert score", f"{predicted:.2f}", 
+                                     help="Expected score based on regression line")
+                        with col2:
+                            st.metric("Residual Error", f"{res:+.2f}",
+                                     help="Actual - Predicted")
+                        
+                        # Error interpretation
+                        if res > 0:
+                            st.success(f"📈 Expert scored **{abs(res):.2f} points higher** than expected from the trend → Unusual positive deviation")
+                        else:
+                            st.warning(f"📉 Expert scored **{abs(res):.2f} points lower** than expected from the trend → Unusual negative deviation")
+                        
+                        # Compare with raw difference
+                        raw_diff = expert - psyche
+                        st.info(f"ℹ️ Raw difference (Expert - PSYCHE) = {raw_diff:+.2f} vs Residual = {res:+.2f}")
+                
+                # Download buttons
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.download_button(
+                        label="📥 Download PNG (300 DPI)",
+                        data=fig_to_bytes(fig1_1c),
+                        file_name="Fig1-1c_Residual_Error_Analysis.png",
+                        mime="image/png"
+                    )
+                with col2:
+                    st.download_button(
+                        label="📥 Download PNG (600 DPI)",
+                        data=fig_to_bytes(fig1_1c, dpi=600),
+                        file_name="Fig1-1c_Residual_Error_Analysis_600dpi.png",
+                        mime="image/png"
+                    )
+                plt.close(fig1_1c)
+            else:
+                st.warning("회귀선을 계산할 수 없습니다 (데이터 부족).")
+        else:
+            st.warning("데이터가 없습니다.")
     
     with tab2:
         st.markdown("### Figure 1-2: Individual Validators")
