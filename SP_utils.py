@@ -407,9 +407,11 @@ def create_conversational_agent(profile_version, beh_dir_version, client_number,
     # -------------------------------
     # NEW: recall-failure state machine
     # -------------------------------
-    RECALL_FAILURE_PROB = 0.8      # user requested ~0.5-0.6
-    RECALL_FAILURE_TURNS = 2        # "Use 2 turns by default"
-    recall_failure_turns_left = 0   # state: how many future turns remain in failure mode
+    # State variables:
+    # - current_prob: Current activation probability (0.8 -> 0.4 -> 0.0)
+    # - is_mode_on: Whether recall failure mode is currently active
+    current_prob = 0.8
+    is_mode_on = False
 
     RECALL_FAILURE_TEXT = (
         "RECALL-FAILURE MODE (take precedence over everything above)):\n"
@@ -419,26 +421,36 @@ def create_conversational_agent(profile_version, beh_dir_version, client_number,
     )
 
     def agent(human_input: str):
-        nonlocal recall_failure_turns_left
+        nonlocal current_prob, is_mode_on
 
         # 1) Decide whether we are in a "past detail" topic
         past_detail = is_past_detail_question(human_input)
 
-        # 2) Topic-change rule: if NOT past-detail, deactivate immediately
+        # 2) If keyword NOT found: turn OFF and reset prob to 0.8
         if not past_detail:
-            recall_failure_turns_left = 0
+            is_mode_on = False
+            current_prob = 0.8
 
-        # 3) If diagnosis is MDD and this is a past-detail question, probabilistically activate
-        if diag == "MDD" and past_detail and recall_failure_turns_left <= 0:
-            if random.random() < RECALL_FAILURE_PROB:
-                recall_failure_turns_left = RECALL_FAILURE_TURNS
+        # 3) If keyword found and diagnosis is MDD: probabilistic activation
+        elif diag == "MDD":
+            # If prob is 0.0, it means we've been on for 3+ consecutive turns
+            # Turn OFF and reset prob to 0.8 for next time
+            if current_prob <= 0.0:
+                is_mode_on = False
+                current_prob = 0.8
+            else:
+                # Try to activate with current_prob
+                if random.random() < current_prob:
+                    # Success: turn ON and decrease prob by 0.4
+                    is_mode_on = True
+                    current_prob -= 0.4
+                else:
+                    # Failed to activate: turn OFF and reset prob to 0.8
+                    is_mode_on = False
+                    current_prob = 0.8
 
         # 4) Construct recall_failure_mode string for this turn
-        recall_failure_mode = RECALL_FAILURE_TEXT if recall_failure_turns_left > 0 else ""
-
-        # 5) Decrement after deciding for this turn (so it lasts exactly N turns)
-        if recall_failure_turns_left > 0:
-            recall_failure_turns_left -= 1
+        recall_failure_mode = RECALL_FAILURE_TEXT if is_mode_on else ""
 
         # -------------------------------
         # FIX 1: Duplicate-last-user-message issue

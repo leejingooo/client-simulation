@@ -945,7 +945,7 @@ def create_weight_correlation_heatmaps(element_scores_psyche, element_scores_exp
     cbar2 = plt.colorbar(im2, ax=ax2)
     cbar2.ax.set_ylabel('Correlation', fontsize=24, family='Helvetica')
     cbar2.ax.tick_params(labelsize=24)
-    cbar2.set_ticks([0.84, 0.91])  # Example code 스타일: 2개만 표기
+    cbar2.set_ticks([0.84, 0.90])  # Example code 스타일: 2개만 표기
     
     ax2.set_xlabel('$w_{Behavior}$', fontsize=32, family='Helvetica')
     ax2.set_ylabel('$w_{Impulsivity}$', fontsize=32, family='Helvetica')

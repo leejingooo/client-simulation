@@ -121,12 +121,12 @@ This codebase implements the **PSYCHE (Patient Simulation for Yielding psyCHiatr
      3. Instructions aligning LLM with real psychiatric patients (counters assistant-tuning bias)
    - **Recall Failure Mechanism** (added 2026-01-03 for MDD patients):
      - **Purpose**: Simulates memory/recall difficulties common in depression
-     - **Activation**: MDD patients have probability (default 1.0, configurable) to enter "recall failure mode" for 2 turns when asked about past details (onset, duration, triggers, stressors, alleviating/exacerbating factors)
+     - **Activation**: MDD patients have probability (default 0.8, configurable) to enter "recall failure mode" for 2 turns when asked about past details (onset, duration, triggers, stressors, alleviating/exacerbating factors)
      - **Detection**: Regex/keyword detector (`is_past_detail_question()`) identifies past-detail questions
      - **State machine**: If topic changes (non-past-detail question), mode immediately deactivates
      - **Behavior**: Patient responds vaguely ("not sure") initially, may recall partially if clinician re-asks with specificity
      - **Implementation**: Mode injected via `{recall_failure_mode}` placeholder in system prompt (must be present)
-     - **Configuration**: `RECALL_FAILURE_PROB = 1.0` (line 418 in SP_utils.py), `RECALL_FAILURE_TURNS = 2`
+     - **Configuration**: `RECALL_FAILURE_PROB = 0.8` (line 410 in SP_utils.py), `RECALL_FAILURE_TURNS = 2`
    - **System Prompt Storage**: System prompts now stored in Firebase at `system_prompts/con-agent_version6_0`
      - Local files still exist in `data/prompts/con-agent_system_prompt/` for backup
      - Use page 21_System_Prompt_Test to edit and test prompts interactively
@@ -855,7 +855,7 @@ if 'paca_agent' in st.session_state:
 14. **Playwright setup**: Chromium browser required for certain features - auto-installed on dev container startup via `setup_playwright()` in [Home.py](Home.py)
 15. **Recall failure placeholder**: System prompts MUST contain `{recall_failure_mode}` placeholder - automatically appended if missing in SP agent creation
 16. **Firebase system prompts**: Production prompts at `system_prompts/con-agent_version6_0`, test prompts at `system_prompts/con-agent_version6_0_test`
-17. **Recall failure configuration**: Default probability is 1.0 (100%) in production (`SP_utils.py` line 418), but configurable in page 21 test interface (0.0-1.0)
+17. **Recall failure configuration**: Default probability is 0.8 (80%) in production (`SP_utils.py` line 410), but configurable in page 21 test interface (0.0-1.0)
 18. **Firebase data loading for analysis pages**: 
     - Always load ALL root keys first: `all_data = firebase_ref.get()`
     - NEVER use `firebase_ref.child(key).get()` in a loop without checking root first
