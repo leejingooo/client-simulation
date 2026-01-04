@@ -345,6 +345,187 @@ def create_correlation_plot_by_disorder(psyche_scores, avg_expert_scores):
     plt.tight_layout()
     return fig
 
+def calculate_category_scores(element_scores_psyche, element_scores_expert_dict):
+    """Calculate category-level scores (Subjective, Impulsivity, Behavior) for correlation analysis.
+    
+    Returns:
+    - psyche_category_scores: {(client_num, exp_num): {'Subjective': float, 'Impulsivity': float, 'Behavior': float}}
+    - expert_category_scores: {validator: {(client_num, exp_num): {'Subjective': float, 'Impulsivity': float, 'Behavior': float}}}
+    """
+    from evaluator import PSYCHE_RUBRIC
+    
+    # Category별 element 분류
+    impulsivity_elements = [k for k, v in PSYCHE_RUBRIC.items() if v.get('type') == 'impulsivity']
+    behavior_elements = [k for k, v in PSYCHE_RUBRIC.items() if v.get('type') == 'behavior']
+    subjective_elements = [k for k, v in PSYCHE_RUBRIC.items() if v.get('type') in ['g-eval', 'binary'] and v.get('weight') == 1]
+    
+    # Weights
+    weight_subjective = 1
+    weight_impulsivity = 5
+    weight_behavior = 2
+    
+    # PSYCHE category scores
+    psyche_category_scores = {}
+    for exp in EXPERIMENT_NUMBERS:
+        if exp not in element_scores_psyche:
+            continue
+        
+        psyche_elements = element_scores_psyche[exp]
+        categories = {
+            'Subjective': 0,
+            'Impulsivity': 0,
+            'Behavior': 0
+        }
+        
+        # Subjective
+        for elem in subjective_elements:
+            if elem in psyche_elements and 'score' in psyche_elements[elem]:
+                categories['Subjective'] += psyche_elements[elem]['score'] * weight_subjective
+        
+        # Impulsivity
+        for elem in impulsivity_elements:
+            if elem in psyche_elements and 'score' in psyche_elements[elem]:
+                categories['Impulsivity'] += psyche_elements[elem]['score'] * weight_impulsivity
+        
+        # Behavior
+        for elem in behavior_elements:
+            if elem in psyche_elements and 'score' in psyche_elements[elem]:
+                categories['Behavior'] += psyche_elements[elem]['score'] * weight_behavior
+        
+        psyche_category_scores[exp] = categories
+    
+    # Expert category scores (averaged across validators)
+    expert_category_scores = {validator: {} for validator in VALIDATORS}
+    
+    for validator in VALIDATORS:
+        for exp in EXPERIMENT_NUMBERS:
+            if exp not in element_scores_expert_dict[validator]:
+                continue
+            
+            expert_elements = element_scores_expert_dict[validator][exp]
+            categories = {
+                'Subjective': 0,
+                'Impulsivity': 0,
+                'Behavior': 0
+            }
+            
+            # Subjective
+            for elem in subjective_elements:
+                if elem in expert_elements:
+                    elem_data = expert_elements[elem]
+                    if isinstance(elem_data, dict) and 'weighted_score' in elem_data:
+                        categories['Subjective'] += elem_data['weighted_score']
+                    elif isinstance(elem_data, dict) and 'score' in elem_data:
+                        categories['Subjective'] += elem_data['score'] * weight_subjective
+            
+            # Impulsivity
+            for elem in impulsivity_elements:
+                if elem in expert_elements:
+                    elem_data = expert_elements[elem]
+                    if isinstance(elem_data, dict) and 'weighted_score' in elem_data:
+                        categories['Impulsivity'] += elem_data['weighted_score']
+                    elif isinstance(elem_data, dict) and 'score' in elem_data:
+                        categories['Impulsivity'] += elem_data['score'] * weight_impulsivity
+            
+            # Behavior
+            for elem in behavior_elements:
+                if elem in expert_elements:
+                    elem_data = expert_elements[elem]
+                    if isinstance(elem_data, dict) and 'weighted_score' in elem_data:
+                        categories['Behavior'] += elem_data['weighted_score']
+                    elif isinstance(elem_data, dict) and 'score' in elem_data:
+                        categories['Behavior'] += elem_data['score'] * weight_behavior
+            
+            expert_category_scores[validator][exp] = categories
+    
+    return psyche_category_scores, expert_category_scores
+
+def create_correlation_plot_by_category(psyche_category_scores, expert_category_scores):
+    """Figure 1-4: Category-level correlation analysis (Subjective, Impulsivity, Behavior)."""
+    fig, axes = plt.subplots(1, 3, figsize=(24, 8))
+    
+    categories = ['Subjective', 'Impulsivity', 'Behavior']
+    category_labels = {
+        'Subjective': 'Subjective Information',
+        'Impulsivity': 'Impulsivity',
+        'Behavior': 'MFC-Behavior'
+    }
+    
+    for idx, category in enumerate(categories):
+        ax = axes[idx]
+        
+        # 데이터 수집 - validator별 평균
+        data_by_model = {model: [] for model in COLOR_MAP.keys()}
+        all_x, all_y = [], []
+        
+        for exp in EXPERIMENT_NUMBERS:
+            if exp not in psyche_category_scores:
+                continue
+            
+            psyche_score = psyche_category_scores[exp][category]
+            
+            # Expert score - average across all validators
+            expert_scores = []
+            for validator in VALIDATORS:
+                if exp in expert_category_scores[validator]:
+                    expert_scores.append(expert_category_scores[validator][exp][category])
+            
+            if not expert_scores:
+                continue
+            
+            expert_score = np.mean(expert_scores)
+            model = get_model_from_exp(exp[1])
+            
+            data_by_model[model].append((psyche_score, expert_score))
+            all_x.append(psyche_score)
+            all_y.append(expert_score)
+        
+        # Scatter plot
+        for model, points in data_by_model.items():
+            if points:
+                x_vals = [p[0] for p in points]
+                y_vals = [p[1] for p in points]
+                ax.scatter(x_vals, y_vals, 
+                          color=COLOR_MAP[model],
+                          label=LABEL_MAP[model],
+                          s=MARKER_MAP[model]['size'],
+                          marker=MARKER_MAP[model]['marker'],
+                          alpha=0.7,
+                          edgecolors='black',
+                          linewidths=1.5)
+        
+        # 회귀선
+        if len(all_x) >= 2:
+            z = np.polyfit(all_x, all_y, 1)
+            p = np.poly1d(z)
+            x_line = np.linspace(min(all_x), max(all_x), 100)
+            ax.plot(x_line, p(x_line), '#3498db', linestyle='-', linewidth=2)
+            
+            # Correlation
+            correlation, p_value = stats.pearsonr(all_x, all_y)
+            p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
+            ax.text(0.05, 0.95, f'r = {correlation:.4f}\n{p_text}',
+                   transform=ax.transAxes, fontsize=22, family='Helvetica',
+                   verticalalignment='top')
+        
+        # 스타일링
+        ax.set_title(category_labels[category], fontsize=36, fontweight='bold', family='Helvetica', pad=20)
+        ax.set_xlabel('PSYCHE SCORE', fontsize=36, family='Helvetica')
+        ax.set_ylabel('Expert score', fontsize=36, family='Helvetica')
+        ax.tick_params(labelsize=32)
+        ax.grid(False)
+        
+        # Legend only on first subplot
+        if idx == 0:
+            ax.legend(loc='lower right', prop={'size': 18, 'weight': 'bold', 'family': 'Helvetica'})
+        
+        for spine in ax.spines.values():
+            spine.set_color('black')
+            spine.set_linewidth(2)
+    
+    plt.tight_layout()
+    return fig
+
 # ================================
 # Figure 2: Weight-Correlation Analysis
 # ================================
@@ -806,7 +987,7 @@ def main():
     # ================================
     st.markdown("## 📈 Figure 1: PSYCHE-Expert Correlation")
     
-    tab1, tab2, tab3 = st.tabs(["Average Expert", "Individual Validators", "By Disorder"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Average Expert", "Individual Validators", "By Disorder", "By Category"])
     
     with tab1:
         st.markdown("### Figure 1-1: Average Expert Score")
@@ -873,6 +1054,38 @@ def main():
                 mime="image/png"
             )
         plt.close(fig1_3)
+    
+    with tab4:
+        st.subheader("Figure 1-4: Category-Level Analysis")
+        st.caption("Subjective, Impulsivity, MFC-Behavior별 correlation 분석")
+        
+        if element_scores_psyche and element_scores_expert:
+            # Calculate category scores
+            psyche_category_scores, expert_category_scores = calculate_category_scores(
+                element_scores_psyche, element_scores_expert
+            )
+            
+            fig1_4 = create_correlation_plot_by_category(psyche_category_scores, expert_category_scores)
+            st.pyplot(fig1_4)
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                st.download_button(
+                    label="📥 Download PNG (300 DPI)",
+                    data=fig_to_bytes(fig1_4),
+                    file_name="Fig1-4_Category_Level_Analysis.png",
+                    mime="image/png"
+                )
+            with col2:
+                st.download_button(
+                    label="📥 Download PNG (600 DPI)",
+                    data=fig_to_bytes(fig1_4, dpi=600),
+                    file_name="Fig1-4_Category_Level_Analysis_600dpi.png",
+                    mime="image/png"
+                )
+            plt.close(fig1_4)
+        else:
+            st.warning("Element-level 데이터가 없습니다. Category별 분석을 위해서는 element 점수가 필요합니다.")
     
     st.markdown("---")
     

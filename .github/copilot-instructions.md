@@ -1,5 +1,7 @@
 # Client Simulation - Copilot Instructions
 
+**Last Updated**: January 2026 (includes recall failure mechanism for MDD patients)
+
 ## Quick Start
 
 **For immediate productivity:**
@@ -9,6 +11,7 @@
 4. **Key directories**: `pages/` (experiment pages), `data/prompts/` (agent instructions), see [Project Structure](#project-structure)
 5. **Common workflows**: [Running Experiments](#running-experiments), [Creating New Pages](#creating-new-experiment-pages)
 6. **Memory critical**: Always store agents in `st.session_state` (see [Memory Management](#memory-management-critical))
+7. **System prompt testing**: Use [pages/21_System_Prompt_Test.py](pages/21_System_Prompt_Test.py) to iteratively test prompts before production
 
 ## Project Overview
 
