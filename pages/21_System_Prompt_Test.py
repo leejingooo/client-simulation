@@ -422,10 +422,14 @@ elif st.session_state.sp_test_mode == 'chat':
                 # Show recall failure status for this specific SP message
                 if sp_message_idx < len(st.session_state.recall_failure_states):
                     is_active = st.session_state.recall_failure_states[sp_message_idx]
+                    # Debug info
+                    st.caption(f"🐛 Debug: SP msg #{sp_message_idx+1}, State: {is_active}, Total states: {len(st.session_state.recall_failure_states)}")
                     if is_active:
                         st.caption("🔴 **Recall Failure Mode: ON**")
                     else:
                         st.caption("🟢 **Recall Failure Mode: OFF**")
+                else:
+                    st.caption(f"🐛 Debug: SP msg #{sp_message_idx+1}, No state saved yet")
                 sp_message_idx += 1
     
     # Chat input
@@ -436,11 +440,15 @@ elif st.session_state.sp_test_mode == 'chat':
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
             status_placeholder = st.empty()
+            debug_placeholder = st.empty()
             full_response, is_recall_active = agent(prompt)
             message_placeholder.markdown(full_response)
             
             # Store the state for this message
             st.session_state.recall_failure_states.append(is_recall_active)
+            
+            # Debug info
+            debug_placeholder.caption(f"🐛 Debug: Just saved state={is_recall_active}, Total states now: {len(st.session_state.recall_failure_states)}, States list: {st.session_state.recall_failure_states}")
             
             if is_recall_active:
                 status_placeholder.caption("🔴 **Recall Failure Mode: ON**")
