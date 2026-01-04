@@ -296,12 +296,19 @@ def create_sp_construct(client_number: str, profile_version: str, instruction_ve
         # Special handling for Spontaneity with parentheses
         # Extract only "(+)" or "(-)" from strings like "(+) explanation" or "(-) explanation"
         if field == "Spontaneity":
-            # Check for (+) pattern
-            if "(+)" in raw_value or "( +)" in raw_value or "(+ )" in raw_value or "+" in raw_value:
+            # Use regex to extract (+) or (-) pattern
+            import re
+            match = re.search(r'\([\s]*([+-])[\s]*\)', raw_value)
+            if match:
+                sign = match.group(1)
+                return f"({sign})"
+            # Fallback: check for + or - anywhere in the string
+            elif '+' in raw_value:
                 return "(+)"
-            # Check for (-) pattern
-            elif "(-)" in raw_value or "( -)" in raw_value or "(- )" in raw_value or "-" in raw_value:
+            elif '-' in raw_value or '−' in raw_value:  # Include minus sign variants
                 return "(-)"
+            else:
+                return ""  # Return empty if no valid spontaneity marker found
         
         # For Affect: allow multiple selections (comma-separated)
         if field == "Affect":
