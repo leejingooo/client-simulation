@@ -50,6 +50,7 @@ This codebase implements the **PSYCHE (Patient Simulation for Yielding psyCHiatr
 ├── sp_construct_generator.py        # SP construct generation post-conversation
 ├── paca_construct_generator.py      # PACA construct generation post-conversation
 ├── pages/                           # Streamlit pages (auto-discovered by framework)
+│   ├── 10_재실험.py                # Re-experiment page for client 6301 (2 repetitions)
 │   ├── 12_PSYCHE-Expert_Correlation.py  # Expert vs PSYCHE score comparison (6 validators × 24 experiments)
 │   ├── 13_SP_Quantitative.py       # SP quantitative validation data extraction (4.1 validation metrics)
 │   ├── 14_SP_Qualitative.py        # SP qualitative validation data extraction (4.2 Likert scale analysis)
@@ -57,14 +58,17 @@ This codebase implements the **PSYCHE (Patient Simulation for Yielding psyCHiatr
 │   ├── 16_MFC_Viewer.py            # MFC data viewer (Profile, History, Behavior inspection tool)
 │   ├── 17_Conversation_log_viewer.py  # SP-Expert conversation log viewer (validation studies)
 │   ├── 18_MDD_MFC_Editor.py        # MFC editor for client 6301 (MDD patient - new patient cohort)
+│   ├── 21_System_Prompt_Test.py    # Interactive system prompt editor and SP testing interface
 │   ├── SP_validation/              # SP validation page subfolder
 │   ├── deprecated/                 # Deprecated pages (archived)
 │   ├── 연구자용 격리 폴더 (연구모드시 페이지 복원)/  # Research-mode pages (hidden in production)
 │   ├── 연구자용 격리 폴더 2 (연구모드시 페이지 복원)/  # Additional research pages
-│   └── 연구자용 격리 폴더 3 (실험시 있었던 파일들)/  # Archived experiment files (includes 19_MFC_Copier.py)
+│   └── 연구자용 격리 폴더 3 (실험시 있었던 파일들)/  # Archived experiment files
 │       ├── 01_experiment(MDD|BD|OCD)_<model>_<type>.py  # Experiment pages per disorder/model
 │       ├── 01_unified_<model>_<type>.py  # Unified experiment pages with client selection
 │       ├── 04_evaluation.py        # Automated PACA evaluation tool (4.4)
+│       ├── 19_MFC_Copier.py        # MFC data cloning utility (e.g., 6201→6301)
+│       ├── 20_Upload_System_Prompt_to_Firebase.py  # One-time utility to upload system prompts to Firebase
 │       └── 02_generation, 02_viewer, 03_ai_ai_viewer (접근제한).py  # Other research tools
 ├── data/
 │   ├── prompts/                    # Agent system prompts (versioned)
@@ -103,7 +107,7 @@ This codebase implements the **PSYCHE (Patient Simulation for Yielding psyCHiatr
 **Rationale**: Sequential chain prevents "lost-in-the-middle" problem with long contexts, ensures clinically consistent patient behavior
 
 #### 2. PSYCHE-SP Agent (`SP_utils.py`, `sp_construct_generator.py`)
-   - Built with LangChain + ChatOpenAI/ChatAnthropic (gpt-4o-2024-11-20 in paper)
+   - Built with LangChain + ChatOpenAI/ChatAnthropic (gpt-4o-2024-11-20 in paper, gpt-5.1-2025-11-13 currently)
    - **Fed with entire MFC** (Profile + History + Behavior) as psychiatric schema
    - Uses `InMemoryChatMessageHistory` for conversation state
    - **Critical**: Cached with `@st.cache_resource` to persist across Streamlit reruns - without this, memory resets!
@@ -112,6 +116,18 @@ This codebase implements the **PSYCHE (Patient Simulation for Yielding psyCHiatr
      1. MFC explanation
      2. Methods for generating utterances grounded in MFC elements
      3. Instructions aligning LLM with real psychiatric patients (counters assistant-tuning bias)
+   - **Recall Failure Mechanism** (added 2026-01-03 for MDD patients):
+     - **Purpose**: Simulates memory/recall difficulties common in depression
+     - **Activation**: MDD patients have probability (default 1.0, configurable) to enter "recall failure mode" for 2 turns when asked about past details (onset, duration, triggers, stressors, alleviating/exacerbating factors)
+     - **Detection**: Regex/keyword detector (`is_past_detail_question()`) identifies past-detail questions
+     - **State machine**: If topic changes (non-past-detail question), mode immediately deactivates
+     - **Behavior**: Patient responds vaguely ("not sure") initially, may recall partially if clinician re-asks with specificity
+     - **Implementation**: Mode injected via `{recall_failure_mode}` placeholder in system prompt (must be present)
+     - **Configuration**: `RECALL_FAILURE_PROB = 1.0` (line 418 in SP_utils.py), `RECALL_FAILURE_TURNS = 2`
+   - **System Prompt Storage**: System prompts now stored in Firebase at `system_prompts/con-agent_version6_0`
+     - Local files still exist in `data/prompts/con-agent_system_prompt/` for backup
+     - Use page 21_System_Prompt_Test to edit and test prompts interactively
+     - Use page 20_Upload_System_Prompt_to_Firebase to upload local prompts to Firebase
    - **Research purpose**: Ground truth for PACA evaluation - simulates realistic patient behavior
 
 #### 3. PACA Agent (`PACA_*_utils.py`, `paca_construct_generator.py`)
@@ -528,6 +544,7 @@ for speaker, message in st.session_state.conversation_generator:
   - **Purpose**: View and verify MFC components (Profile, History, Behavior) stored in Firebase
   - **Client-Disorder mapping**:
     - 6201: MDD, 6202: BD, 6203: PD, 6204: GAD, 6205: SAD, 6206: OCD, 6207: PTSD
+    - 6301: MDD (new patient cohort, editable via page 18)
   - **Features**:
     - Load and display all three MFC components side-by-side
     - Version selection (default: 6.0 → `version6_0` in Firebase)
@@ -568,6 +585,33 @@ for speaker, message in st.session_state.conversation_generator:
   - **Critical**: Depends on 19_MFC_Copier (in 연구자용 격리 폴더 3) to initially clone 6201→6301 data
   - **Use case**: Creating new patient variations without affecting validated research cohort (6201-6207)
   - **Related pages**: Page 16 (MFC Viewer for read-only inspection), Page 19 (MFC Copier for cloning)
+- `pages/21_System_Prompt_Test.py`: Interactive system prompt editor and SP testing interface
+  - **Purpose**: Real-time system prompt editing and immediate SP behavioral testing without affecting production
+  - **Two modes**: 
+    1. **Edit mode**: Side-by-side system prompt editor with validation
+    2. **Chat mode**: Interactive conversation with SP using test prompt
+  - **Features**:
+    - **Dual-panel editor**: Current prompt (read-only) vs. edited prompt (editable)
+    - **Required placeholder validation**: Ensures `{given_information}`, `{current_date}`, `{profile_json}`, `{history}`, `{behavioral_instruction}`, `{recall_failure_mode}` are present
+    - **Recall Failure probability slider**: Configure activation probability (0.0-1.0) for MDD patients
+    - **Test-first workflow**: Save to temporary Firebase path (`con-agent_version6_0_test`) before production
+    - **Real-time chat interface**: Test SP behavior immediately after editing prompt
+    - **Conversation persistence**: Save test conversations to Firebase for analysis
+  - **Workflow**:
+    1. Load current prompt from Firebase `system_prompts/con-agent_version6_0`
+    2. Edit prompt in right panel (validates placeholders)
+    3. Click "테스트만 하기" to enter chat mode with test prompt
+    4. Conduct test conversation with SP (client 6301 by default)
+    5. If satisfied, click "Firebase에 저장" to update production prompt
+  - **Critical**: Production experiments (10_재실험 etc.) still use local files - Firebase storage is for future migration
+  - **Use case**: Iterative prompt engineering, debugging SP behavior, testing recall failure mechanism
+  - **Related pages**: Page 20 (Upload local prompts to Firebase), Page 18 (Edit MFC for test client 6301)
+- `pages/10_재실험.py`: Re-experiment page for client 6301 (MDD patient, new cohort)
+  - **Purpose**: Run repeated experiments with new patient profile (6301) to validate updated configurations
+  - **Configuration**: 2 repetitions of client 6301 (MDD) as defined in `SP_SEQUENCE`
+  - **Workflow**: Same as validation pages - SP Construct generation followed by expert scoring interface
+  - **Target client**: 6301 (new MDD patient created via page 18 MFC Editor)
+  - **Note**: Part of paper revision - testing new patient cohort and updated system prompts
 - `pages/연구자용 격리 폴더 (연구모드시 페이지 복원)/`: Research-mode pages
   - Contains disorder-specific experiment pages: `01_experiment(MDD|BD|OCD)_<model>_<type>.py`
   - Contains unified experiment pages with client selection: `01_unified_<model>_<type>.py`
@@ -578,6 +622,8 @@ for speaker, message in st.session_state.conversation_generator:
   - Contains `19_MFC_Copier.py`: Utility for cloning MFC data between client numbers (e.g., 6201→6301)
   - Used for creating new patient cohorts without manual recreation of MFC components
   - Workflow: Select source client → select target client → copy Profile/History/Behavior → validate in MFC Viewer
+  - Contains `20_Upload_System_Prompt_to_Firebase.py`: One-time utility to upload local system prompts to Firebase
+  - Workflow: Read local `con-agent_system_prompt_version6.0.txt` → upload to `system_prompts/con-agent_version6_0` in Firebase
 
 **Navigation pattern**:
 ```python
@@ -804,7 +850,10 @@ if 'paca_agent' in st.session_state:
 12. **Firebase sanitization**: `sanitize_dict()` converts `/$#[].` to `_` before saving - all slashes become underscores in stored data
 13. **Initial greeting memory timing**: The hardcoded initial greeting "안녕하세요, 저는 정신과 의사 김민수입니다..." must be added to PACA and SP memories BEFORE creating `conversation_generator` - check for duplicates using `if len(memory.messages) == 0 or memory.messages[-1].content != greeting`
 14. **Playwright setup**: Chromium browser required for certain features - auto-installed on dev container startup via `setup_playwright()` in [Home.py](Home.py)
-15. **Firebase data loading for analysis pages**: 
+15. **Recall failure placeholder**: System prompts MUST contain `{recall_failure_mode}` placeholder - automatically appended if missing in SP agent creation
+16. **Firebase system prompts**: Production prompts at `system_prompts/con-agent_version6_0`, test prompts at `system_prompts/con-agent_version6_0_test`
+17. **Recall failure configuration**: Default probability is 1.0 (100%) in production (`SP_utils.py` line 418), but configurable in page 21 test interface (0.0-1.0)
+18. **Firebase data loading for analysis pages**: 
     - Always load ALL root keys first: `all_data = firebase_ref.get()`
     - NEVER use `firebase_ref.child(key).get()` in a loop without checking root first
     - PSYCHE scores are at ROOT level, not nested under `clients/`

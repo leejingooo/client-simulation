@@ -41,6 +41,22 @@ if 'show_message' not in st.session_state:
     st.session_state.show_message = None
 if 'recall_failure_prob' not in st.session_state:
     st.session_state.recall_failure_prob = 1.0
+if 'recall_failure_text' not in st.session_state:
+    st.session_state.recall_failure_text = (
+        "RECALL-FAILURE MODE (apply only if relevant to the clinician's question):\n"
+        "Although the following information defines your background, you experience difficulty "
+        "spontaneously recalling or articulating parts of it due to your current depressive state. "
+        "If asked about past events, symptom onset, stressors, or factors that worsen or relieve symptoms, "
+        "you may respond vaguely or say you are not sure. If the clinician asks again with more specific "
+        "questions, you may recall partially and disclose reluctantly.\n"
+    )
+if 'recall_failure_keywords' not in st.session_state:
+    st.session_state.recall_failure_keywords = [
+        "언제", "when", "얼마", "how long", "duration", "onset",
+        "시작", "start", "began", "trigger", "원인", "cause",
+        "악화", "worsen", "exacerbate", "완화", "relieve", "allevia",
+        "스트레스", "stressor", "유발", "provoke", "기억", "recall", "remember"
+    ]
 
 # ================================
 # Configuration
@@ -112,9 +128,11 @@ if st.session_state.sp_test_mode == 'edit':
     
     st.markdown("---")
     
-    # Recall Failure Probability Setting
-    st.subheader("⚙️ 설정")
-    st.markdown("**Recall Failure 확률 (MDD 환자 전용)**")
+    # Recall Failure Settings
+    st.subheader("⚙️ Recall Failure 설정 (MDD 환자 전용)")
+    
+    # Probability setting
+    st.markdown("**1. 활성화 확률**")
     st.caption("MDD 환자가 과거 상세 질문에 대해 기억 회상 실패 모드를 활성화할 확률입니다.")
     
     recall_prob = st.slider(
@@ -126,6 +144,40 @@ if st.session_state.sp_test_mode == 'edit':
         help="0.0 = 회상 실패 없음, 1.0 = 항상 회상 실패 모드 활성화"
     )
     st.session_state.recall_failure_prob = recall_prob
+    
+    st.markdown("---")
+    
+    # RECALL_FAILURE_TEXT setting
+    st.markdown("**2. Recall Failure 모드 설명 텍스트**")
+    st.caption("Recall failure 모드가 활성화될 때 시스템 프롬프트에 추가되는 지시사항입니다.")
+    
+    recall_text = st.text_area(
+        "Recall Failure 텍스트",
+        value=st.session_state.recall_failure_text,
+        height=150,
+        help="이 텍스트는 recall failure 모드 활성화 시 시스템 프롬프트에 동적으로 추가됩니다.",
+        key="recall_failure_text_input"
+    )
+    st.session_state.recall_failure_text = recall_text
+    
+    st.markdown("---")
+    
+    # Keywords setting
+    st.markdown("**3. 과거 상세 질문 감지 키워드**")
+    st.caption("이 키워드들이 질문에 포함되면 '과거 상세 질문'으로 인식합니다.")
+    
+    keywords_input = st.text_area(
+        "키워드 (한 줄에 하나씩)",
+        value="\n".join(st.session_state.recall_failure_keywords),
+        height=200,
+        help="각 키워드를 새 줄에 입력하세요. 대소문자 구분 없이 검색됩니다.",
+        key="recall_failure_keywords_input"
+    )
+    # Parse keywords from text area
+    keywords_list = [k.strip() for k in keywords_input.split("\n") if k.strip()]
+    st.session_state.recall_failure_keywords = keywords_list
+    
+    st.info(f"현재 {len(keywords_list)}개 키워드 설정됨")
     
     st.markdown("---")
     
@@ -256,29 +308,18 @@ elif st.session_state.sp_test_mode == 'chat':
         memory = InMemoryChatMessageHistory()
         chain = chat_prompt | chat_llm
         
-        # Recall failure state machine - Use user-configured probability
+        # Recall failure state machine - Use user-configured values
         RECALL_FAILURE_PROB = st.session_state.recall_failure_prob
         RECALL_FAILURE_TURNS = 2
         recall_failure_turns_left = [0]  # Use list for nonlocal mutation
+        recall_failure_active = [False]  # Track if mode is currently active
         
-        RECALL_FAILURE_TEXT = (
-            "RECALL-FAILURE MODE (apply only if relevant to the clinician's question):\n"
-            "Although the following information defines your background, you experience difficulty "
-            "spontaneously recalling or articulating parts of it due to your current depressive state. "
-            "If asked about past events, symptom onset, stressors, or factors that worsen or relieve symptoms, "
-            "you may respond vaguely or say you are not sure. If the clinician asks again with more specific "
-            "questions, you may recall partially and disclose reluctantly.\n"
-        )
+        RECALL_FAILURE_TEXT = st.session_state.recall_failure_text
+        KEYWORDS = st.session_state.recall_failure_keywords
         
         def is_past_detail_question(text: str) -> bool:
             text_lower = text.lower()
-            keywords = [
-                "언제", "when", "얼마", "how long", "duration", "onset",
-                "시작", "start", "began", "trigger", "원인", "cause",
-                "악화", "worsen", "exacerbate", "완화", "relieve", "allevia",
-                "스트레스", "stressor", "유발", "provoke", "기억", "recall", "remember"
-            ]
-            return any(kw in text_lower for kw in keywords)
+            return any(kw.lower() in text_lower for kw in KEYWORDS)
         
         def agent(human_input: str):
             past_detail = is_past_detail_question(human_input)
@@ -291,6 +332,7 @@ elif st.session_state.sp_test_mode == 'chat':
                     recall_failure_turns_left[0] = RECALL_FAILURE_TURNS
             
             recall_failure_mode = RECALL_FAILURE_TEXT if recall_failure_turns_left[0] > 0 else ""
+            recall_failure_active[0] = recall_failure_turns_left[0] > 0
             
             if recall_failure_turns_left[0] > 0:
                 recall_failure_turns_left[0] -= 1
@@ -311,15 +353,17 @@ elif st.session_state.sp_test_mode == 'chat':
             memory.add_user_message(human_input)
             memory.add_ai_message(response.content)
             
-            return response.content
+            return response.content, recall_failure_active[0]
         
         st.session_state.sp_test_agent = agent
         st.session_state.sp_test_memory = memory
+        st.session_state.recall_failure_active = recall_failure_active
         
         st.success("✅ SP 에이전트가 생성되었습니다!")
     
     agent = st.session_state.sp_test_agent
     memory = st.session_state.sp_test_memory
+    recall_failure_active = st.session_state.recall_failure_active
     
     # Display test configuration in expandable section
     with st.expander("🔍 현재 테스트 설정", expanded=False):
@@ -335,8 +379,10 @@ elif st.session_state.sp_test_mode == 'chat':
             )
         
         st.markdown("---")
-        st.markdown("**Recall Failure 확률**")
-        st.info(f"현재 설정: **{st.session_state.recall_failure_prob:.1f}** (0.0 = 회상 실패 없음, 1.0 = 항상 활성화)")
+        st.markdown("**Recall Failure 설정**")
+        st.info(f"""**확률**: {st.session_state.recall_failure_prob:.1f} (0.0 = 회상 실패 없음, 1.0 = 항상 활성화)
+**키워드**: {len(st.session_state.recall_failure_keywords)}개 설정됨
+**텍스트 길이**: {len(st.session_state.recall_failure_text)}자""")
     
     st.markdown("---")
     
@@ -360,13 +406,22 @@ elif st.session_state.sp_test_mode == 'chat':
     st.caption("안녕하세요, 저는 정신과 의사 000입니다. 오늘 어떤 일로 오셨나요? 로 면담을 시작해주세요.")
     
     # Display conversation history
-    for message in memory.messages:
+    for idx, message in enumerate(memory.messages):
         if isinstance(message, HumanMessage):
             with st.chat_message("user"):
                 st.markdown(message.content)
         else:
             with st.chat_message("assistant"):
                 st.markdown(message.content)
+                # Show recall failure status only for SP messages
+                # Note: We show the status from when this message was generated
+                # For the last message, we use the current state
+                if idx == len(memory.messages) - 1 and hasattr(st.session_state, 'recall_failure_active'):
+                    is_active = st.session_state.recall_failure_active[0]
+                    if is_active:
+                        st.caption("🔴 **Recall Failure Mode: ON**")
+                    else:
+                        st.caption("🟢 **Recall Failure Mode: OFF**")
     
     # Chat input
     if prompt := st.chat_input("면담 내용을 입력하세요"):
@@ -375,8 +430,13 @@ elif st.session_state.sp_test_mode == 'chat':
         
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
-            full_response = agent(prompt)
+            status_placeholder = st.empty()
+            full_response, is_recall_active = agent(prompt)
             message_placeholder.markdown(full_response)
+            if is_recall_active:
+                status_placeholder.caption("🔴 **Recall Failure Mode: ON**")
+            else:
+                status_placeholder.caption("🟢 **Recall Failure Mode: OFF**")
         
         st.rerun()
     
