@@ -35,6 +35,8 @@ if 'sp_test_memory' not in st.session_state:
     st.session_state.sp_test_memory = None
 if 'edited_prompt' not in st.session_state:
     st.session_state.edited_prompt = None
+if 'prompt_reset_counter' not in st.session_state:
+    st.session_state.prompt_reset_counter = 0
 
 # ================================
 # Configuration
@@ -86,7 +88,7 @@ if st.session_state.sp_test_mode == 'edit':
             "수정할 System Prompt",
             value=st.session_state.edited_prompt,
             height=500,
-            key="edit_prompt_area",
+            key=f"edit_prompt_area_{st.session_state.prompt_reset_counter}",
             help="System Prompt를 수정하세요. {given_information}, {current_date}, {profile_json}, {history}, {behavioral_instruction}, {recall_failure_mode} 플레이스홀더는 반드시 유지해야 합니다."
         )
         st.session_state.edited_prompt = edited_prompt_text
@@ -129,9 +131,7 @@ if st.session_state.sp_test_mode == 'edit':
     with col_btn2:
         if st.button("🔄 수정 취소", use_container_width=True):
             st.session_state.edited_prompt = current_prompt
-            # Delete widget key to force refresh
-            if 'edit_prompt_area' in st.session_state:
-                del st.session_state['edit_prompt_area']
+            st.session_state.prompt_reset_counter += 1  # Force widget recreation
             st.success("수정 내용이 취소되었습니다.")
             st.rerun()
     
@@ -139,6 +139,7 @@ if st.session_state.sp_test_mode == 'edit':
         if st.button("💾 Firebase에 저장", type="secondary", use_container_width=True):
             try:
                 firebase_ref.child("system_prompts/con-agent_version6_0").set(st.session_state.edited_prompt)
+                st.balloons()
                 st.success("✅ System Prompt가 Firebase에 저장되었습니다!")
                 st.info("💡 참고: 10_재실험 페이지는 아직 로컬 파일을 사용하므로 이 변경사항이 적용되지 않습니다.")
                 st.rerun()
