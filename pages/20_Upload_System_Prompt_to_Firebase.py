@@ -25,14 +25,26 @@ if firebase_ref is None:
     st.stop()
 
 # Load local system prompt
-import os
 base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 local_path = os.path.join(base_path, "data", "prompts", "con-agent_system_prompt", "con-agent_system_prompt_version6.0.txt")
 
 st.subheader("📄 로컬 System Prompt 내용")
 
+# Debug info
+with st.expander("🔍 경로 디버그 정보", expanded=False):
+    st.code(f"__file__: {__file__}")
+    st.code(f"base_path: {base_path}")
+    st.code(f"local_path: {local_path}")
+    st.code(f"exists: {os.path.exists(local_path)}")
+    
+    # List files in directory
+    prompt_dir = os.path.join(base_path, "data", "prompts", "con-agent_system_prompt")
+    if os.path.exists(prompt_dir):
+        st.code(f"Files in directory:\n" + "\n".join(os.listdir(prompt_dir)))
+
 if not os.path.exists(local_path):
     st.error(f"파일을 찾을 수 없습니다: {local_path}")
+    st.warning("위의 '경로 디버그 정보'를 펼쳐서 확인해주세요.")
     st.stop()
 
 try:
