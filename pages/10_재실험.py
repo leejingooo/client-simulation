@@ -270,7 +270,7 @@ def show_validation_page():
     else:
         st.progress(progress, text=f"진행도: {st.session_state.current_sp_index}/{len(SP_SEQUENCE)}")
     
-    st.title(f"검증 {page_number}회차 - 가상환자 6301 (MDD)")
+    st.title(f"검증 {page_number}회차")
     
     # Display instructions in an expander at the top
     with st.expander("📖 검증 안내사항 (클릭하여 펼치기/접기)", expanded=False):
