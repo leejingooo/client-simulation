@@ -415,7 +415,7 @@ def create_conversational_agent(profile_version, beh_dir_version, client_number,
     # -------------------------------
     # NEW: recall-failure state machine
     # -------------------------------
-    RECALL_FAILURE_PROB = 0.6      # user requested ~0.5-0.6
+    RECALL_FAILURE_PROB = 1.0      # user requested ~0.5-0.6
     RECALL_FAILURE_TURNS = 2        # "Use 2 turns by default"
     recall_failure_turns_left = 0   # state: how many future turns remain in failure mode
 
