@@ -174,7 +174,7 @@ if st.session_state.sp_test_mode == 'edit':
             try:
                 firebase_ref.child("system_prompts/con-agent_version6_0").set(st.session_state.edited_prompt)
                 st.session_state.prompt_reset_counter += 1  # Force widget recreation to sync
-                st.session_state.show_message = ("success", "✅ System Prompt가 Firebase에 저장되었습니다!\n\n💡 참고: 10_재실험 페이지는 아직 로컬 파일을 사용하므로 이 변경사항이 적용되지 않습니다.")
+                st.session_state.show_message = ("success", "✅ System Prompt가 Firebase에 저장되었습니다! 새로고침하면 우측 패널에도 반영됩니다. \n\n💡 참고: 10_재실험 페이지는 아직 로컬 파일을 사용하므로 이 변경사항이 적용되지 않습니다.")
                 st.rerun()
             except Exception as e:
                 st.error(f"저장 실패: {str(e)}")
@@ -323,11 +323,18 @@ elif st.session_state.sp_test_mode == 'chat':
     
     # Display test configuration in expandable section
     with st.expander("🔍 현재 테스트 설정", expanded=False):
-        st.markdown("**System Prompt (처음 100자)**")
+        st.markdown("**System Prompt 전체**")
         test_prompt_preview = firebase_ref.child("system_prompts/con-agent_version6_0_test").get()
         if test_prompt_preview:
-            st.code(test_prompt_preview[:100] + "...")
+            st.text_area(
+                "현재 테스트 중인 System Prompt",
+                value=test_prompt_preview,
+                height=400,
+                disabled=True,
+                key="test_prompt_preview"
+            )
         
+        st.markdown("---")
         st.markdown("**Recall Failure 확률**")
         st.info(f"현재 설정: **{st.session_state.recall_failure_prob:.1f}** (0.0 = 회상 실패 없음, 1.0 = 항상 활성화)")
     
