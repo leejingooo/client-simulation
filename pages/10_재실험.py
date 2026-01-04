@@ -599,43 +599,60 @@ def show_validation_page():
         
         # Evaluate each psychiatric element
         for idx, element in enumerate(PSYCHIATRIC_ELEMENTS, 1):
-            st.markdown(f"#### {idx}. {element['name']} {element['description']}")
+            st.markdown(f"#### {idx}. {element['name']}")
+            if element['description']:
+                st.caption(element['description'])
             
-            if element['key'] not in responses['qualitative']:
-                responses['qualitative'][element['key']] = {
+            element_key = element['key']
+            
+            # Initialize element data if not exists
+            if element_key not in responses['qualitative']:
+                responses['qualitative'][element_key] = {
                     'rating': None,
-                    'plausible': '',
-                    'implausible': ''
+                    'plausible_aspects': '',
+                    'less_plausible_aspects': ''
                 }
             
             # Rating
-            rating = st.selectbox(
-                "Rating",
-                options=[None] + rating_options,
-                index=0 if responses['qualitative'][element['key']]['rating'] is None else rating_options.index(responses['qualitative'][element['key']]['rating']) + 1,
-                key=f"qual_rating_{element['key']}_{response_key}"
-            )
-            responses['qualitative'][element['key']]['rating'] = rating if rating else None
+            current_rating = responses['qualitative'][element_key].get('rating')
+            if current_rating and isinstance(current_rating, int):
+                # Convert int to index (1-5 -> 0-4)
+                current_index = current_rating - 1
+            else:
+                current_index = 2  # Default to middle option (3)
             
-            # Plausible features
+            selected_rating = st.radio(
+                f"Rating for {element['name']}",
+                options=rating_options,
+                index=current_index,
+                key=f"qual_rating_{response_key}_{element_key}",
+                horizontal=False,
+                label_visibility="collapsed"
+            )
+            
+            # Extract numeric rating (1-5)
+            rating_value = int(selected_rating.split("—")[0].strip())
+            responses['qualitative'][element_key]['rating'] = rating_value
+            
+            # Plausible aspects
             plausible = st.text_area(
-                "Plausible Features",
-                value=responses['qualitative'][element['key']]['plausible'],
-                key=f"qual_plausible_{element['key']}_{response_key}",
+                "What aspects of the dialogue made this plausible?",
+                value=responses['qualitative'][element_key].get('plausible_aspects', ''),
+                key=f"qual_plausible_{response_key}_{element_key}",
                 height=80,
-                placeholder="List clinically plausible features observed..."
+                placeholder="Describe what aspects made this clinically plausible..."
             )
-            responses['qualitative'][element['key']]['plausible'] = plausible
+            responses['qualitative'][element_key]['plausible_aspects'] = plausible
             
-            # Implausible features
-            implausible = st.text_area(
-                "Implausible Features",
-                value=responses['qualitative'][element['key']]['implausible'],
-                key=f"qual_implausible_{element['key']}_{response_key}",
+            # Less plausible aspects
+            less_plausible = st.text_area(
+                "What aspects appeared less plausible or contradictory?",
+                value=responses['qualitative'][element_key].get('less_plausible_aspects', ''),
+                key=f"qual_less_plausible_{response_key}_{element_key}",
                 height=80,
-                placeholder="List clinically implausible features observed..."
+                placeholder="Describe what aspects appeared less plausible..."
             )
-            responses['qualitative'][element['key']]['implausible'] = implausible
+            responses['qualitative'][element_key]['less_plausible_aspects'] = less_plausible
             
             st.markdown("---")
         
@@ -659,32 +676,87 @@ def show_validation_page():
         col_save1, col_save2, col_save3 = st.columns(3)
         
         with col_save1:
-            if st.button("💾 중간 저장", use_container_width=True):
-                save_sp_validation(firebase_ref, page_number, client_number, responses, memory, is_final=False)
-                st.success("중간 저장 완료!")
-        
-        with col_save2:
+            # Back button - only show if not on first SP
             if st.session_state.current_sp_index > 0:
-                if st.button("← 이전", use_container_width=True):
+                if st.button("⬅️ 이전으로", use_container_width=True):
+                    # Save current state before going back
+                    save_sp_validation(firebase_ref, page_number, client_number, responses, memory, is_final=False)
+                    # Decrease index to go back
                     st.session_state.current_sp_index -= 1
-                    st.rerun()
-        
-        with col_save3:
-            if st.session_state.current_sp_index < len(SP_SEQUENCE) - 1:
-                if st.button("다음 →", type="primary", use_container_width=True):
-                    # Save before moving to next
-                    save_sp_validation(firebase_ref, page_number, client_number, responses, memory, is_final=True)
-                    save_sp_validation_progress(firebase_ref, expert_name, st.session_state.current_sp_index + 1)
-                    st.session_state.current_sp_index += 1
-                    st.success("저장 완료! 다음 검증으로 이동합니다.")
+                    # Save progress to Firebase
+                    save_sp_validation_progress(firebase_ref, st.session_state.expert_name, st.session_state.current_sp_index)
+                    # Clear current session to force reload of previous SP
+                    if session_key in st.session_state:
+                        del st.session_state[session_key]
                     st.rerun()
             else:
-                if st.button("완료 ✓", type="primary", use_container_width=True):
-                    # Final save
-                    save_sp_validation(firebase_ref, page_number, client_number, responses, memory, is_final=True)
-                    save_sp_validation_progress(firebase_ref, expert_name, st.session_state.current_sp_index + 1)
+                st.write("")  # Empty placeholder
+        
+        with col_save2:
+            if st.button("💾 중간 저장", use_container_width=True):
+                save_sp_validation(firebase_ref, page_number, client_number, responses, memory, is_final=False)
+                st.success("중간 저장되었습니다!")
+        
+        with col_save3:
+            # Determine button text based on completion status
+            if all_completed:
+                next_button_text = "✅ 저장"
+            elif st.session_state.current_sp_index == len(SP_SEQUENCE) - 1:
+                next_button_text = "✅ 완료"
+            else:
+                next_button_text = "✅ 검증 완료 및 다음으로"
+            
+            if st.button(next_button_text, type="primary", use_container_width=True):
+                # Validate that all non-empty items are selected
+                missing_items = []
+                
+                # Check element responses
+                for element in VALIDATION_ELEMENTS:
+                    sp_content = get_sp_value(sp_construct, element)
+                    is_empty = sp_content is None or str(sp_content).strip() == '' or str(sp_content).lower() in ['none', 'n/a', 'null']
+                    
+                    # Only check non-empty items
+                    if not is_empty:
+                        if element not in responses or not responses[element] or responses[element] == "선택 안함":
+                            missing_items.append(element)
+                
+                # Check qualitative evaluation
+                if 'qualitative' not in responses:
+                    missing_items.append("Qualitative Evaluation (전체)")
+                else:
+                    PSYCHIATRIC_ELEMENTS_KEYS = ['mood', 'affect', 'thought_process', 'thought_content', 'insight', 'suicidal', 'homicidal']
+                    for elem_key in PSYCHIATRIC_ELEMENTS_KEYS:
+                        if elem_key not in responses['qualitative']:
+                            missing_items.append(f"Qualitative Evaluation - {elem_key}")
+                        else:
+                            elem_data = responses['qualitative'][elem_key]
+                            if not elem_data.get('rating'):
+                                missing_items.append(f"Qualitative Evaluation - {elem_key} (rating)")
+                            # Text fields are optional, only rating is required
+                
+                if missing_items:
+                    st.error(f"⚠️ 다음 항목을 평가해주세요:\n\n" + "\n".join([f"- {item}" for item in missing_items]))
+                    st.stop()
+                
+                # Final save
+                save_sp_validation(firebase_ref, page_number, client_number, responses, memory, is_final=True)
+                
+                # If all completed, just save (don't move forward)
+                if all_completed:
+                    st.success("검증이 저장되었습니다!")
+                    st.rerun()
+                else:
+                    # Move to next SP
                     st.session_state.current_sp_index += 1
-                    st.success("모든 검증이 완료되었습니다!")
+                    
+                    # Save progress to Firebase
+                    save_sp_validation_progress(firebase_ref, st.session_state.expert_name, st.session_state.current_sp_index)
+                    
+                    # Clear current session to force agent recreation for next SP
+                    if session_key in st.session_state:
+                        del st.session_state[session_key]
+                    
+                    st.success("검증이 완료되었습니다! 다음 검증으로 이동합니다.")
                     st.rerun()
 
 
