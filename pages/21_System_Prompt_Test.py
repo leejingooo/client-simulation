@@ -136,11 +136,11 @@ if st.session_state.sp_test_mode == 'edit':
             st.rerun()
     
     with col_btn3:
-        if st.button("💾 영구 저장 (주의)", type="secondary", use_container_width=True):
+        if st.button("💾 Firebase에 저장", type="secondary", use_container_width=True):
             try:
                 firebase_ref.child("system_prompts/con-agent_version6_0").set(st.session_state.edited_prompt)
-                st.success("✅ System Prompt가 Firebase에 영구 저장되었습니다!")
-                st.warning("이제 모든 페이지에서 수정된 프롬프트를 사용합니다.")
+                st.success("✅ System Prompt가 Firebase에 저장되었습니다!")
+                st.info("💡 참고: 10_재실험 페이지는 아직 로컬 파일을 사용하므로 이 변경사항이 적용되지 않습니다.")
                 st.rerun()
             except Exception as e:
                 st.error(f"저장 실패: {str(e)}")
@@ -148,9 +148,10 @@ if st.session_state.sp_test_mode == 'edit':
     # Button explanations
     st.info("""
     **📌 버튼 설명**
-    - **테스트만 하기**: 수정한 내용으로 바로 테스트 (Firebase에 저장 안 함)
+    - **테스트만 하기**: 임시 경로(`con-agent_version6_0_test`)에 저장하고 테스트. 다른 페이지에 영향 없음.
     - **수정 취소**: 우측의 수정 내용을 좌측의 원본으로 되돌림
-    - **영구 저장**: Firebase에 영구적으로 저장 (모든 페이지에 적용됨)
+    - **Firebase에 저장**: Firebase 원본 경로(`con-agent_version6_0`)에 저장. 
+      현재는 다른 페이지들(10_재실험 등)은 로컬 파일을 사용하므로 이 곳의 수정 사항은 반영되지 않음.
     """)
 
 # ================================
