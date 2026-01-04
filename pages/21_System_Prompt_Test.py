@@ -117,28 +117,38 @@ if st.session_state.sp_test_mode == 'edit':
     col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 1])
     
     with col_btn1:
-        if st.button("💾 Firebase에 저장 (영구)", type="secondary", use_container_width=True):
-            try:
-                firebase_ref.child("system_prompts/con-agent_version6_0").set(st.session_state.edited_prompt)
-                st.success("✅ System Prompt가 Firebase에 저장되었습니다!")
-                st.rerun()
-            except Exception as e:
-                st.error(f"저장 실패: {str(e)}")
-    
-    with col_btn2:
-        if st.button("🔄 원래대로 복원", use_container_width=True):
-            st.session_state.edited_prompt = current_prompt
-            st.rerun()
-    
-    with col_btn3:
-        if st.button("🚀 수정 완료 및 테스트 시작", type="primary", use_container_width=True, disabled=bool(missing_placeholders)):
-            # Save to Firebase temporarily for testing
+        if st.button("🚀 테스트만 하기", type="primary", use_container_width=True, disabled=bool(missing_placeholders)):
+            # Save to temporary location for testing
             try:
                 firebase_ref.child("system_prompts/con-agent_version6_0_test").set(st.session_state.edited_prompt)
                 st.session_state.sp_test_mode = 'chat'
                 st.rerun()
             except Exception as e:
                 st.error(f"임시 저장 실패: {str(e)}")
+    
+    with col_btn2:
+        if st.button("🔄 수정 취소", use_container_width=True):
+            st.session_state.edited_prompt = current_prompt
+            st.success("수정 내용이 취소되었습니다.")
+            st.rerun()
+    
+    with col_btn3:
+        if st.button("💾 영구 저장 (주의)", type="secondary", use_container_width=True):
+            try:
+                firebase_ref.child("system_prompts/con-agent_version6_0").set(st.session_state.edited_prompt)
+                st.success("✅ System Prompt가 Firebase에 영구 저장되었습니다!")
+                st.warning("이제 모든 페이지에서 수정된 프롬프트를 사용합니다.")
+                st.rerun()
+            except Exception as e:
+                st.error(f"저장 실패: {str(e)}")
+    
+    # Button explanations
+    st.info("""
+    **📌 버튼 설명**
+    - **테스트만 하기**: 수정한 내용으로 바로 테스트 (Firebase에 저장 안 함)
+    - **수정 취소**: 우측의 수정 내용을 좌측의 원본으로 되돌림
+    - **영구 저장**: Firebase에 영구적으로 저장 (모든 페이지에 적용됨)
+    """)
 
 # ================================
 # Mode: Chat with SP
