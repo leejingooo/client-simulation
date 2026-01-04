@@ -51,14 +51,17 @@ This codebase implements the **PSYCHE (Patient Simulation for Yielding psyCHiatr
 ├── paca_construct_generator.py      # PACA construct generation post-conversation
 ├── pages/                           # Streamlit pages (auto-discovered by framework)
 │   ├── 12_PSYCHE-Expert_Correlation.py  # Expert vs PSYCHE score comparison (6 validators × 24 experiments)
-│   ├── 13_SP_Quantitative.py       # SP quantitative validation data extraction (renamed from 13_SP_정량검증_데이터추출.py)
-│   ├── 14_SP_Qualitative.py        # SP qualitative validation data extraction (renamed from 14_SP_정성검증_데이터추출.py)
+│   ├── 13_SP_Quantitative.py       # SP quantitative validation data extraction (4.1 validation metrics)
+│   ├── 14_SP_Qualitative.py        # SP qualitative validation data extraction (4.2 Likert scale analysis)
 │   ├── 15_Figure_Generator.py      # Publication-quality figure generation (Helvetica font, paper figures)
 │   ├── 16_MFC_Viewer.py            # MFC data viewer (Profile, History, Behavior inspection tool)
 │   ├── 17_Conversation_log_viewer.py  # SP-Expert conversation log viewer (validation studies)
+│   ├── 18_MDD_MFC_Editor.py        # MFC editor for client 6301 (MDD patient - new patient cohort)
 │   ├── SP_validation/              # SP validation page subfolder
 │   ├── deprecated/                 # Deprecated pages (archived)
-│   └── 연구자용 격리 폴더 (연구모드시 페이지 복원)/  # Research-mode pages (hidden in production)
+│   ├── 연구자용 격리 폴더 (연구모드시 페이지 복원)/  # Research-mode pages (hidden in production)
+│   ├── 연구자용 격리 폴더 2 (연구모드시 페이지 복원)/  # Additional research pages
+│   └── 연구자용 격리 폴더 3 (실험시 있었던 파일들)/  # Archived experiment files (includes 19_MFC_Copier.py)
 │       ├── 01_experiment(MDD|BD|OCD)_<model>_<type>.py  # Experiment pages per disorder/model
 │       ├── 01_unified_<model>_<type>.py  # Unified experiment pages with client selection
 │       ├── 04_evaluation.py        # Automated PACA evaluation tool (4.4)
@@ -329,10 +332,17 @@ streamlit run Home.py --server.enableCORS false --server.enableXsrfProtection fa
 
 1. **Import base experiment logic**: `from Experiment_<model>_<type> import experiment_page` (e.g., `Experiment_gpt_basic`, `Experiment_claude_guided`)
 2. **Set client number** - **Disorder mapping** (research cohort):
-   - `client_number = 6201` → Major Depressive Disorder (MDD)
-   - `client_number = 6202` → Bipolar Disorder (BD)
-   - `client_number = 6206` → Obsessive-Compulsive Disorder (OCD)
-   - **Legacy numbers**: 6101-6107 (older patient profiles, still in use on some pages)
+   - **Primary cohort (6201-6207)**: Used in paper validation studies
+     - `client_number = 6201` → Major Depressive Disorder (MDD)
+     - `client_number = 6202` → Bipolar Disorder (BD)
+     - `client_number = 6203` → Panic Disorder (PD)
+     - `client_number = 6204` → Generalized Anxiety Disorder (GAD)
+     - `client_number = 6205` → Social Anxiety Disorder (SAD)
+     - `client_number = 6206` → Obsessive-Compulsive Disorder (OCD)
+     - `client_number = 6207` → Post-Traumatic Stress Disorder (PTSD)
+   - **New cohort (6301+)**: New patient profiles for extended research
+     - `client_number = 6301` → MDD (editable via page 18_MDD_MFC_Editor.py)
+   - **Legacy cohort (6101-6107)**: Older patient profiles (still in use on some pages)
 3. **Session state reset** on page change to prevent memory leakage:
    ```python
    if st.session_state.current_page != current_page:
@@ -540,12 +550,34 @@ for speaker, message in st.session_state.conversation_generator:
     - Odd indices (1, 3, 5...) = SP responses
   - **Usage**: Select filters → choose conversation → review dialogue → export if needed
   - **Related pages**: Page 13 (SP Quantitative), Page 14 (SP Qualitative), Page 16 (MFC Viewer)
+- `pages/18_MDD_MFC_Editor.py`: Interactive MFC editor for client 6301 (new MDD patient cohort)
+  - **Purpose**: Edit and update MFC components (Profile, History, Behavioral Directive) for new patient profiles
+  - **Target client**: 6301 (MDD patient - extensible pattern for other 6301+ clients)
+  - **Features**:
+    - Side-by-side comparison (current vs. edited content)
+    - JSON validation with error handling
+    - Three-tab interface for Profile/History/Behavior editing
+    - Confirmation workflow to prevent accidental overwrites
+    - Real-time Firebase save with version control (version 6_0)
+  - **Workflow**: 
+    1. Load current MFC data from Firebase
+    2. Edit JSON content in right-side text areas (left side shows current)
+    3. Validate JSON format before saving
+    4. Confirm changes with warning message
+    5. Save to Firebase with automatic backup
+  - **Critical**: Depends on 19_MFC_Copier (in 연구자용 격리 폴더 3) to initially clone 6201→6301 data
+  - **Use case**: Creating new patient variations without affecting validated research cohort (6201-6207)
+  - **Related pages**: Page 16 (MFC Viewer for read-only inspection), Page 19 (MFC Copier for cloning)
 - `pages/연구자용 격리 폴더 (연구모드시 페이지 복원)/`: Research-mode pages
   - Contains disorder-specific experiment pages: `01_experiment(MDD|BD|OCD)_<model>_<type>.py`
   - Contains unified experiment pages with client selection: `01_unified_<model>_<type>.py`
   - Contains `04_evaluation.py`: Automated PACA evaluation tool (generates PSYCHE scores by comparing SP vs PACA constructs)
   - Contains access-restricted tools: `02_generation.py`, `02_viewer.py`, `03_ai_ai_viewer.py`
   - Historical experiment pages: `01_환자_*.py`
+- `pages/연구자용 격리 폴더 3 (실험시 있었던 파일들)/`: Archived experiment files
+  - Contains `19_MFC_Copier.py`: Utility for cloning MFC data between client numbers (e.g., 6201→6301)
+  - Used for creating new patient cohorts without manual recreation of MFC components
+  - Workflow: Select source client → select target client → copy Profile/History/Behavior → validate in MFC Viewer
 
 **Navigation pattern**:
 ```python
