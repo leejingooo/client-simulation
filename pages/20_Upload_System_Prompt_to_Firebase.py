@@ -25,7 +25,9 @@ if firebase_ref is None:
     st.stop()
 
 # Load local system prompt
-local_path = "/workspaces/client-simulation/data/prompts/con-agent_system_prompt/con-agent_system_prompt_version6.0.txt"
+import os
+base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+local_path = os.path.join(base_path, "data", "prompts", "con-agent_system_prompt", "con-agent_system_prompt_version6.0.txt")
 
 st.subheader("📄 로컬 System Prompt 내용")
 
