@@ -527,7 +527,7 @@ def create_correlation_plot_by_disorder(psyche_scores, avg_expert_scores):
             correlation, p_value = stats.pearsonr(all_x, all_y)
             p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
             ax.text(0.3, 0.10, f'r = {correlation:.4f}, {p_text}',
-                   transform=ax.transAxes, fontsize=18, family='Helvetica')
+                   transform=ax.transAxes, fontsize=24, family='Helvetica')
         
         # 스타일링 (1-1과 동일)
         ax.set_title(DISORDER_NAMES[DISORDER_MAP[disorder_code]], fontsize=36, fontweight='bold', family='Helvetica', pad=20)
@@ -704,8 +704,8 @@ def create_correlation_plot_by_category(psyche_category_scores, expert_category_
             # Correlation
             correlation, p_value = stats.pearsonr(all_x, all_y)
             p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
-            ax.text(0.05, 0.95, f'r = {correlation:.4f}\n{p_text}',
-                   transform=ax.transAxes, fontsize=18, family='Helvetica')
+            ax.text(0.3, 0.10, f'r = {correlation:.4f}, {p_text}',
+                   transform=ax.transAxes, fontsize=24, family='Helvetica')
         
         # 스타일링
         ax.set_title(category_labels[category], fontsize=36, fontweight='bold', family='Helvetica', pad=20)
