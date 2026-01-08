@@ -58,12 +58,12 @@ EXPERIMENT_NUMBERS = [
 VALIDATORS = ["이강토", "김태환", "김광현", "김주오", "허율", "장재용"]
 
 VALIDATOR_INITIALS = {
-    "이강토": "K.T. Lee",
-    "김태환": "T.H. Kim",
-    "김광현": "K.H. Kim",
-    "김주오": "J.O. Kim",
-    "허율": "Y. Heo",
-    "장재용": "J.Y. Jang"
+    "이강토": "A",
+    "김태환": "B",
+    "김광현": "C",
+    "김주오": "D",
+    "허율": "E",
+    "장재용": "F"
 }
 
 DISORDER_MAP = {6201: "mdd", 6202: "bd", 6206: "ocd"}
@@ -976,18 +976,18 @@ def load_sp_validation_data(root_data):
     # VALIDATION_ELEMENTS 24개
     
     SP_SEQUENCE = [
-        (1, 6201), (2, 6202), (3, 6203), (4, 6204), (5, 6205), (6, 6206), (7, 6207),
-        (8, 6203), (9, 6201), (10, 6204), (11, 6207), (12, 6202), (13, 6206), (14, 6205),
+        (1, 6301), (2, 6202), (3, 6203), (4, 6204), (5, 6205), (6, 6206), (7, 6207),
+        (8, 6203), (2, 6301), (10, 6204), (11, 6207), (12, 6202), (13, 6206), (14, 6205),
     ]
     
     CLIENT_TO_CASE = {
-        6201: 'MDD',
         6202: 'BD',
         6203: 'PD',
         6204: 'GAD',
         6205: 'SAD',
         6206: 'OCD',
-        6207: 'PTSD'
+        6207: 'PTSD',
+        6301: 'MDD'
     }
     
     VALIDATION_ELEMENTS = [
@@ -1074,14 +1074,33 @@ def create_sp_validation_heatmap(conformity_by_case):
     
     df = pd.DataFrame(df_data, index=elements)
     
+    # Add Average column (평균 across cases)
+    df['Average'] = df[cases].mean(axis=1)
+    
+    # Add Average row (평균 across elements)
+    avg_row = df[cases + ['Average']].mean(axis=0)
+    df.loc['Average'] = avg_row
+    
     # Figure 생성 (example code 스타일)
-    fig, ax = plt.subplots(figsize=(16, 11))
+    fig, ax = plt.subplots(figsize=(17, 11.5))
     
     # Heatmap - Element가 x축 (column), Case가 y축 (row)
+    # Transpose to show cases as rows and elements as columns
     sns.heatmap(df.T, annot=True, fmt='.0f', cmap='Blues', 
                 vmin=0, vmax=100, ax=ax, square=True,
                 linewidths=0.5, cbar=False,
-                annot_kws={'fontsize': 10, 'family': 'Helvetica'})
+                annot_kws={'fontsize': 10, 'family': 'Helvetica', 'weight': 'normal'})
+    
+    # Highlight Average row and column with bold text
+    # Get heatmap text objects and make Average entries bold
+    for text in ax.texts:
+        # Get position to check if it's in Average row or column
+        x, y = text.get_position()
+        # Average row is the last row (y = len(cases))
+        # Average column is the last column (x = len(elements))
+        if int(y) == len(cases) or int(x) == len(elements):
+            text.set_weight('bold')
+            text.set_fontsize(11)
     
     # y축 라벨 위치 조정 (오른쪽으로)
     ax.yaxis.tick_right()
@@ -1095,7 +1114,7 @@ def create_sp_validation_heatmap(conformity_by_case):
     
     # 가로 컬러바 추가 (하단)
     # [left, bottom, width, height]
-    cbar_ax = fig.add_axes([0.7, 0.08, 0.4, 0.02])
+    cbar_ax = fig.add_axes([0.68, 0.08, 0.4, 0.02])
     cbar = plt.colorbar(ax.collections[0], cax=cbar_ax, orientation="horizontal")
     
     # 컬러바 스타일 조정

@@ -2,6 +2,37 @@
 
 **Last Updated**: January 2026 (includes recall failure mechanism for MDD patients)
 
+## First Time Setup
+
+**If this is your first time working with this codebase:**
+
+1. **Open in dev container** - VSCode will prompt to "Reopen in Container" (required for Python 3.11 environment)
+2. **Wait for auto-install** - Container runs `updateContentCommand` to install system packages (chromium) and Python dependencies
+3. **Wait for auto-start** - Container runs `postAttachCommand` to start Streamlit on port 8501
+4. **Configure secrets** - Create `.streamlit/secrets.toml` with:
+   ```toml
+   [firebase]
+   type = "service_account"
+   project_id = "your-project-id"
+   private_key_id = "..."
+   private_key = "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+   client_email = "..."
+   
+   firebase_database_url = "https://your-project.firebaseio.com"
+   
+   [participant]
+   names = ["expert1", "expert2", ...]
+   ```
+5. **Set API keys** - Add to `.streamlit/secrets.toml` or environment:
+   ```toml
+   OPENAI_API_KEY = "sk-..."
+   ANTHROPIC_API_KEY = "sk-ant-..."
+   ```
+6. **Verify startup** - Look for "You can now view your Streamlit app in your browser" message
+7. **Access UI** - Click forwarded port 8501 or navigate to `http://localhost:8501`
+
+**Ready state**: When you see the Streamlit UI with authentication prompt, you're ready to go!
+
 ## Quick Start
 
 **For immediate productivity:**
@@ -526,13 +557,14 @@ for speaker, message in st.session_state.conversation_generator:
     - Calculates average across all 6 validators per experiment
   - **Visualizations**: Overall correlation plot + disorder-specific plots (MDD, BD, OCD)
   - **Critical**: Must load ALL Firebase root keys first (`firebase_ref.get()`), then filter by pattern
-  - **Experiment number → model mapping**: See `get_model_from_exp()` function
-    - 3111, 3117 → gptsmaller (pattern: 31xx with second 1)
-    - 1121, 1123 → gptlarge (pattern: 112x)
-    - 3134, 3138 → claudesmaller (pattern: 313x, 314x)
-    - 1143, 1145 → claudelarge (pattern: 114x)
-    - BD: 32xx series (3211/3212=gpt, 1221/1222=gpt, 3231/3234=claude, 1241/1242=claude)
-    - OCD: 36xx series (3611/3612=gpt, 1621/1622=gpt, 3631/3632=claude, 1641/1642=claude)
+  - **Experiment number → model mapping**: Uses explicit `MODEL_BY_EXP` dictionary
+    - **Pattern**: Define `MODEL_BY_EXP = {exp_num: 'model_name', ...}` for all 24 experiments
+    - **Lookup function**: `get_model_from_exp(exp_num)` returns model name or 'unknown'
+    - **Example mapping**:
+      - MDD (6201): 3111, 3117 → gptsmaller | 1121, 1123 → gptlarge | 3134, 3138 → claudesmaller | 1143, 1145 → claudelarge
+      - BD (6202): 3211, 3212 → gptsmaller | 1221, 1222 → gptlarge | 3231, 3234 → claudesmaller | 1241, 1242 → claudelarge
+      - OCD (6206): 3611, 3612 → gptsmaller | 1621, 1622 → gptlarge | 3631, 3632 → claudesmaller | 1641, 1642 → claudelarge
+    - **Why explicit dict**: Avoids fragile substring parsing, supports all disorder numbering schemes
 - `pages/15_Figure_Generator.py`: Publication-quality figure generation for research paper
   - **Purpose**: Generate publication-ready figures with consistent styling (Helvetica font, IEEE/academic standards)
   - **Features**: 
@@ -861,12 +893,12 @@ if 'paca_agent' in st.session_state:
     - NEVER use `firebase_ref.child(key).get()` in a loop without checking root first
     - PSYCHE scores are at ROOT level, not nested under `clients/`
     - Key pattern matching: `if "_psyche_" in key and key.startswith("clients_")`
-    - See [09_plot.py](pages/09_plot.py) lines 90-140 for correct pattern
-16. **Experiment number → model mapping**:
-    - Pattern recognition is complex - see `get_model_from_exp()` in visualization pages
-    - Do NOT rely on simple index-based parsing (e.g., `exp_str[1]`) - use substring matching
+    - See [pages/09_plot.py](pages/09_plot.py) lines 90-140 for correct pattern
+19. **Experiment number → model mapping**:
+    - Use explicit `MODEL_BY_EXP` dictionary (not substring parsing) - see pages/12 and 15
+    - Pattern: `MODEL_BY_EXP = {3111: 'gptsmaller', 1121: 'gptlarge', ...}` for all 24 experiments
+    - Lookup: `get_model_from_exp(exp_num)` returns model name or 'unknown'
     - Different disorders use different numbering schemes (MDD=31xx/11xx, BD=32xx/12xx, OCD=36xx/16xx)
-    - Model identifiers: gptsmaller (3111, 3117), gptlarge (1121, 1123), claudesmaller (3134, 3138), claudelarge (1143, 1145)
 
 ## Key Files Reference
 
