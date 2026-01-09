@@ -194,12 +194,36 @@ def create_correlation_plot_average(psyche_scores, avg_expert_scores, figsize=(8
                       label=LABEL_MAP[model],
                       alpha=0.7)
     
-    # 회귀선
+    # 회귀선 및 95% CI
     if len(all_x) >= 2:
-        z = np.polyfit(all_x, all_y, 1)
+        all_x_arr = np.array(all_x)
+        all_y_arr = np.array(all_y)
+        
+        # Linear regression
+        z = np.polyfit(all_x_arr, all_y_arr, 1)
         p = np.poly1d(z)
-        x_line = np.linspace(min(all_x), max(all_x), 100)
-        ax.plot(x_line, p(x_line), '#3498db', linestyle='-', linewidth=2)
+        x_line = np.linspace(min(all_x_arr), max(all_x_arr), 100)
+        y_line = p(x_line)
+        
+        # Calculate 95% confidence interval
+        n = len(all_x_arr)
+        y_pred = p(all_x_arr)
+        residuals = all_y_arr - y_pred
+        std_err = np.sqrt(np.sum(residuals**2) / (n - 2))
+        
+        # Standard error of prediction
+        x_mean = np.mean(all_x_arr)
+        sxx = np.sum((all_x_arr - x_mean)**2)
+        se_line = std_err * np.sqrt(1/n + (x_line - x_mean)**2 / sxx)
+        
+        # 95% CI (t-distribution)
+        from scipy.stats import t as t_dist
+        t_val = t_dist.ppf(0.975, n - 2)
+        ci = t_val * se_line
+        
+        # Plot CI
+        ax.fill_between(x_line, y_line - ci, y_line + ci, alpha=0.2, color='#3498db')
+        ax.plot(x_line, y_line, '#3498db', linestyle='-', linewidth=2)
         
         # Correlation
         correlation, p_value = stats.pearsonr(all_x, all_y)
@@ -285,12 +309,36 @@ def create_correlation_plot_average_with_errors(psyche_scores, avg_expert_scores
                family='Helvetica',
                zorder=4)
     
-    # 회귀선
+    # 회귀선 및 95% CI
     if len(all_x) >= 2:
-        z = np.polyfit(all_x, all_y, 1)
+        all_x_arr = np.array(all_x)
+        all_y_arr = np.array(all_y)
+        
+        # Linear regression
+        z = np.polyfit(all_x_arr, all_y_arr, 1)
         p = np.poly1d(z)
-        x_line = np.linspace(min(all_x), max(all_x), 100)
-        ax.plot(x_line, p(x_line), '#3498db', linestyle='-', linewidth=2, zorder=1)
+        x_line = np.linspace(min(all_x_arr), max(all_x_arr), 100)
+        y_line = p(x_line)
+        
+        # Calculate 95% confidence interval
+        n = len(all_x_arr)
+        y_pred = p(all_x_arr)
+        residuals = all_y_arr - y_pred
+        std_err = np.sqrt(np.sum(residuals**2) / (n - 2))
+        
+        # Standard error of prediction
+        x_mean = np.mean(all_x_arr)
+        sxx = np.sum((all_x_arr - x_mean)**2)
+        se_line = std_err * np.sqrt(1/n + (x_line - x_mean)**2 / sxx)
+        
+        # 95% CI (t-distribution)
+        from scipy.stats import t as t_dist
+        t_val = t_dist.ppf(0.975, n - 2)
+        ci = t_val * se_line
+        
+        # Plot CI
+        ax.fill_between(x_line, y_line - ci, y_line + ci, alpha=0.2, color='#3498db', zorder=0)
+        ax.plot(x_line, y_line, '#3498db', linestyle='-', linewidth=2, zorder=1)
         
         # Correlation
         correlation, p_value = stats.pearsonr(all_x, all_y)
@@ -374,9 +422,31 @@ def create_correlation_plot_average_with_residuals(psyche_scores, avg_expert_sco
                       linewidths=1.5,
                       zorder=2)
     
-    # 회귀선
-    x_line = np.linspace(min(all_x), max(all_x), 100)
-    ax.plot(x_line, p(x_line), '#3498db', linestyle='-', linewidth=2, zorder=1)
+    # 회귀선 및 95% CI
+    all_x_arr = np.array(all_x)
+    all_y_arr = np.array(all_y)
+    x_line = np.linspace(min(all_x_arr), max(all_x_arr), 100)
+    y_line = p(x_line)
+    
+    # Calculate 95% confidence interval
+    n = len(all_x_arr)
+    y_pred = p(all_x_arr)
+    residuals = all_y_arr - y_pred
+    std_err = np.sqrt(np.sum(residuals**2) / (n - 2))
+    
+    # Standard error of prediction
+    x_mean = np.mean(all_x_arr)
+    sxx = np.sum((all_x_arr - x_mean)**2)
+    se_line = std_err * np.sqrt(1/n + (x_line - x_mean)**2 / sxx)
+    
+    # 95% CI (t-distribution)
+    from scipy.stats import t as t_dist
+    t_val = t_dist.ppf(0.975, n - 2)
+    ci = t_val * se_line
+    
+    # Plot CI and line
+    ax.fill_between(x_line, y_line - ci, y_line + ci, alpha=0.2, color='#3498db', zorder=0)
+    ax.plot(x_line, y_line, '#3498db', linestyle='-', linewidth=2, zorder=1)
     
     # Highlight top 3 residuals with red circles and labels
     for rank, (abs_res, res, exp, psyche, expert, model, predicted) in enumerate(top_3_residuals, 1):
@@ -456,12 +526,32 @@ def create_correlation_plot_by_validator(psyche_scores, expert_data):
                           s=MARKER_MAP[model]["size"],
                           alpha=0.7)
         
-        # 회귀선 및 correlation
+        # 회귀선 및 95% CI
         if len(validator_x) >= 2:
-            z = np.polyfit(validator_x, validator_y, 1)
+            validator_x_arr = np.array(validator_x)
+            validator_y_arr = np.array(validator_y)
+            
+            z = np.polyfit(validator_x_arr, validator_y_arr, 1)
             p = np.poly1d(z)
-            x_line = np.linspace(min(validator_x), max(validator_x), 100)
-            ax.plot(x_line, p(x_line), '#3498db', linestyle='-', linewidth=2)
+            x_line = np.linspace(min(validator_x_arr), max(validator_x_arr), 100)
+            y_line = p(x_line)
+            
+            # Calculate 95% confidence interval
+            n = len(validator_x_arr)
+            y_pred = p(validator_x_arr)
+            residuals = validator_y_arr - y_pred
+            std_err = np.sqrt(np.sum(residuals**2) / (n - 2))
+            
+            x_mean = np.mean(validator_x_arr)
+            sxx = np.sum((validator_x_arr - x_mean)**2)
+            se_line = std_err * np.sqrt(1/n + (x_line - x_mean)**2 / sxx)
+            
+            from scipy.stats import t as t_dist
+            t_val = t_dist.ppf(0.975, n - 2)
+            ci = t_val * se_line
+            
+            ax.fill_between(x_line, y_line - ci, y_line + ci, alpha=0.2, color='#3498db')
+            ax.plot(x_line, y_line, '#3498db', linestyle='-', linewidth=2)
             
             correlation, p_value = stats.pearsonr(validator_x, validator_y)
             p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
@@ -517,12 +607,32 @@ def create_correlation_plot_by_disorder(psyche_scores, avg_expert_scores):
                           s=MARKER_MAP[model]["size"],
                           alpha=0.7)
         
-        # 회귀선
+        # 회귀선 및 95% CI
         if len(all_x) >= 2:
-            z = np.polyfit(all_x, all_y, 1)
+            all_x_arr = np.array(all_x)
+            all_y_arr = np.array(all_y)
+            
+            z = np.polyfit(all_x_arr, all_y_arr, 1)
             p = np.poly1d(z)
-            x_line = np.linspace(min(all_x), max(all_x), 100)
-            ax.plot(x_line, p(x_line), '#3498db', linestyle='-', linewidth=2)
+            x_line = np.linspace(min(all_x_arr), max(all_x_arr), 100)
+            y_line = p(x_line)
+            
+            # Calculate 95% confidence interval
+            n = len(all_x_arr)
+            y_pred = p(all_x_arr)
+            residuals = all_y_arr - y_pred
+            std_err = np.sqrt(np.sum(residuals**2) / (n - 2))
+            
+            x_mean = np.mean(all_x_arr)
+            sxx = np.sum((all_x_arr - x_mean)**2)
+            se_line = std_err * np.sqrt(1/n + (x_line - x_mean)**2 / sxx)
+            
+            from scipy.stats import t as t_dist
+            t_val = t_dist.ppf(0.975, n - 2)
+            ci = t_val * se_line
+            
+            ax.fill_between(x_line, y_line - ci, y_line + ci, alpha=0.2, color='#3498db')
+            ax.plot(x_line, y_line, '#3498db', linestyle='-', linewidth=2)
             
             correlation, p_value = stats.pearsonr(all_x, all_y)
             p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
@@ -694,12 +804,32 @@ def create_correlation_plot_by_category(psyche_category_scores, expert_category_
                           edgecolors='black',
                           linewidths=1.5)
         
-        # 회귀선
+        # 회귀선 및 95% CI
         if len(all_x) >= 2:
-            z = np.polyfit(all_x, all_y, 1)
+            all_x_arr = np.array(all_x)
+            all_y_arr = np.array(all_y)
+            
+            z = np.polyfit(all_x_arr, all_y_arr, 1)
             p = np.poly1d(z)
-            x_line = np.linspace(min(all_x), max(all_x), 100)
-            ax.plot(x_line, p(x_line), '#3498db', linestyle='-', linewidth=2)
+            x_line = np.linspace(min(all_x_arr), max(all_x_arr), 100)
+            y_line = p(x_line)
+            
+            # Calculate 95% confidence interval
+            n = len(all_x_arr)
+            y_pred = p(all_x_arr)
+            residuals = all_y_arr - y_pred
+            std_err = np.sqrt(np.sum(residuals**2) / (n - 2))
+            
+            x_mean = np.mean(all_x_arr)
+            sxx = np.sum((all_x_arr - x_mean)**2)
+            se_line = std_err * np.sqrt(1/n + (x_line - x_mean)**2 / sxx)
+            
+            from scipy.stats import t as t_dist
+            t_val = t_dist.ppf(0.975, n - 2)
+            ci = t_val * se_line
+            
+            ax.fill_between(x_line, y_line - ci, y_line + ci, alpha=0.2, color='#3498db')
+            ax.plot(x_line, y_line, '#3498db', linestyle='-', linewidth=2)
             
             # Correlation
             correlation, p_value = stats.pearsonr(all_x, all_y)
@@ -771,12 +901,32 @@ def create_combined_correlation_figure(psyche_scores, avg_expert_scores, expert_
                           s=MARKER_MAP[model]["size"],
                           alpha=0.7)
         
-        # 회귀선
+        # 회귀선 및 95% CI
         if len(validator_x) >= 2:
-            z = np.polyfit(validator_x, validator_y, 1)
+            validator_x_arr = np.array(validator_x)
+            validator_y_arr = np.array(validator_y)
+            
+            z = np.polyfit(validator_x_arr, validator_y_arr, 1)
             p = np.poly1d(z)
-            x_line = np.linspace(min(validator_x), max(validator_x), 100)
-            ax.plot(x_line, p(x_line), '#3498db', linestyle='-', linewidth=2)
+            x_line = np.linspace(min(validator_x_arr), max(validator_x_arr), 100)
+            y_line = p(x_line)
+            
+            # Calculate 95% confidence interval
+            n = len(validator_x_arr)
+            y_pred = p(validator_x_arr)
+            residuals = validator_y_arr - y_pred
+            std_err = np.sqrt(np.sum(residuals**2) / (n - 2))
+            
+            x_mean = np.mean(validator_x_arr)
+            sxx = np.sum((validator_x_arr - x_mean)**2)
+            se_line = std_err * np.sqrt(1/n + (x_line - x_mean)**2 / sxx)
+            
+            from scipy.stats import t as t_dist
+            t_val = t_dist.ppf(0.975, n - 2)
+            ci = t_val * se_line
+            
+            ax.fill_between(x_line, y_line - ci, y_line + ci, alpha=0.15, color='#3498db')
+            ax.plot(x_line, y_line, '#3498db', linestyle='-', linewidth=2)
             
             correlation, p_value = stats.pearsonr(validator_x, validator_y)
             p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
@@ -831,12 +981,32 @@ def create_combined_correlation_figure(psyche_scores, avg_expert_scores, expert_
                           s=MARKER_MAP[model]["size"],
                           alpha=0.7)
         
-        # 회귀선
+        # 회귀선 및 95% CI
         if len(all_x) >= 2:
-            z = np.polyfit(all_x, all_y, 1)
+            all_x_arr = np.array(all_x)
+            all_y_arr = np.array(all_y)
+            
+            z = np.polyfit(all_x_arr, all_y_arr, 1)
             p = np.poly1d(z)
-            x_line = np.linspace(min(all_x), max(all_x), 100)
-            ax.plot(x_line, p(x_line), '#3498db', linestyle='-', linewidth=2)
+            x_line = np.linspace(min(all_x_arr), max(all_x_arr), 100)
+            y_line = p(x_line)
+            
+            # Calculate 95% confidence interval
+            n = len(all_x_arr)
+            y_pred = p(all_x_arr)
+            residuals = all_y_arr - y_pred
+            std_err = np.sqrt(np.sum(residuals**2) / (n - 2))
+            
+            x_mean = np.mean(all_x_arr)
+            sxx = np.sum((all_x_arr - x_mean)**2)
+            se_line = std_err * np.sqrt(1/n + (x_line - x_mean)**2 / sxx)
+            
+            from scipy.stats import t as t_dist
+            t_val = t_dist.ppf(0.975, n - 2)
+            ci = t_val * se_line
+            
+            ax.fill_between(x_line, y_line - ci, y_line + ci, alpha=0.15, color='#3498db')
+            ax.plot(x_line, y_line, '#3498db', linestyle='-', linewidth=2)
             
             correlation, p_value = stats.pearsonr(all_x, all_y)
             p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
@@ -912,12 +1082,32 @@ def create_combined_correlation_figure(psyche_scores, avg_expert_scores, expert_
                           edgecolors='black',
                           linewidths=1.5)
         
-        # 회귀선
+        # 회귀선 및 95% CI
         if len(all_x) >= 2:
-            z = np.polyfit(all_x, all_y, 1)
+            all_x_arr = np.array(all_x)
+            all_y_arr = np.array(all_y)
+            
+            z = np.polyfit(all_x_arr, all_y_arr, 1)
             p = np.poly1d(z)
-            x_line = np.linspace(min(all_x), max(all_x), 100)
-            ax.plot(x_line, p(x_line), '#3498db', linestyle='-', linewidth=2)
+            x_line = np.linspace(min(all_x_arr), max(all_x_arr), 100)
+            y_line = p(x_line)
+            
+            # Calculate 95% confidence interval
+            n = len(all_x_arr)
+            y_pred = p(all_x_arr)
+            residuals = all_y_arr - y_pred
+            std_err = np.sqrt(np.sum(residuals**2) / (n - 2))
+            
+            x_mean = np.mean(all_x_arr)
+            sxx = np.sum((all_x_arr - x_mean)**2)
+            se_line = std_err * np.sqrt(1/n + (x_line - x_mean)**2 / sxx)
+            
+            from scipy.stats import t as t_dist
+            t_val = t_dist.ppf(0.975, n - 2)
+            ci = t_val * se_line
+            
+            ax.fill_between(x_line, y_line - ci, y_line + ci, alpha=0.15, color='#3498db')
+            ax.plot(x_line, y_line, '#3498db', linestyle='-', linewidth=2)
             
             correlation, p_value = stats.pearsonr(all_x, all_y)
             p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
@@ -988,12 +1178,31 @@ def create_combined_correlation_figure_v2(psyche_scores, avg_expert_scores, expe
                           s=MARKER_MAP[model]["size"],
                           alpha=0.7)
         
-        # 회귀선
+        # 회귀선 및 95% CI
         if len(validator_x) >= 2:
-            z = np.polyfit(validator_x, validator_y, 1)
+            validator_x_arr = np.array(validator_x)
+            validator_y_arr = np.array(validator_y)
+            
+            z = np.polyfit(validator_x_arr, validator_y_arr, 1)
             p = np.poly1d(z)
-            x_line = np.linspace(min(validator_x), max(validator_x), 100)
-            ax.plot(x_line, p(x_line), '#3498db', linestyle='-', linewidth=2)
+            x_line = np.linspace(min(validator_x_arr), max(validator_x_arr), 100)
+            y_line = p(x_line)
+            
+            n = len(validator_x_arr)
+            y_pred = p(validator_x_arr)
+            residuals = validator_y_arr - y_pred
+            std_err = np.sqrt(np.sum(residuals**2) / (n - 2))
+            
+            x_mean = np.mean(validator_x_arr)
+            sxx = np.sum((validator_x_arr - x_mean)**2)
+            se_line = std_err * np.sqrt(1/n + (x_line - x_mean)**2 / sxx)
+            
+            from scipy.stats import t as t_dist
+            t_val = t_dist.ppf(0.975, n - 2)
+            ci = t_val * se_line
+            
+            ax.fill_between(x_line, y_line - ci, y_line + ci, alpha=0.15, color='#3498db')
+            ax.plot(x_line, y_line, '#3498db', linestyle='-', linewidth=2)
             
             correlation, p_value = stats.pearsonr(validator_x, validator_y)
             p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
@@ -1052,12 +1261,31 @@ def create_combined_correlation_figure_v2(psyche_scores, avg_expert_scores, expe
                           s=MARKER_MAP[model]["size"],
                           alpha=0.7)
         
-        # 회귀선
+        # 회귀선 및 95% CI
         if len(all_x) >= 2:
-            z = np.polyfit(all_x, all_y, 1)
+            all_x_arr = np.array(all_x)
+            all_y_arr = np.array(all_y)
+            
+            z = np.polyfit(all_x_arr, all_y_arr, 1)
             p = np.poly1d(z)
-            x_line = np.linspace(min(all_x), max(all_x), 100)
-            ax.plot(x_line, p(x_line), '#3498db', linestyle='-', linewidth=2)
+            x_line = np.linspace(min(all_x_arr), max(all_x_arr), 100)
+            y_line = p(x_line)
+            
+            n = len(all_x_arr)
+            y_pred = p(all_x_arr)
+            residuals = all_y_arr - y_pred
+            std_err = np.sqrt(np.sum(residuals**2) / (n - 2))
+            
+            x_mean = np.mean(all_x_arr)
+            sxx = np.sum((all_x_arr - x_mean)**2)
+            se_line = std_err * np.sqrt(1/n + (x_line - x_mean)**2 / sxx)
+            
+            from scipy.stats import t as t_dist
+            t_val = t_dist.ppf(0.975, n - 2)
+            ci = t_val * se_line
+            
+            ax.fill_between(x_line, y_line - ci, y_line + ci, alpha=0.15, color='#3498db')
+            ax.plot(x_line, y_line, '#3498db', linestyle='-', linewidth=2)
             
             correlation, p_value = stats.pearsonr(all_x, all_y)
             p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
@@ -1136,12 +1364,31 @@ def create_combined_correlation_figure_v2(psyche_scores, avg_expert_scores, expe
                           edgecolors='black',
                           linewidths=1.5)
         
-        # 회귀선
+        # 회귀선 및 95% CI
         if len(all_x) >= 2:
-            z = np.polyfit(all_x, all_y, 1)
+            all_x_arr = np.array(all_x)
+            all_y_arr = np.array(all_y)
+            
+            z = np.polyfit(all_x_arr, all_y_arr, 1)
             p = np.poly1d(z)
-            x_line = np.linspace(min(all_x), max(all_x), 100)
-            ax.plot(x_line, p(x_line), '#3498db', linestyle='-', linewidth=2)
+            x_line = np.linspace(min(all_x_arr), max(all_x_arr), 100)
+            y_line = p(x_line)
+            
+            n = len(all_x_arr)
+            y_pred = p(all_x_arr)
+            residuals = all_y_arr - y_pred
+            std_err = np.sqrt(np.sum(residuals**2) / (n - 2))
+            
+            x_mean = np.mean(all_x_arr)
+            sxx = np.sum((all_x_arr - x_mean)**2)
+            se_line = std_err * np.sqrt(1/n + (x_line - x_mean)**2 / sxx)
+            
+            from scipy.stats import t as t_dist
+            t_val = t_dist.ppf(0.975, n - 2)
+            ci = t_val * se_line
+            
+            ax.fill_between(x_line, y_line - ci, y_line + ci, alpha=0.15, color='#3498db')
+            ax.plot(x_line, y_line, '#3498db', linestyle='-', linewidth=2)
             
             correlation, p_value = stats.pearsonr(all_x, all_y)
             p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
