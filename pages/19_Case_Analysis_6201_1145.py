@@ -89,11 +89,27 @@ def load_psyche_score(_firebase_ref, client_num, disorder, model, exp_num):
 @st.cache_data
 def load_conversation_log(_firebase_ref, client_num, exp_num):
     """Load PACA-SP conversation log"""
-    key = f"clients/{client_num}/conversation_log_{client_num}_{exp_num}"
+    # Firebase structure: clients_{client}_conversation_log_{client}_{exp} > data > 0/1/2... > message
+    key = f"clients_{client_num}_conversation_log_{client_num}_{exp_num}"
     
     try:
         data = _firebase_ref.child(key).get()
-        return data
+        if data:
+            # Extract messages from 'data' key structure
+            if isinstance(data, dict) and 'data' in data:
+                messages = []
+                data_dict = data['data']
+                # Sort by numeric keys
+                indices = sorted([int(k) for k in data_dict.keys() if k.isdigit()])
+                for idx in indices:
+                    msg_data = data_dict[str(idx)]
+                    if isinstance(msg_data, dict) and 'message' in msg_data:
+                        # Alternate PACA/SP based on index (even=PACA, odd=SP)
+                        speaker = 'PACA' if idx % 2 == 0 else 'SP'
+                        messages.append({'speaker': speaker, 'message': msg_data['message']})
+                return messages
+            return data
+        return None
     except Exception as e:
         st.error(f"❌ Error loading conversation log: {str(e)}")
         return None
@@ -454,7 +470,16 @@ with tab2:
             # Display element-by-element
             st.subheader("Element-by-Element Scoring")
             
+            # Handle both nested 'elements' and flat structure
+            elements_dict = None
             if 'elements' in result_data:
+                elements_dict = result_data['elements']
+            elif is_psyche:
+                # For PSYCHE flat structure, extract all elements except 'psyche_score'
+                elements_dict = {k: v for k, v in result_data.items() 
+                                if k != 'psyche_score' and isinstance(v, dict) and 'score' in v}
+            
+            if elements_dict:
                 # Group by category
                 categories = {
                     "Subjective": [],
@@ -463,7 +488,7 @@ with tab2:
                     "Other": []
                 }
                 
-                for element, elem_data in result_data['elements'].items():
+                for element, elem_data in elements_dict.items():
                     weight = get_element_weight(element)
                     
                     if weight == 1:
@@ -478,9 +503,14 @@ with tab2:
                     # Get PSYCHE score for comparison (if viewing expert)
                     psyche_elem_score = None
                     psyche_elem_weighted = None
-                    if not is_psyche and 'elements' in psyche_data and element in psyche_data['elements']:
-                        psyche_elem_score = psyche_data['elements'][element].get('score', 0)
-                        psyche_elem_weighted = psyche_data['elements'][element].get('weighted_score', 0)
+                    if not is_psyche:
+                        # Try nested structure first, then flat
+                        if 'elements' in psyche_data and element in psyche_data['elements']:
+                            psyche_elem_score = psyche_data['elements'][element].get('score', 0)
+                            psyche_elem_weighted = psyche_data['elements'][element].get('weighted_score', 0)
+                        elif element in psyche_data and isinstance(psyche_data[element], dict):
+                            psyche_elem_score = psyche_data[element].get('score', 0)
+                            psyche_elem_weighted = psyche_data[element].get('weighted_score', 0)
                     
                     item = {
                         'Element': element,
@@ -616,8 +646,11 @@ with tab4:
         psyche_scores = []
         
         for element in elements:
+            # Try nested structure first, then flat
             if 'elements' in psyche_data and element in psyche_data['elements']:
                 psyche_scores.append(psyche_data['elements'][element].get('weighted_score', 0))
+            elif element in psyche_data and isinstance(psyche_data[element], dict):
+                psyche_scores.append(psyche_data[element].get('weighted_score', 0))
             else:
                 psyche_scores.append(0)
         
