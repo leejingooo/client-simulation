@@ -896,21 +896,12 @@ def main():
                 )
                 st.pyplot(fig_combined)
                 
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.download_button(
-                        label="📥 Download PNG (300 DPI)",
-                        data=fig_to_bytes(fig_combined),
-                        file_name="Fig1_Combined_Correlation_Analysis.png",
-                        mime="image/png"
-                    )
-                with col2:
-                    st.download_button(
-                        label="📥 Download PNG (600 DPI)",
-                        data=fig_to_bytes(fig_combined, dpi=600),
-                        file_name="Fig1_Combined_Correlation_Analysis_600dpi.png",
-                        mime="image/png"
-                    )
+                st.download_button(
+                    label="📥 Download PNG (300 DPI)",
+                    data=fig_to_bytes(fig_combined),
+                    file_name="Fig1_Combined_Correlation_Analysis.png",
+                    mime="image/png"
+                )
                 plt.close(fig_combined)
         else:
             st.warning("Element-level 데이터가 없습니다. Category별 분석을 위해서는 element 점수가 필요합니다.")
@@ -932,21 +923,12 @@ def main():
                 )
                 st.pyplot(fig_combined_v2)
                 
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.download_button(
-                        label="📥 Download PNG (300 DPI)",
-                        data=fig_to_bytes(fig_combined_v2),
-                        file_name="Fig1_Combined_Correlation_Analysis_V2.png",
-                        mime="image/png"
-                    )
-                with col2:
-                    st.download_button(
-                        label="📥 Download PNG (600 DPI)",
-                        data=fig_to_bytes(fig_combined_v2, dpi=600),
-                        file_name="Fig1_Combined_Correlation_Analysis_V2_600dpi.png",
-                        mime="image/png"
-                    )
+                st.download_button(
+                    label="📥 Download PNG (300 DPI)",
+                    data=fig_to_bytes(fig_combined_v2),
+                    file_name="Fig1_Combined_Correlation_Analysis_V2.png",
+                    mime="image/png"
+                )
                 plt.close(fig_combined_v2)
         else:
             st.warning("Element-level 데이터가 없습니다. Category별 분석을 위해서는 element 점수가 필요합니다.")
