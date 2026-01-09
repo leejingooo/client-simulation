@@ -1638,7 +1638,7 @@ def main():
         st.write(f"Expert data: {len(expert_data)} validators")
         
         # Check for debug keys
-        psyche_elem_count = len([k for k in element_scores_psyche.keys() if not k.startswith('_debug')])
+        psyche_elem_count = len([k for k in element_scores_psyche.keys() if isinstance(k, tuple)])
         st.write(f"Element-level PSYCHE scores: {psyche_elem_count} experiments")
         
         if '_debug_keys' in element_scores_psyche:
@@ -1663,7 +1663,7 @@ def main():
         
         # Show sample data
         if psyche_elem_count > 0:
-            sample_keys = [k for k in element_scores_psyche.keys() if not k.startswith('_debug')][:3]
+            sample_keys = [k for k in element_scores_psyche.keys() if isinstance(k, tuple)][:3]
             st.write("Sample PSYCHE element data:", sample_keys)
             if sample_keys:
                 sample_exp = sample_keys[0]
