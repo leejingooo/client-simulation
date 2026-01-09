@@ -708,8 +708,7 @@ def create_combined_correlation_figure_v2(psyche_scores, avg_expert_scores, expe
         
         # Legend는 첫 번째 plot (맨 왼쪽 맨 상단)에만 표시
         if idx == 0:
-            ax.legend(loc='upper left', fontsize=20, frameon=True, 
-                     fancybox=False, edgecolor='black', framealpha=0.9)
+            ax.legend(loc='upper left', prop={'size': 18, 'weight': 'bold', 'family': 'Helvetica'})
         
         for spine in ax.spines.values():
             spine.set_color('black')
