@@ -245,8 +245,29 @@ with tab1:
     st.header("Score Comparison: Expert vs PSYCHE")
     
     # Load data
-    expert_data = load_expert_scores(firebase_ref, VALIDATORS, CLIENT_NUM, EXP_NUM)
-    psyche_data = load_psyche_score(firebase_ref, CLIENT_NUM, DISORDER, MODEL, EXP_NUM)
+    with st.spinner("Loading data..."):
+        expert_data = load_expert_scores(firebase_ref, VALIDATORS, CLIENT_NUM, EXP_NUM)
+        psyche_data = load_psyche_score(firebase_ref, CLIENT_NUM, DISORDER, MODEL, EXP_NUM)
+    
+    # Debug info
+    with st.expander("🔍 Debug Info - Data Loading Status"):
+        st.write(f"**Target Client:** {CLIENT_NUM}")
+        st.write(f"**Target Experiment:** {EXP_NUM}")
+        st.write(f"**Disorder:** {DISORDER}")
+        st.write(f"**Model:** {MODEL}")
+        st.write("")
+        st.write(f"**Expert data loaded:** {len(expert_data) if expert_data else 0} validators")
+        if expert_data:
+            for validator, data in expert_data.items():
+                has_elements = 'elements' in data if data else False
+                has_score = 'psyche_score' in data if data else False
+                st.write(f"  - {validator}: elements={has_elements}, score={has_score}")
+        st.write(f"**PSYCHE data loaded:** {psyche_data is not None}")
+        if psyche_data:
+            st.write(f"  - Has 'elements': {'elements' in psyche_data}")
+            st.write(f"  - Has 'psyche_score': {'psyche_score' in psyche_data}")
+            if 'psyche_score' in psyche_data:
+                st.write(f"  - PSYCHE Score: {psyche_data['psyche_score']}")
     
     if expert_data and psyche_data:
         # Calculate average expert score
@@ -342,6 +363,24 @@ with tab1:
             )
     else:
         st.error("❌ Could not load necessary data for comparison")
+        
+        # Show what's missing
+        if not expert_data:
+            st.warning("⚠️ Expert validation data not found")
+            st.info(f"Looking for keys like: `expert_<validator_name>_{CLIENT_NUM}_{EXP_NUM}`")
+        
+        if not psyche_data:
+            st.warning("⚠️ PSYCHE automated score not found")
+            st.info(f"Looking for key: `clients_{CLIENT_NUM}_psyche_{DISORDER}_{MODEL}_{EXP_NUM}`")
+            
+            # Try alternative keys
+            st.markdown("**Trying alternative key patterns...**")
+            alt_key = f"clients_{CLIENT_NUM}/psyche_{DISORDER}_{MODEL}_{EXP_NUM}"
+            alt_data = firebase_ref.child(alt_key).get()
+            if alt_data:
+                st.success(f"✓ Found data at alternative path: `{alt_key}`")
+            else:
+                st.error(f"✗ No data at alternative path: `{alt_key}`")
 
 # ================================
 # Tab 2: Expert Evaluations vs PSYCHE
