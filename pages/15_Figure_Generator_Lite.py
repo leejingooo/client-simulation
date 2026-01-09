@@ -570,7 +570,7 @@ def create_combined_correlation_figure_v2(psyche_scores, avg_expert_scores, expe
     
     # GridSpec with spacing between sections
     gs = fig.add_gridspec(4, 3, hspace=0.35, wspace=0.3,
-                          height_ratios=[1, 1, 1.2, 1.2])
+                          height_ratios=[1, 1, 1, 1])
     
     # ========================================
     # (a) Validator-specific: Rows 0-1 (2x3)
