@@ -1375,6 +1375,19 @@ def create_weight_correlation_heatmaps(element_scores_psyche, element_scores_exp
     # Figure 생성
     fig, axes = plt.subplots(1, 2, figsize=(20, 8))
     
+    # Find max and min correlation for equal weights
+    max_corr = np.max(correlation_equal)
+    min_corr = np.min(correlation_equal)
+    max_idx = np.unravel_index(np.argmax(correlation_equal), correlation_equal.shape)
+    min_idx = np.unravel_index(np.argmin(correlation_equal), correlation_equal.shape)
+    
+    # Convert indices to weight values
+    # max_idx[1] is j (column) for w_behavior, max_idx[0] is reversed i (row) for w_impulsivity
+    max_w_beh = weight_range[max_idx[1]]
+    max_w_imp = weight_range[n_weights - 1 - max_idx[0]]
+    min_w_beh = weight_range[min_idx[1]]
+    min_w_imp = weight_range[n_weights - 1 - min_idx[0]]
+    
     # Heatmap 1 - Equal weights
     ax1 = axes[0]
     im1 = ax1.imshow(correlation_equal, cmap='Greens', aspect='auto',
@@ -1420,7 +1433,15 @@ def create_weight_correlation_heatmaps(element_scores_psyche, element_scores_exp
         spine.set_linewidth(1)
     
     plt.tight_layout()
-    return fig
+    
+    # Return figure and stats info
+    stats_info = {
+        'max_corr': max_corr,
+        'max_weights': (max_w_imp, max_w_beh, 1.0),
+        'min_corr': min_corr,
+        'min_weights': (min_w_imp, min_w_beh, 1.0)
+    }
+    return fig, stats_info
 
 # ================================
 # Figure 3: SP Validation Heatmap
@@ -1697,21 +1718,12 @@ def main():
         fig1_1 = create_correlation_plot_average(psyche_scores, avg_expert_scores)
         st.pyplot(fig1_1)
         
-        col1, col2 = st.columns(2)
-        with col1:
-            st.download_button(
-                label="📥 Download PNG (300 DPI)",
-                data=fig_to_bytes(fig1_1),
-                file_name="Fig1_1_PSYCHE_Expert_Correlation_Average.png",
-                mime="image/png"
-            )
-        with col2:
-            st.download_button(
-                label="📥 Download PNG (600 DPI)",
-                data=fig_to_bytes(fig1_1, dpi=600),
-                file_name="Fig1_1_PSYCHE_Expert_Correlation_Average_600dpi.png",
-                mime="image/png"
-            )
+        st.download_button(
+            label="📥 Download PNG (300 DPI)",
+            data=fig_to_bytes(fig1_1),
+            file_name="Fig1_1_PSYCHE_Expert_Correlation_Average.png",
+            mime="image/png"
+        )
         plt.close(fig1_1)
     
     with tab1b:
@@ -1751,22 +1763,13 @@ def main():
                     else:
                         st.warning(f"⚠️ Expert scored **lower** than PSYCHE by {abs(err):.2f} points → PSYCHE may have overestimated")
             
-            # Download buttons
-            col1, col2 = st.columns(2)
-            with col1:
-                st.download_button(
-                    label="📥 Download PNG (300 DPI)",
-                    data=fig_to_bytes(fig1_1b),
-                    file_name="Fig1-1b_Error_Analysis.png",
-                    mime="image/png"
-                )
-            with col2:
-                st.download_button(
-                    label="📥 Download PNG (600 DPI)",
-                    data=fig_to_bytes(fig1_1b, dpi=600),
-                    file_name="Fig1-1b_Error_Analysis_600dpi.png",
-                    mime="image/png"
-                )
+            # Download button
+            st.download_button(
+                label="📥 Download PNG (300 DPI)",
+                data=fig_to_bytes(fig1_1b),
+                file_name="Fig1-1b_Error_Analysis.png",
+                mime="image/png"
+            )
             plt.close(fig1_1b)
         else:
             st.warning("데이터가 없습니다.")
@@ -1826,22 +1829,13 @@ def main():
                         raw_diff = expert - psyche
                         st.info(f"ℹ️ Raw difference (Expert - PSYCHE) = {raw_diff:+.2f} vs Residual = {res:+.2f}")
                 
-                # Download buttons
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.download_button(
-                        label="📥 Download PNG (300 DPI)",
-                        data=fig_to_bytes(fig1_1c),
-                        file_name="Fig1-1c_Residual_Error_Analysis.png",
-                        mime="image/png"
-                    )
-                with col2:
-                    st.download_button(
-                        label="📥 Download PNG (600 DPI)",
-                        data=fig_to_bytes(fig1_1c, dpi=600),
-                        file_name="Fig1-1c_Residual_Error_Analysis_600dpi.png",
-                        mime="image/png"
-                    )
+                # Download button
+                st.download_button(
+                    label="📥 Download PNG (300 DPI)",
+                    data=fig_to_bytes(fig1_1c),
+                    file_name="Fig1-1c_Residual_Error_Analysis.png",
+                    mime="image/png"
+                )
                 plt.close(fig1_1c)
             else:
                 st.warning("회귀선을 계산할 수 없습니다 (데이터 부족).")
@@ -1863,21 +1857,12 @@ def main():
             )
             st.pyplot(fig_combined)
             
-            col1, col2 = st.columns(2)
-            with col1:
-                st.download_button(
-                    label="📥 Download PNG (300 DPI)",
-                    data=fig_to_bytes(fig_combined),
-                    file_name="Fig1_Combined_Correlation_Analysis.png",
-                    mime="image/png"
-                )
-            with col2:
-                st.download_button(
-                    label="📥 Download PNG (600 DPI)",
-                    data=fig_to_bytes(fig_combined, dpi=600),
-                    file_name="Fig1_Combined_Correlation_Analysis_600dpi.png",
-                    mime="image/png"
-                )
+            st.download_button(
+                label="📥 Download PNG (300 DPI)",
+                data=fig_to_bytes(fig_combined),
+                file_name="Fig1_Combined_Correlation_Analysis.png",
+                mime="image/png"
+            )
             plt.close(fig_combined)
         else:
             st.warning("Element-level 데이터가 없습니다. Category별 분석을 위해서는 element 점수가 필요합니다.")
@@ -1898,21 +1883,12 @@ def main():
             )
             st.pyplot(fig_combined_v2)
             
-            col1, col2 = st.columns(2)
-            with col1:
-                st.download_button(
-                    label="📥 Download PNG (300 DPI)",
-                    data=fig_to_bytes(fig_combined_v2),
-                    file_name="Fig1_Combined_Correlation_Analysis_V2.png",
-                    mime="image/png"
-                )
-            with col2:
-                st.download_button(
-                    label="📥 Download PNG (600 DPI)",
-                    data=fig_to_bytes(fig_combined_v2, dpi=600),
-                    file_name="Fig1_Combined_Correlation_Analysis_V2_600dpi.png",
-                    mime="image/png"
-                )
+            st.download_button(
+                label="📥 Download PNG (300 DPI)",
+                data=fig_to_bytes(fig_combined_v2),
+                file_name="Fig1_Combined_Correlation_Analysis_V2.png",
+                mime="image/png"
+            )
             plt.close(fig_combined_v2)
         else:
             st.warning("Element-level 데이터가 없습니다. Category별 분석을 위해서는 element 점수가 필요합니다.")
@@ -1922,21 +1898,12 @@ def main():
         fig1_2 = create_correlation_plot_by_validator(psyche_scores, expert_data)
         st.pyplot(fig1_2)
         
-        col1, col2 = st.columns(2)
-        with col1:
-            st.download_button(
-                label="📥 Download PNG (300 DPI)",
-                data=fig_to_bytes(fig1_2),
-                file_name="Fig1_2_PSYCHE_Expert_Correlation_Validators.png",
-                mime="image/png"
-            )
-        with col2:
-            st.download_button(
-                label="📥 Download PNG (600 DPI)",
-                data=fig_to_bytes(fig1_2, dpi=600),
-                file_name="Fig1_2_PSYCHE_Expert_Correlation_Validators_600dpi.png",
-                mime="image/png"
-            )
+        st.download_button(
+            label="📥 Download PNG (300 DPI)",
+            data=fig_to_bytes(fig1_2),
+            file_name="Fig1_2_PSYCHE_Expert_Correlation_Validators.png",
+            mime="image/png"
+        )
         plt.close(fig1_2)
     
     with tab3:
@@ -1944,21 +1911,12 @@ def main():
         fig1_3 = create_correlation_plot_by_disorder(psyche_scores, avg_expert_scores)
         st.pyplot(fig1_3)
         
-        col1, col2 = st.columns(2)
-        with col1:
-            st.download_button(
-                label="📥 Download PNG (300 DPI)",
-                data=fig_to_bytes(fig1_3),
-                file_name="Fig1_3_PSYCHE_Expert_Correlation_Disorders.png",
-                mime="image/png"
-            )
-        with col2:
-            st.download_button(
-                label="📥 Download PNG (600 DPI)",
-                data=fig_to_bytes(fig1_3, dpi=600),
-                file_name="Fig1_3_PSYCHE_Expert_Correlation_Disorders_600dpi.png",
-                mime="image/png"
-            )
+        st.download_button(
+            label="📥 Download PNG (300 DPI)",
+            data=fig_to_bytes(fig1_3),
+            file_name="Fig1_3_PSYCHE_Expert_Correlation_Disorders.png",
+            mime="image/png"
+        )
         plt.close(fig1_3)
     
     with tab4:
@@ -1974,21 +1932,12 @@ def main():
             fig1_4 = create_correlation_plot_by_category(psyche_category_scores, expert_category_scores)
             st.pyplot(fig1_4)
             
-            col1, col2 = st.columns(2)
-            with col1:
-                st.download_button(
-                    label="📥 Download PNG (300 DPI)",
-                    data=fig_to_bytes(fig1_4),
-                    file_name="Fig1-4_Category_Level_Analysis.png",
-                    mime="image/png"
-                )
-            with col2:
-                st.download_button(
-                    label="📥 Download PNG (600 DPI)",
-                    data=fig_to_bytes(fig1_4, dpi=600),
-                    file_name="Fig1-4_Category_Level_Analysis_600dpi.png",
-                    mime="image/png"
-                )
+            st.download_button(
+                label="📥 Download PNG (300 DPI)",
+                data=fig_to_bytes(fig1_4),
+                file_name="Fig1-4_Category_Level_Analysis.png",
+                mime="image/png"
+            )
             plt.close(fig1_4)
         else:
             st.warning("Element-level 데이터가 없습니다. Category별 분석을 위해서는 element 점수가 필요합니다.")
@@ -2006,21 +1955,12 @@ def main():
         if fig3:
             st.pyplot(fig3)
             
-            col1, col2 = st.columns(2)
-            with col1:
-                st.download_button(
-                    label="📥 Download PNG (300 DPI)",
-                    data=fig_to_bytes(fig3),
-                    file_name="Fig3_SP_Validation_Heatmap.png",
-                    mime="image/png"
-                )
-            with col2:
-                st.download_button(
-                    label="📥 Download PNG (600 DPI)",
-                    data=fig_to_bytes(fig3, dpi=600),
-                    file_name="Fig3_SP_Validation_Heatmap_600dpi.png",
-                    mime="image/png"
-                )
+            st.download_button(
+                label="📥 Download PNG (300 DPI)",
+                data=fig_to_bytes(fig3),
+                file_name="Fig3_SP_Validation_Heatmap.png",
+                mime="image/png"
+            )
             plt.close(fig3)
         else:
             st.warning("Failed to create SP validation heatmap.")
@@ -2043,24 +1983,29 @@ def main():
         st.info(f"PSYCHE element data: {psyche_count} experiments, Expert element data: {expert_count} total entries")
         
         with st.spinner("Weight-Correlation Heatmap 생성 중... (약 1-2분 소요)"):
-            fig2 = create_weight_correlation_heatmaps(element_scores_psyche, element_scores_expert)
-        st.pyplot(fig2)
+            fig2, stats_info = create_weight_correlation_heatmaps(element_scores_psyche, element_scores_expert)
         
+        # Display max/min correlation info
         col1, col2 = st.columns(2)
         with col1:
-            st.download_button(
-                label="📥 Download PNG (300 DPI)",
-                data=fig_to_bytes(fig2),
-                file_name="Fig2_Weight_Correlation_Heatmaps.png",
-                mime="image/png"
-            )
+            st.success(f"**📈 Maximum Correlation (Equal weights)**\n\n"
+                      f"- **r = {stats_info['max_corr']:.4f}**\n"
+                      f"- Weights: (w_Impulsivity={stats_info['max_weights'][0]:.1f}, "
+                      f"w_Behavior={stats_info['max_weights'][1]:.1f}, w_Subjective={stats_info['max_weights'][2]:.1f})")
         with col2:
-            st.download_button(
-                label="📥 Download PNG (600 DPI)",
-                data=fig_to_bytes(fig2, dpi=600),
-                file_name="Fig2_Weight_Correlation_Heatmaps_600dpi.png",
-                mime="image/png"
-            )
+            st.info(f"**📉 Minimum Correlation (Equal weights)**\n\n"
+                   f"- **r = {stats_info['min_corr']:.4f}**\n"
+                   f"- Weights: (w_Impulsivity={stats_info['min_weights'][0]:.1f}, "
+                   f"w_Behavior={stats_info['min_weights'][1]:.1f}, w_Subjective={stats_info['min_weights'][2]:.1f})")
+        
+        st.pyplot(fig2)
+        
+        st.download_button(
+            label="📥 Download PNG (300 DPI)",
+            data=fig_to_bytes(fig2),
+            file_name="Fig2_Weight_Correlation_Heatmaps.png",
+            mime="image/png"
+        )
         plt.close(fig2)
     else:
         st.warning("Element-level scores not available. Cannot generate weight correlation heatmaps.")
