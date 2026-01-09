@@ -1187,6 +1187,7 @@ def load_element_scores(root_data):
     
     # Debug: collect all matching keys
     psyche_keys_found = []
+    psyche_data_structure_sample = None
     
     # Load PSYCHE element scores
     for client_num, exp_num in EXPERIMENT_NUMBERS:
@@ -1202,28 +1203,45 @@ def load_element_scores(root_data):
             psyche_keys_found.append(key)
             record = data or {}
             
-            # Extract element scores directly from record (no 'elements' layer)
-            # Filter out metadata fields like 'psyche_score', 'timestamp', etc.
+            # Save sample structure for debugging
+            if psyche_data_structure_sample is None:
+                psyche_data_structure_sample = {
+                    'key': key,
+                    'top_level_keys': list(record.keys())[:10],
+                    'has_elements': 'elements' in record
+                }
+            
+            # Try 'elements' layer first (standard structure)
             element_data = {}
-            for field_name, field_value in record.items():
-                if field_name in valid_elements and isinstance(field_value, dict):
-                    element_data[field_name] = field_value
+            if 'elements' in record and isinstance(record['elements'], dict):
+                for field_name, field_value in record['elements'].items():
+                    if field_name in valid_elements:
+                        element_data[field_name] = field_value
+            else:
+                # Fallback: extract element scores directly from record
+                for field_name, field_value in record.items():
+                    if field_name in valid_elements and isinstance(field_value, dict):
+                        element_data[field_name] = field_value
             
             if element_data:
                 psyche_element_scores[(client_num, exp_num)] = element_data
             break
     
-    # Store found keys for debugging
+    # Store debug info
     psyche_element_scores['_debug_keys'] = psyche_keys_found
+    psyche_element_scores['_debug_structure'] = psyche_data_structure_sample
     
-    # Load Expert element scores (still uses 'elements' layer)
+    # Load Expert element scores
     for validator in VALIDATORS:
         sanitized_name = sanitize_firebase_key(validator)
         for client_num, exp_num in EXPERIMENT_NUMBERS:
             key = f"expert_{sanitized_name}_{client_num}_{exp_num}"
             data = (root_data or {}).get(key, {}) or {}
             if 'elements' in data:
-                expert_element_scores[validator][(client_num, exp_num)] = data['elements']
+                # Filter to valid elements only
+                valid_elem_data = {k: v for k, v in data['elements'].items() if k in valid_elements}
+                if valid_elem_data:
+                    expert_element_scores[validator][(client_num, exp_num)] = valid_elem_data
     
     return psyche_element_scores, expert_element_scores
 
@@ -1620,10 +1638,18 @@ def main():
         st.write(f"Expert data: {len(expert_data)} validators")
         
         # Check for debug keys
-        psyche_elem_count = len([k for k in element_scores_psyche.keys() if k != '_debug_keys'])
+        psyche_elem_count = len([k for k in element_scores_psyche.keys() if not k.startswith('_debug')])
         st.write(f"Element-level PSYCHE scores: {psyche_elem_count} experiments")
+        
         if '_debug_keys' in element_scores_psyche:
-            st.write(f"PSYCHE keys found: {element_scores_psyche['_debug_keys'][:5]}")
+            debug_keys = element_scores_psyche['_debug_keys']
+            st.write(f"PSYCHE keys found: {len(debug_keys)} total")
+            if debug_keys:
+                st.write(f"Sample keys: {debug_keys[:3]}")
+        
+        if '_debug_structure' in element_scores_psyche:
+            st.write("**PSYCHE data structure sample:**")
+            st.json(element_scores_psyche['_debug_structure'])
         
         st.write(f"Element-level Expert scores: {len(element_scores_expert)} validators")
         if element_scores_expert:
@@ -1637,8 +1663,12 @@ def main():
         
         # Show sample data
         if psyche_elem_count > 0:
-            sample_keys = [k for k in element_scores_psyche.keys() if k != '_debug_keys'][:3]
+            sample_keys = [k for k in element_scores_psyche.keys() if not k.startswith('_debug')][:3]
             st.write("Sample PSYCHE element data:", sample_keys)
+            if sample_keys:
+                sample_exp = sample_keys[0]
+                sample_elements = list(element_scores_psyche[sample_exp].keys())[:5]
+                st.write(f"  Elements in {sample_exp}: {sample_elements}")
         if element_scores_expert:
             sample_validator = list(element_scores_expert.keys())[0]
             st.write(f"Sample Expert element data ({sample_validator}):", list(element_scores_expert[sample_validator].keys())[:3])
