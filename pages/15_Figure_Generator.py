@@ -1651,7 +1651,7 @@ def create_weight_correlation_heatmaps(element_scores_psyche, element_scores_exp
     ax1.set_yticks(range(1, 11))
     ax1.tick_params(labelsize=22)
     ax1.grid(False)
-    ax1.plot(2, 5, 'rs', markersize=10, label='(5, 2, 1)')
+    ax1.plot(2, 5, marker='s', color='purple', markersize=10, label='(5, 2, 1)')
     
     for spine in ax1.spines.values():
         spine.set_color('black')
@@ -1673,7 +1673,7 @@ def create_weight_correlation_heatmaps(element_scores_psyche, element_scores_exp
     ax2.set_yticks(range(1, 11))
     ax2.tick_params(labelsize=22)
     ax2.grid(False)
-    ax2.plot(2, 5, 'rs', markersize=10, label='(5, 2, 1)')
+    ax2.plot(2, 5, marker='s', color='purple', markersize=10, label='(5, 2, 1)')
     
     for spine in ax2.spines.values():
         spine.set_color('black')
