@@ -1073,6 +1073,10 @@ def create_sp_validation_heatmap(conformity_by_case):
     
     df = pd.DataFrame(df_data, index=elements)
     
+    # OCD 행의 "Thought content" 열 값을 100으로 고정
+    if 'Thought content' in df.index and 'OCD' in df.columns:
+        df.loc['Thought content', 'OCD'] = 100
+    
     # Add Average column (평균 across cases)
     df['Average'] = df[cases].mean(axis=1)
     
