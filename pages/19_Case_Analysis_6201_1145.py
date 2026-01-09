@@ -37,7 +37,7 @@ matplotlib.rcParams['axes.unicode_minus'] = False
 CLIENT_NUM = 6201
 EXP_NUM = 1145
 DISORDER = "mdd"
-MODEL = "claudelarge"
+MODEL = "claudeguided"
 
 VALIDATORS = ["이강토", "김태환", "김광현", "김주오", "허율", "장재용"]
 
