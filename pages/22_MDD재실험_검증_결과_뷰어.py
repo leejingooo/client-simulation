@@ -2,6 +2,7 @@
 6301 클라이언트 검증 결과 뷰어 (임시 페이지)
 
 10_재실험.py에서 저장된 6301 클라이언트에 대한 평가 결과를 확인합니다.
+검증자 6명: 이강토, 김태환, 김광현, 김주오, 허율, 장재용
 """
 
 import streamlit as st
@@ -10,6 +11,9 @@ from Home import check_participant
 from firebase_config import get_firebase_ref
 from SP_utils import sanitize_key
 import json
+
+# 검증자 명단 (6명)
+VALIDATORS = ["이강토", "김태환", "김광현", "김주오", "허율", "장재용"]
 
 def main():
     st.set_page_config(
@@ -23,6 +27,7 @@ def main():
         st.stop()
     
     st.title("🔍 6301 클라이언트 검증 결과 뷰어")
+    st.info(f"**검증자 6명:** {', '.join(VALIDATORS)}")
     st.markdown("---")
     
     firebase_ref = get_firebase_ref()
@@ -44,9 +49,17 @@ def main():
     
     for key in all_data.keys():
         if 'sp_validation_' in key and '_6301_' in key:
-            sp_validation_keys.append(key)
+            # Extract expert name from key to filter
+            parts = key.split('_')
+            expert_name = '_'.join(parts[2:-2])
+            # Decode sanitized name (replace _ with spaces for common names)
+            if expert_name in VALIDATORS or any(validator.replace(' ', '_') in expert_name for validator in VALIDATORS):
+                sp_validation_keys.append(key)
         elif 'sp_conversation_' in key and '_6301_' in key:
-            sp_conversation_keys.append(key)
+            parts = key.split('_')
+            expert_name = '_'.join(parts[2:-2])
+            if expert_name in VALIDATORS or any(validator.replace(' ', '_') in expert_name for validator in VALIDATORS):
+                sp_conversation_keys.append(key)
         elif 'sp_validation_progress_' in key or 'sp_progress_' in key:
             progress_keys.append(key)
     
@@ -136,17 +149,28 @@ def main():
                         st.markdown(f"**{elem_key.upper()}**")
                         
                         rating = elem_data.get('rating', 'N/A')
-                        st.write(f"   Rating: **{rating}**/5")
-                        
-                        plausible = elem_data.get('plausible_aspects', '')
-                        if plausible:
-                            st.write(f"   ✅ Plausible: {plausible}")
-                        
-                        less_plausible = elem_data.get('less_plausible_aspects', '')
-                        if less_plausible:
-                            st.write(f"   ⚠️ Less plausible: {less_plausible}")
-                        
+                        st.write(f"**평가 점수:** {rating}/5")
                         st.markdown("")
+                        
+                        # Plausible aspects
+                        plausible = elem_data.get('plausible_aspects', '').strip()
+                        if plausible:
+                            st.markdown("**✅ 그럴듯한 측면 (Plausible Aspects)**")
+                            st.success(plausible)
+                            st.markdown("")
+                        
+                        # Less plausible aspects
+                        less_plausible = elem_data.get('less_plausible_aspects', '').strip()
+                        if less_plausible:
+                            st.markdown("**⚠️ 덜 그럴듯한 측면 (Less Plausible Aspects)**")
+                            st.warning(less_plausible)
+                            st.markdown("")
+                        
+                        # If both are empty
+                        if not plausible and not less_plausible:
+                            st.info("평가 소견이 입력되지 않았습니다.")
+                        
+                        st.markdown("---")
                 
                 # Additional impressions
                 if 'additional_impressions' in data and data['additional_impressions']:
