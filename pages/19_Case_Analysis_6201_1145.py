@@ -55,7 +55,7 @@ VALIDATOR_INITIALS = {
 # ================================
 
 @st.cache_data
-def load_expert_scores(firebase_ref, validators, client_num, exp_num):
+def load_expert_scores(_firebase_ref, validators, client_num, exp_num):
     """Load expert validation scores for all validators"""
     expert_data = {}
     
@@ -64,7 +64,7 @@ def load_expert_scores(firebase_ref, validators, client_num, exp_num):
         key = f"expert_{sanitized_name}_{client_num}_{exp_num}"
         
         try:
-            data = firebase_ref.child(key).get()
+            data = _firebase_ref.child(key).get()
             if data:
                 expert_data[validator] = data
             else:
@@ -75,24 +75,24 @@ def load_expert_scores(firebase_ref, validators, client_num, exp_num):
     return expert_data
 
 @st.cache_data
-def load_psyche_score(firebase_ref, client_num, disorder, model, exp_num):
+def load_psyche_score(_firebase_ref, client_num, disorder, model, exp_num):
     """Load PSYCHE automated score"""
     key = f"clients_{client_num}_psyche_{disorder}_{model}_{exp_num}"
     
     try:
-        data = firebase_ref.child(key).get()
+        data = _firebase_ref.child(key).get()
         return data
     except Exception as e:
         st.error(f"❌ Error loading PSYCHE score: {str(e)}")
         return None
 
 @st.cache_data
-def load_conversation_log(firebase_ref, client_num, exp_num):
+def load_conversation_log(_firebase_ref, client_num, exp_num):
     """Load PACA-SP conversation log"""
     key = f"clients/{client_num}/conversation_log_{client_num}_{exp_num}"
     
     try:
-        data = firebase_ref.child(key).get()
+        data = _firebase_ref.child(key).get()
         return data
     except Exception as e:
         st.error(f"❌ Error loading conversation log: {str(e)}")
