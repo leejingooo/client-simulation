@@ -138,8 +138,19 @@ def create_comparison_dataframe(expert_data, psyche_data):
                 row[validator] = "N/A"
         
         # Add PSYCHE score with method
+        # PSYCHE data has two possible structures:
+        # 1. Old format (04_evaluation.py): elements directly at top level
+        # 2. New format: nested under 'elements' key
+        psyche_elem = None
         if 'elements' in psyche_data and element in psyche_data['elements']:
             psyche_elem = psyche_data['elements'][element]
+        elif element in psyche_data and isinstance(psyche_data[element], dict):
+            # Flat structure - check if element is directly in psyche_data
+            # Exclude 'psyche_score' key which is the total, not an element
+            if element != 'psyche_score':
+                psyche_elem = psyche_data[element]
+        
+        if psyche_elem:
             psyche_score = psyche_elem.get('score', 0)
             psyche_weighted = psyche_elem.get('weighted_score', 0)
             psyche_method = psyche_elem.get('method', 'N/A')
@@ -260,14 +271,25 @@ with tab1:
         if expert_data:
             for validator, data in expert_data.items():
                 has_elements = 'elements' in data if data else False
-                has_score = 'psyche_score' in data if data else False
+                # Expert data uses 'expert_score', not 'psyche_score'
+                has_score = 'expert_score' in data if data else False
+                if not has_score:
+                    has_score = 'psyche_score' in data  # fallback for old format
                 st.write(f"  - {validator}: elements={has_elements}, score={has_score}")
+                if data and (data.get('expert_score') or data.get('psyche_score')):
+                    score = data.get('expert_score', data.get('psyche_score', 0))
+                    st.write(f"    → Score: {score:.2f}")
         st.write(f"**PSYCHE data loaded:** {psyche_data is not None}")
         if psyche_data:
             st.write(f"  - Has 'elements': {'elements' in psyche_data}")
             st.write(f"  - Has 'psyche_score': {'psyche_score' in psyche_data}")
             if 'psyche_score' in psyche_data:
                 st.write(f"  - PSYCHE Score: {psyche_data['psyche_score']}")
+            # Show if flat structure (elements at top level)
+            element_count = sum(1 for k, v in psyche_data.items() 
+                               if k != 'psyche_score' and isinstance(v, dict) and 'score' in v)
+            if element_count > 0:
+                st.write(f"  - Direct elements (flat structure): {element_count}")
     
     if expert_data and psyche_data:
         # Calculate average expert score
@@ -409,7 +431,8 @@ with tab2:
         else:
             if selected_validator in expert_data:
                 result_data = expert_data[selected_validator]
-                total_score = result_data.get('psyche_score', 0)
+                # Expert validation data uses 'expert_score' key (not 'psyche_score')
+                total_score = result_data.get('expert_score', result_data.get('psyche_score', 0))
                 
                 # Show comparison with PSYCHE
                 col1, col2, col3 = st.columns(3)
