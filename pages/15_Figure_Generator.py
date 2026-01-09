@@ -725,6 +725,221 @@ def create_correlation_plot_by_category(psyche_category_scores, expert_category_
     plt.tight_layout()
     return fig
 
+def create_combined_correlation_figure(psyche_scores, avg_expert_scores, expert_data, psyche_category_scores, expert_category_scores):
+    """Combined Figure: Validator-specific, Disease-specific, and Category-specific correlation plots.
+    
+    Layout:
+    - Rows 0-1: Validator-specific (2x3 grid) - (a)
+    - Row 2: Disease-specific (1x3 grid) - (b)
+    - Row 3: Category-specific (1x3 grid) - (c)
+    """
+    fig = plt.figure(figsize=(24, 32))
+    
+    # GridSpec with spacing between sections
+    gs = fig.add_gridspec(4, 3, hspace=0.35, wspace=0.3,
+                          height_ratios=[1, 1, 1.2, 1.2])
+    
+    # ========================================
+    # (a) Validator-specific: Rows 0-1 (2x3)
+    # ========================================
+    for idx, validator in enumerate(VALIDATORS):
+        row = idx // 3
+        col = idx % 3
+        ax = fig.add_subplot(gs[row, col])
+        
+        # 데이터 수집
+        validator_x, validator_y = [], []
+        data_by_model = {model: [] for model in COLOR_MAP.keys()}
+        
+        for exp in EXPERIMENT_NUMBERS:
+            psyche = psyche_scores.get(exp)
+            expert = expert_data[validator].get(exp)
+            if psyche is not None and expert is not None:
+                validator_x.append(psyche)
+                validator_y.append(expert)
+                model = get_model_from_exp(exp[1])
+                if model in data_by_model:
+                    data_by_model[model].append((psyche, expert))
+        
+        # Scatter plot
+        for model, points in data_by_model.items():
+            if points:
+                x, y = zip(*points)
+                ax.scatter(x, y,
+                          c=COLOR_MAP[model],
+                          marker=MARKER_MAP[model]["marker"],
+                          s=MARKER_MAP[model]["size"],
+                          alpha=0.7)
+        
+        # 회귀선
+        if len(validator_x) >= 2:
+            z = np.polyfit(validator_x, validator_y, 1)
+            p = np.poly1d(z)
+            x_line = np.linspace(min(validator_x), max(validator_x), 100)
+            ax.plot(x_line, p(x_line), '#3498db', linestyle='-', linewidth=2)
+            
+            correlation, p_value = stats.pearsonr(validator_x, validator_y)
+            p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
+            ax.text(0.3, 0.10, f'r = {correlation:.4f}, {p_text}',
+                   transform=ax.transAxes, fontsize=18, family='Helvetica')
+        
+        # 스타일링
+        ax.set_title(VALIDATOR_INITIALS[validator], fontsize=24, fontweight='bold', family='Helvetica')
+        ax.set_xlabel('PSYCHE SCORE', fontsize=22, family='Helvetica')
+        ax.set_ylabel('Expert score', fontsize=22, family='Helvetica')
+        ax.set_yticks([5, 35, 65])
+        ax.set_xticks([5, 30, 55])
+        ax.tick_params(labelsize=20)
+        ax.grid(False)
+        
+        for spine in ax.spines.values():
+            spine.set_color('black')
+            spine.set_linewidth(2)
+    
+    # (a) 마커 추가 - 왼쪽 상단
+    fig.text(0.02, 0.95, '(a)', fontsize=32, fontweight='bold', family='Helvetica')
+    
+    # ========================================
+    # (b) Disease-specific: Row 2 (1x3)
+    # ========================================
+    for idx, (disorder_code, disorder_name) in enumerate([(6201, "MDD"), (6202, "BD"), (6206, "OCD")]):
+        ax = fig.add_subplot(gs[2, idx])
+        
+        # 데이터 필터링
+        data_by_model = {model: [] for model in COLOR_MAP.keys()}
+        all_x, all_y = [], []
+        
+        for exp in EXPERIMENT_NUMBERS:
+            if exp[0] != disorder_code:
+                continue
+            psyche = psyche_scores.get(exp)
+            expert = avg_expert_scores.get(exp)
+            if psyche is not None and expert is not None:
+                all_x.append(psyche)
+                all_y.append(expert)
+                model = get_model_from_exp(exp[1])
+                if model in data_by_model:
+                    data_by_model[model].append((psyche, expert))
+        
+        # Scatter plot
+        for model, points in data_by_model.items():
+            if points:
+                x, y = zip(*points)
+                ax.scatter(x, y,
+                          c=COLOR_MAP[model],
+                          marker=MARKER_MAP[model]["marker"],
+                          s=MARKER_MAP[model]["size"],
+                          alpha=0.7)
+        
+        # 회귀선
+        if len(all_x) >= 2:
+            z = np.polyfit(all_x, all_y, 1)
+            p = np.poly1d(z)
+            x_line = np.linspace(min(all_x), max(all_x), 100)
+            ax.plot(x_line, p(x_line), '#3498db', linestyle='-', linewidth=2)
+            
+            correlation, p_value = stats.pearsonr(all_x, all_y)
+            p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
+            ax.text(0.3, 0.10, f'r = {correlation:.4f}, {p_text}',
+                   transform=ax.transAxes, fontsize=24, family='Helvetica')
+        
+        # 스타일링
+        ax.set_title(DISORDER_NAMES[DISORDER_MAP[disorder_code]], fontsize=30, fontweight='bold', family='Helvetica', pad=20)
+        ax.set_xlabel('PSYCHE SCORE', fontsize=28, family='Helvetica')
+        ax.set_ylabel('Expert score', fontsize=28, family='Helvetica')
+        ax.set_yticks([5, 35, 65])
+        ax.set_xticks([5, 30, 55])
+        ax.tick_params(labelsize=26)
+        ax.grid(False)
+        
+        for spine in ax.spines.values():
+            spine.set_color('black')
+            spine.set_linewidth(2)
+    
+    # (b) 마커 추가
+    fig.text(0.02, 0.48, '(b)', fontsize=32, fontweight='bold', family='Helvetica')
+    
+    # ========================================
+    # (c) Category-specific: Row 3 (1x3)
+    # ========================================
+    categories = ['Subjective', 'Impulsivity', 'Behavior']
+    category_labels = {
+        'Subjective': 'Subjective Information',
+        'Impulsivity': 'Impulsivity',
+        'Behavior': 'MFC-Behavior'
+    }
+    
+    for idx, category in enumerate(categories):
+        ax = fig.add_subplot(gs[3, idx])
+        
+        # 데이터 수집
+        data_by_model = {model: [] for model in COLOR_MAP.keys()}
+        all_x, all_y = [], []
+        
+        for exp in EXPERIMENT_NUMBERS:
+            if exp not in psyche_category_scores:
+                continue
+            
+            psyche_score = psyche_category_scores[exp][category]
+            
+            # Expert score - average across validators
+            expert_scores = []
+            for validator in VALIDATORS:
+                if exp in expert_category_scores[validator]:
+                    expert_scores.append(expert_category_scores[validator][exp][category])
+            
+            if not expert_scores:
+                continue
+            
+            expert_score = np.mean(expert_scores)
+            model = get_model_from_exp(exp[1])
+            
+            data_by_model[model].append((psyche_score, expert_score))
+            all_x.append(psyche_score)
+            all_y.append(expert_score)
+        
+        # Scatter plot
+        for model, points in data_by_model.items():
+            if points:
+                x_vals = [p[0] for p in points]
+                y_vals = [p[1] for p in points]
+                ax.scatter(x_vals, y_vals, 
+                          color=COLOR_MAP[model],
+                          label=LABEL_MAP[model],
+                          s=MARKER_MAP[model]['size'],
+                          marker=MARKER_MAP[model]['marker'],
+                          alpha=0.7,
+                          edgecolors='black',
+                          linewidths=1.5)
+        
+        # 회귀선
+        if len(all_x) >= 2:
+            z = np.polyfit(all_x, all_y, 1)
+            p = np.poly1d(z)
+            x_line = np.linspace(min(all_x), max(all_x), 100)
+            ax.plot(x_line, p(x_line), '#3498db', linestyle='-', linewidth=2)
+            
+            correlation, p_value = stats.pearsonr(all_x, all_y)
+            p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
+            ax.text(0.3, 0.10, f'r = {correlation:.4f}, {p_text}',
+                   transform=ax.transAxes, fontsize=24, family='Helvetica')
+        
+        # 스타일링
+        ax.set_title(category_labels[category], fontsize=30, fontweight='bold', family='Helvetica', pad=20)
+        ax.set_xlabel('PSYCHE SCORE', fontsize=28, family='Helvetica')
+        ax.set_ylabel('Expert score', fontsize=28, family='Helvetica')
+        ax.tick_params(labelsize=26)
+        ax.grid(False)
+        
+        for spine in ax.spines.values():
+            spine.set_color('black')
+            spine.set_linewidth(2)
+    
+    # (c) 마커 추가
+    fig.text(0.02, 0.23, '(c)', fontsize=32, fontweight='bold', family='Helvetica')
+    
+    return fig
+
 # ================================
 # Figure 2: Weight-Correlation Analysis
 # ================================
@@ -1209,10 +1424,11 @@ def main():
     # ================================
     st.markdown("## 📈 Figure 1: PSYCHE-Expert Correlation")
     
-    tab1, tab1b, tab1c, tab2, tab3, tab4 = st.tabs([
+    tab1, tab1b, tab1c, tab_combined, tab2, tab3, tab4 = st.tabs([
         "1-1: Average Expert", 
         "1-1b: Error Analysis (Raw)", 
         "1-1c: Error Analysis (Residual)",
+        "Combined Figure",
         "1-2: Individual Validators", 
         "1-3: By Disorder", 
         "1-4: By Category"
@@ -1374,6 +1590,40 @@ def main():
         else:
             st.warning("데이터가 없습니다.")
     
+    with tab_combined:
+        st.markdown("### Combined Figure: Validator, Disorder, and Category Analysis")
+        st.caption("(a) Validator-specific (2×3), (b) Disease-specific (1×3), (c) Category-specific (1×3)")
+        
+        if element_scores_psyche and element_scores_expert:
+            psyche_category_scores, expert_category_scores = calculate_category_scores(
+                element_scores_psyche, element_scores_expert
+            )
+            
+            fig_combined = create_combined_correlation_figure(
+                psyche_scores, avg_expert_scores, expert_data,
+                psyche_category_scores, expert_category_scores
+            )
+            st.pyplot(fig_combined)
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                st.download_button(
+                    label="📥 Download PNG (300 DPI)",
+                    data=fig_to_bytes(fig_combined),
+                    file_name="Fig1_Combined_Correlation_Analysis.png",
+                    mime="image/png"
+                )
+            with col2:
+                st.download_button(
+                    label="📥 Download PNG (600 DPI)",
+                    data=fig_to_bytes(fig_combined, dpi=600),
+                    file_name="Fig1_Combined_Correlation_Analysis_600dpi.png",
+                    mime="image/png"
+                )
+            plt.close(fig_combined)
+        else:
+            st.warning("Element-level 데이터가 없습니다. Category별 분석을 위해서는 element 점수가 필요합니다.")
+    
     with tab2:
         st.markdown("### Figure 1-2: Individual Validators")
         fig1_2 = create_correlation_plot_by_validator(psyche_scores, expert_data)
@@ -1453,43 +1703,6 @@ def main():
     st.markdown("---")
     
     # ================================
-    # Figure 2: Weight-Correlation Analysis
-    # ================================
-    st.markdown("## 🔥 Figure 2: Weight-Correlation Analysis")
-    st.caption("가중치 변화에 따른 correlation 변화 분석")
-    
-    if element_scores_psyche and element_scores_expert:
-        # Check if there's actual data (exclude _debug_keys)
-        psyche_count = len([k for k in element_scores_psyche.keys() if k != '_debug_keys'])
-        expert_count = sum(len(v) for v in element_scores_expert.values())
-        
-        st.info(f"PSYCHE element data: {psyche_count} experiments, Expert element data: {expert_count} total entries")
-        
-        fig2 = create_weight_correlation_heatmaps(element_scores_psyche, element_scores_expert)
-        st.pyplot(fig2)
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            st.download_button(
-                label="📥 Download PNG (300 DPI)",
-                data=fig_to_bytes(fig2),
-                file_name="Fig2_Weight_Correlation_Heatmaps.png",
-                mime="image/png"
-            )
-        with col2:
-            st.download_button(
-                label="📥 Download PNG (600 DPI)",
-                data=fig_to_bytes(fig2, dpi=600),
-                file_name="Fig2_Weight_Correlation_Heatmaps_600dpi.png",
-                mime="image/png"
-            )
-        plt.close(fig2)
-    else:
-        st.warning("Element-level scores not available. Cannot generate weight correlation heatmaps.")
-    
-    st.markdown("---")
-    
-    # ================================
     # Figure 3: SP Validation Heatmap
     # ================================
     st.markdown("## 🔵 Figure 3: SP Validation Heatmap")
@@ -1520,6 +1733,44 @@ def main():
             st.warning("Failed to create SP validation heatmap.")
     else:
         st.info("SP validation 데이터가 없습니다. 02_가상환자에_대한_전문가_검증.py에서 검증을 완료해주세요.")
+    
+    st.markdown("---")
+    
+    # ================================
+    # Figure 2: Weight-Correlation Analysis
+    # ================================
+    st.markdown("## 🔥 Figure 2: Weight-Correlation Analysis")
+    st.caption("가중치 변화에 따른 correlation 변화 분석 (생성에 시간이 걸립니다)")
+    
+    if element_scores_psyche and element_scores_expert:
+        # Check if there's actual data (exclude _debug_keys)
+        psyche_count = len([k for k in element_scores_psyche.keys() if k != '_debug_keys'])
+        expert_count = sum(len(v) for v in element_scores_expert.values())
+        
+        st.info(f"PSYCHE element data: {psyche_count} experiments, Expert element data: {expert_count} total entries")
+        
+        with st.spinner("Weight-Correlation Heatmap 생성 중... (약 1-2분 소요)"):
+            fig2 = create_weight_correlation_heatmaps(element_scores_psyche, element_scores_expert)
+        st.pyplot(fig2)
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.download_button(
+                label="📥 Download PNG (300 DPI)",
+                data=fig_to_bytes(fig2),
+                file_name="Fig2_Weight_Correlation_Heatmaps.png",
+                mime="image/png"
+            )
+        with col2:
+            st.download_button(
+                label="📥 Download PNG (600 DPI)",
+                data=fig_to_bytes(fig2, dpi=600),
+                file_name="Fig2_Weight_Correlation_Heatmaps_600dpi.png",
+                mime="image/png"
+            )
+        plt.close(fig2)
+    else:
+        st.warning("Element-level scores not available. Cannot generate weight correlation heatmaps.")
 
 if __name__ == "__main__":
     main()
