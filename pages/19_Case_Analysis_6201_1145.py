@@ -98,20 +98,31 @@ def load_conversation_log(_firebase_ref, client_num, exp_num):
             # Extract messages from 'data' key structure
             if isinstance(data, dict) and 'data' in data:
                 messages = []
-                data_dict = data['data']
-                # Sort by numeric keys
-                indices = sorted([int(k) for k in data_dict.keys() if k.isdigit()])
-                for idx in indices:
-                    msg_data = data_dict[str(idx)]
-                    if isinstance(msg_data, dict) and 'message' in msg_data:
-                        # Alternate PACA/SP based on index (even=PACA, odd=SP)
-                        speaker = 'PACA' if idx % 2 == 0 else 'SP'
-                        messages.append({'speaker': speaker, 'message': msg_data['message']})
-                return messages
+                data_content = data['data']
+                
+                # Handle both list and dict formats
+                if isinstance(data_content, list):
+                    # List format: iterate by index
+                    for idx, msg_data in enumerate(data_content):
+                        if isinstance(msg_data, dict) and 'message' in msg_data:
+                            speaker = 'PACA' if idx % 2 == 0 else 'SP'
+                            messages.append({'speaker': speaker, 'message': msg_data['message']})
+                elif isinstance(data_content, dict):
+                    # Dict format: sort by numeric keys
+                    indices = sorted([int(k) for k in data_content.keys() if k.isdigit()])
+                    for idx in indices:
+                        msg_data = data_content[str(idx)]
+                        if isinstance(msg_data, dict) and 'message' in msg_data:
+                            speaker = 'PACA' if idx % 2 == 0 else 'SP'
+                            messages.append({'speaker': speaker, 'message': msg_data['message']})
+                
+                return messages if messages else None
             return data
         return None
     except Exception as e:
         st.error(f"❌ Error loading conversation log: {str(e)}")
+        import traceback
+        st.code(traceback.format_exc())
         return None
 
 def get_element_weight(element_name):
