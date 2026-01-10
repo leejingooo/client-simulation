@@ -112,30 +112,30 @@ LABEL_MAP = {
 
 # PIQSCA scores (sum of 3 ratings: process_of_the_interview, techniques, information_for_diagnosis)
 PIQSCA_SCORES = {
-    (6201, 3111): 12,  # 444
-    (6201, 3117): 10,  # 433
-    (6201, 1121): 15,  # 555
-    (6201, 1123): 11,  # 434
-    (6201, 3134): 6,   # 222
-    (6201, 3138): 9,   # 333
-    (6201, 1143): 11,  # 434
-    (6201, 1145): 3,   # 111
-    (6202, 3211): 3,   # 111
-    (6202, 3212): 9,   # 333
-    (6202, 1221): 6,   # 213
-    (6202, 1222): 3,   # 111
-    (6202, 3231): 3,   # 111
-    (6202, 3234): 7,   # 223
-    (6202, 1241): 6,   # 213
-    (6202, 1242): 8,   # 332
-    (6206, 3611): 11,  # 434
-    (6206, 3612): 8,   # 314
-    (6206, 1621): 13,  # 445
-    (6206, 1622): 7,   # 322
-    (6206, 3631): 6,   # 222
-    (6206, 3632): 10,  # 433
-    (6206, 1641): 11,  # 434
-    (6206, 1642): 11,  # 434
+    (6201, 3111): 12,  # 444 - gptsmaller
+    (6201, 3117): 10,  # 433 - gptsmaller
+    (6201, 1121): 15,  # 555 - gptlarge
+    (6201, 1123): 11,  # 434 - gptlarge
+    (6201, 3134): 6,   # 222 - claudesmaller
+    (6201, 3138): 9,   # 333 - claudesmaller
+    (6201, 1143): 11,  # 434 - claudelarge
+    (6201, 1145): 3,   # 111 - claudelarge
+    (6202, 3211): 3,   # 111 - gptsmaller
+    (6202, 3212): 9,   # 333 - gptsmaller
+    (6202, 1221): 6,   # 213 - gptlarge
+    (6202, 1222): 3,   # 111 - gptlarge
+    (6202, 3231): 3,   # 111 - claudesmaller
+    (6202, 3234): 7,   # 223 - claudesmaller
+    (6202, 1241): 6,   # 213 - claudelarge
+    (6202, 1242): 8,   # 332 - claudelarge
+    (6206, 3611): 11,  # 434 - gptsmaller
+    (6206, 3612): 8,   # 314 - gptsmaller
+    (6206, 1621): 13,  # 445 - gptlarge
+    (6206, 1622): 7,   # 322 - gptlarge
+    (6206, 3631): 6,   # 222 - claudesmaller
+    (6206, 3632): 10,  # 433 - claudesmaller
+    (6206, 1641): 11,  # 434 - claudelarge
+    (6206, 1642): 11,  # 434 - claudelarge
 }
 
 def get_model_from_exp(exp_num):
@@ -1719,8 +1719,15 @@ def calculate_weighted_correlation_from_elements(element_scores_psyche, element_
         return correlation
     return None
 
-def create_weight_correlation_heatmaps(element_scores_psyche, element_scores_expert_dict):
-    """Figure 2: Weight-correlation analysis heatmaps."""
+@st.cache_data(show_spinner="Weight correlation 계산 중... (캐시됨, 최초 1회만 실행)")
+def calculate_weight_correlations(_element_scores_psyche, _element_scores_expert_dict):
+    """Calculate weight correlation matrices (cached for performance).
+    
+    Returns:
+    - correlation_equal: Equal weights heatmap data
+    - correlation_fixed: Fixed expert weights heatmap data
+    - weight_range: Weight range used
+    """
     # 0.1 간격으로 1부터 10까지 (총 91개 포인트)
     weight_range = np.arange(1, 10.1, 0.1)
     n_weights = len(weight_range)
@@ -1730,7 +1737,7 @@ def create_weight_correlation_heatmaps(element_scores_psyche, element_scores_exp
     for i, w_imp in enumerate(weight_range):
         for j, w_beh in enumerate(weight_range):
             corr = calculate_weighted_correlation_from_elements(
-                element_scores_psyche, element_scores_expert_dict, w_imp, w_beh
+                _element_scores_psyche, _element_scores_expert_dict, w_imp, w_beh
             )
             correlation_equal[n_weights-1-i, j] = corr if corr is not None else 0  # y축 반전
     
@@ -1740,10 +1747,21 @@ def create_weight_correlation_heatmaps(element_scores_psyche, element_scores_exp
     for i, w_imp in enumerate(weight_range):
         for j, w_beh in enumerate(weight_range):
             corr = calculate_weighted_correlation_from_elements(
-                element_scores_psyche, element_scores_expert_dict, w_imp, w_beh,
+                _element_scores_psyche, _element_scores_expert_dict, w_imp, w_beh,
                 expert_fixed_weights=(5, 2, 1)  # Fixed expert weights
             )
             correlation_fixed[n_weights-1-i, j] = corr if corr is not None else 0
+    
+    return correlation_equal, correlation_fixed, weight_range
+
+def create_weight_correlation_heatmaps(element_scores_psyche, element_scores_expert_dict):
+    """Figure 2: Weight-correlation analysis heatmaps."""
+    # Calculate correlations (cached)
+    correlation_equal, correlation_fixed, weight_range = calculate_weight_correlations(
+        element_scores_psyche, element_scores_expert_dict
+    )
+    
+    n_weights = len(weight_range)
     
     # Figure 생성
     fig, axes = plt.subplots(1, 2, figsize=(20, 8))
@@ -1815,6 +1833,194 @@ def create_weight_correlation_heatmaps(element_scores_psyche, element_scores_exp
         'min_weights': (min_w_imp, min_w_beh, 1.0)
     }
     return fig, stats_info
+
+def create_combined_figure_1x4(psyche_scores, avg_expert_scores, correlation_equal, correlation_fixed, weight_range):
+    """Combined Figure: 1×4 layout with (a) PSYCHE-Expert, (b) PSYCHE-PIQSCA, (c) Equal weights, (d) Fixed weights.
+    
+    Layout:
+    - (a) PSYCHE SCORE vs. Expert score
+    - (b) PSYCHE SCORE vs. PIQSCA
+    - (c) Weight correlation - Equal weights
+    - (d) Weight correlation - Expert weights fixed at (5,2,1)
+    """
+    fig = plt.figure(figsize=(32, 8))
+    gs = fig.add_gridspec(1, 4, wspace=0.3)
+    
+    # ========================================
+    # (a) PSYCHE SCORE vs. Expert score
+    # ========================================
+    ax_a = fig.add_subplot(gs[0, 0])
+    
+    # 데이터 준비
+    data_by_model = {model: [] for model in COLOR_MAP.keys()}
+    for exp in EXPERIMENT_NUMBERS:
+        psyche = psyche_scores.get(exp)
+        expert = avg_expert_scores.get(exp)
+        if psyche is not None and expert is not None:
+            model = get_model_from_exp(exp[1])
+            if model in data_by_model:
+                data_by_model[model].append((psyche, expert))
+    
+    # Scatter plot
+    all_x, all_y = [], []
+    for model, points in data_by_model.items():
+        if points:
+            x, y = zip(*points)
+            all_x.extend(x)
+            all_y.extend(y)
+            ax_a.scatter(x, y, 
+                      c=COLOR_MAP[model],
+                      marker=MARKER_MAP[model]["marker"],
+                      s=MARKER_MAP[model]["size"],
+                      label=LABEL_MAP[model],
+                      alpha=0.7,
+                      edgecolors='black',
+                      linewidths=1.5)
+    
+    # 회귀선
+    if len(all_x) >= 2:
+        all_x_arr = np.array(all_x)
+        all_y_arr = np.array(all_y)
+        z = np.polyfit(all_x_arr, all_y_arr, 1)
+        p = np.poly1d(z)
+        x_line = np.linspace(min(all_x_arr), max(all_x_arr), 100)
+        y_line = p(x_line)
+        ax_a.plot(x_line, y_line, '#3498db', linestyle='-', linewidth=2)
+        
+        correlation, p_value = stats.pearsonr(all_x, all_y)
+        p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
+        ax_a.text(0.3, 0.10, f'r = {correlation:.4f}\n{p_text}',
+                 transform=ax_a.transAxes, fontsize=18, family='Helvetica')
+    
+    ax_a.set_title('PSYCHE SCORE vs. Expert score', fontsize=28, pad=15, family='Helvetica', fontweight='bold')
+    ax_a.set_xlabel('PSYCHE SCORE', fontsize=24, family='Helvetica')
+    ax_a.set_ylabel('Expert score', fontsize=24, family='Helvetica')
+    ax_a.set_yticks([5, 35, 65])
+    ax_a.set_xticks([5, 30, 55])
+    ax_a.tick_params(labelsize=20)
+    ax_a.legend(loc='upper left', prop={'size': 14, 'family': 'Helvetica'})
+    
+    for spine in ax_a.spines.values():
+        spine.set_color('black')
+        spine.set_linewidth(2)
+    
+    # ========================================
+    # (b) PSYCHE SCORE vs. PIQSCA
+    # ========================================
+    ax_b = fig.add_subplot(gs[0, 1])
+    
+    # 데이터 준비
+    data_by_model = {model: [] for model in COLOR_MAP.keys()}
+    for exp in EXPERIMENT_NUMBERS:
+        if exp not in PIQSCA_SCORES:
+            continue
+        piqsca_score = PIQSCA_SCORES[exp]
+        if exp in psyche_scores:
+            psyche_score = psyche_scores[exp]
+            model = get_model_from_exp(exp[1])
+            data_by_model[model].append((psyche_score, piqsca_score))
+    
+    # Scatter plot
+    all_x, all_y = [], []
+    for model, points in data_by_model.items():
+        if not points:
+            continue
+        xs = [p[0] for p in points]
+        ys = [p[1] for p in points]
+        all_x.extend(xs)
+        all_y.extend(ys)
+        ax_b.scatter(xs, ys, 
+                    color=COLOR_MAP[model],
+                    marker=MARKER_MAP[model]['marker'],
+                    s=MARKER_MAP[model]['size'],
+                    label=LABEL_MAP[model],
+                    alpha=0.7,
+                    edgecolors='black',
+                    linewidths=1.5)
+    
+    # 회귀선
+    if len(all_x) >= 2:
+        all_x_arr = np.array(all_x)
+        all_y_arr = np.array(all_y)
+        z = np.polyfit(all_x_arr, all_y_arr, 1)
+        p = np.poly1d(z)
+        x_line = np.linspace(min(all_x_arr), max(all_x_arr), 100)
+        y_line = p(x_line)
+        ax_b.plot(x_line, y_line, '#3498db', linestyle='-', linewidth=2)
+        
+        correlation, p_value = stats.pearsonr(all_x, all_y)
+        p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
+        ax_b.text(0.3, 0.10, f'r = {correlation:.4f}\n{p_text}',
+                 transform=ax_b.transAxes, fontsize=18, family='Helvetica')
+    
+    ax_b.set_title('PSYCHE SCORE vs. PIQSCA', fontsize=28, pad=15, family='Helvetica', fontweight='bold')
+    ax_b.set_xlabel('PSYCHE SCORE', fontsize=24, family='Helvetica')
+    ax_b.set_ylabel('PIQSCA', fontsize=24, family='Helvetica')
+    ax_b.set_yticks([3, 9, 15])
+    ax_b.set_xticks([5, 30, 55])
+    ax_b.tick_params(labelsize=20)
+    ax_b.legend(loc='upper left', prop={'size': 14, 'family': 'Helvetica'})
+    
+    for spine in ax_b.spines.values():
+        spine.set_color('black')
+        spine.set_linewidth(2)
+    
+    # ========================================
+    # (c) Weight correlation - Equal weights
+    # ========================================
+    ax_c = fig.add_subplot(gs[0, 2])
+    
+    im_c = ax_c.imshow(correlation_equal, cmap='Greens', aspect='auto',
+                       extent=[1, 10, 1, 10], origin='lower')
+    cbar_c = plt.colorbar(im_c, ax=ax_c)
+    cbar_c.ax.set_ylabel('Correlation', fontsize=18, family='Helvetica')
+    cbar_c.ax.tick_params(labelsize=16)
+    
+    ax_c.set_xlabel('$w_{Behavior}$', fontsize=24, family='Helvetica')
+    ax_c.set_ylabel('$w_{Impulsivity}$', fontsize=24, family='Helvetica')
+    ax_c.set_title('Equal weights', fontsize=28, family='Helvetica', fontweight='bold', pad=15)
+    ax_c.set_xticks(range(1, 11))
+    ax_c.set_yticks(range(1, 11))
+    ax_c.tick_params(labelsize=18)
+    ax_c.grid(False)
+    ax_c.plot(2, 5, marker='s', color='purple', markersize=8, label='(5, 2, 1)')
+    
+    for spine in ax_c.spines.values():
+        spine.set_color('black')
+        spine.set_linewidth(2)
+    
+    # ========================================
+    # (d) Weight correlation - Fixed weights
+    # ========================================
+    ax_d = fig.add_subplot(gs[0, 3])
+    
+    im_d = ax_d.imshow(correlation_fixed, cmap='Greens', aspect='auto',
+                       extent=[1, 10, 1, 10], origin='lower')
+    cbar_d = plt.colorbar(im_d, ax=ax_d)
+    cbar_d.ax.set_ylabel('Correlation', fontsize=18, family='Helvetica')
+    cbar_d.ax.tick_params(labelsize=16)
+    
+    ax_d.set_xlabel('$w_{Behavior}$', fontsize=24, family='Helvetica')
+    ax_d.set_ylabel('$w_{Impulsivity}$', fontsize=24, family='Helvetica')
+    ax_d.set_title('Expert weights fixed at (5,2,1)', fontsize=28, family='Helvetica', fontweight='bold', pad=15)
+    ax_d.set_xticks(range(1, 11))
+    ax_d.set_yticks(range(1, 11))
+    ax_d.tick_params(labelsize=18)
+    ax_d.grid(False)
+    ax_d.plot(2, 5, marker='s', color='purple', markersize=8, label='(5, 2, 1)')
+    
+    for spine in ax_d.spines.values():
+        spine.set_color('black')
+        spine.set_linewidth(2)
+    
+    # Add panel labels
+    fig.text(0.02, 0.95, '(a)', fontsize=32, fontweight='bold', family='Helvetica')
+    fig.text(0.27, 0.95, '(b)', fontsize=32, fontweight='bold', family='Helvetica')
+    fig.text(0.52, 0.95, '(c)', fontsize=32, fontweight='bold', family='Helvetica')
+    fig.text(0.77, 0.95, '(d)', fontsize=32, fontweight='bold', family='Helvetica')
+    
+    plt.tight_layout()
+    return fig
 
 # ================================
 # Figure 3: SP Validation Heatmap
@@ -2341,6 +2547,38 @@ def main():
         mime="image/png"
     )
     plt.close(fig1_5)
+    
+    st.markdown("---")
+    
+    # ================================
+    # Combined Figure 1×4: PSYCHE-Expert, PIQSCA, Weight Correlations
+    # ================================
+    st.markdown("## 🎨 Combined Figure 1×4: Comprehensive Analysis")
+    st.caption("(a) PSYCHE vs. Expert | (b) PSYCHE vs. PIQSCA | (c) Equal weights | (d) Fixed weights")
+    
+    if element_scores_psyche and element_scores_expert:
+        # Calculate weight correlations (cached)
+        correlation_equal, correlation_fixed, weight_range = calculate_weight_correlations(
+            element_scores_psyche, element_scores_expert
+        )
+        
+        if st.button("Generate Combined Figure 1×4", key="combined_1x4"):
+            with st.spinner("Generating combined figure..."):
+                fig_combined_1x4 = create_combined_figure_1x4(
+                    psyche_scores, avg_expert_scores,
+                    correlation_equal, correlation_fixed, weight_range
+                )
+                st.pyplot(fig_combined_1x4)
+                
+                st.download_button(
+                    label="📥 Download PNG (300 DPI)",
+                    data=fig_to_bytes(fig_combined_1x4),
+                    file_name="Fig_Combined_1x4_Comprehensive_Analysis.png",
+                    mime="image/png"
+                )
+                plt.close(fig_combined_1x4)
+    else:
+        st.warning("Element-level 데이터가 필요합니다.")
     
     st.markdown("---")
     

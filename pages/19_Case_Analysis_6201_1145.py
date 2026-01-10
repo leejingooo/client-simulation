@@ -1,10 +1,11 @@
 """
-Case Analysis: Client 6201, Experiment 1145
-Error Analysis - Expert Score vs PSYCHE Score Discrepancy
+Error Case Analysis: Top 3 Cases
+Expert Score vs PSYCHE Score Discrepancy Analysis
 
-Target: Largest discrepancy case for discussion section
-Client: 6201 (MDD)
-Experiment: 1145 (claudelarge)
+Rank 1: Client 6201, Exp 1145 (MDD, Claude-Large)
+Rank 2: Client 6201, Exp 3111 (MDD, GPT-Small)
+Rank 3: Client 6201, Exp 1123 (MDD, GPT-Large)
+
 Validators: 이강토, 김태환, 김광현, 김주오, 허율, 장재용
 """
 
@@ -22,7 +23,7 @@ import json
 # Configuration
 # ================================
 st.set_page_config(
-    page_title="Case Analysis: 6201-1145",
+    page_title="Error Case Analysis Top 3",
     page_icon="🔍",
     layout="wide"
 )
@@ -34,10 +35,36 @@ matplotlib.rcParams['axes.unicode_minus'] = False
 # ================================
 # Constants
 # ================================
-CLIENT_NUM = 6201
-EXP_NUM = 1145
-DISORDER = "mdd"
-MODEL = "claudeguided"
+# Top 3 Error Cases
+CASES = [
+    {
+        "rank": 1,
+        "client_num": 6201,
+        "exp_num": 1145,
+        "disorder": "mdd",
+        "disorder_name": "Major Depressive Disorder (MDD)",
+        "model": "claudeguided",
+        "model_name": "Claude-Large"
+    },
+    {
+        "rank": 2,
+        "client_num": 6201,
+        "exp_num": 3111,
+        "disorder": "mdd",
+        "disorder_name": "Major Depressive Disorder (MDD)",
+        "model": "gptsmaller",
+        "model_name": "GPT-Small"
+    },
+    {
+        "rank": 3,
+        "client_num": 6201,
+        "exp_num": 1123,
+        "disorder": "mdd",
+        "disorder_name": "Major Depressive Disorder (MDD)",
+        "model": "gptguided",
+        "model_name": "GPT-Large"
+    }
+]
 
 VALIDATORS = ["이강토", "김태환", "김광현", "김주오", "허율", "장재용"]
 
@@ -261,8 +288,39 @@ def calculate_expert_average(expert_data):
 # Main App
 # ================================
 
-st.title("🔍 Case Analysis: Error Analysis")
-st.markdown(f"**Client:** {CLIENT_NUM} (MDD) | **Experiment:** {EXP_NUM} ({MODEL})")
+st.title("🔍 Error Case Analysis: Top 3 Cases")
+st.markdown("Expert Score vs PSYCHE Score Discrepancy Analysis")
+
+# Case selection
+st.markdown("---")
+st.subheader("Select Case to Analyze")
+
+case_options = [f"Rank {case['rank']}: Client {case['client_num']}, Exp {case['exp_num']} ({case['model_name']})" 
+                for case in CASES]
+selected_case_str = st.selectbox("Choose a case:", case_options)
+
+# Get selected case
+selected_idx = case_options.index(selected_case_str)
+selected_case = CASES[selected_idx]
+
+CLIENT_NUM = selected_case['client_num']
+EXP_NUM = selected_case['exp_num']
+DISORDER = selected_case['disorder']
+MODEL = selected_case['model']
+
+# Display case info
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    st.metric("Rank", f"#{selected_case['rank']}")
+with col2:
+    st.metric("Client", CLIENT_NUM)
+with col3:
+    st.metric("Experiment", EXP_NUM)
+with col4:
+    st.metric("Disorder", selected_case['disorder_name'])
+
+st.info(f"🤖 **Model:** {selected_case['model_name']} ({MODEL})")
+
 st.markdown("---")
 
 # Initialize Firebase
@@ -716,12 +774,18 @@ with tab4:
 st.markdown("---")
 st.markdown("""
 ### Analysis Notes
-이 페이지는 Expert Score와 PSYCHE Score 간의 가장 큰 차이를 보인 케이스에 대한 상세 분석을 제공합니다.
+이 페이지는 Expert Score와 PSYCHE Score 간의 **가장 큰 차이를 보인 Top 3 케이스**에 대한 상세 분석을 제공합니다.
+
+**Top 3 Error Cases:**
+- **Rank 1:** Client 6201, Exp 1145 (MDD, Claude-Large)
+- **Rank 2:** Client 6201, Exp 3111 (MDD, GPT-Small)
+- **Rank 3:** Client 6201, Exp 1123 (MDD, GPT-Large)
 
 **분석 목적:**
 - Error pattern 파악
 - PSYCHE Score 자동화 평가의 한계점 식별
 - Discussion section을 위한 insight 도출
+- Model별, 실험별 discrepancy 비교
 
 **검증자:** 6명의 정신과 전문의
 - 이강토, 김태환, 김광현, 김주오, 허율, 장재용
