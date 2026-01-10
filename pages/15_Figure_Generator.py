@@ -2141,8 +2141,8 @@ def create_combined_figure_1x4(psyche_scores, avg_expert_scores, piqsca_scores, 
     im_c = ax_c.imshow(correlation_equal, cmap='Greens', aspect='auto',
                        extent=[1, 10, 1, 10], origin='lower')
     cbar_c = plt.colorbar(im_c, ax=ax_c)
-    cbar_c.ax.set_ylabel('Correlation', fontsize=36, family='Helvetica')
-    cbar_c.ax.tick_params(labelsize=32)
+    cbar_c.ax.set_ylabel('Correlation', fontsize=28, family='Helvetica')
+    cbar_c.ax.tick_params(labelsize=28)
     cbar_c.set_ticks([0.78, 0.88])
     
     ax_c.set_xlabel('$w_{Behavior}$', fontsize=36, family='Helvetica')
@@ -2166,8 +2166,8 @@ def create_combined_figure_1x4(psyche_scores, avg_expert_scores, piqsca_scores, 
     im_d = ax_d.imshow(correlation_fixed, cmap='Greens', aspect='auto',
                        extent=[1, 10, 1, 10], origin='lower')
     cbar_d = plt.colorbar(im_d, ax=ax_d)
-    cbar_d.ax.set_ylabel('Correlation', fontsize=36, family='Helvetica')
-    cbar_d.ax.tick_params(labelsize=32)
+    cbar_d.ax.set_ylabel('Correlation', fontsize=28, family='Helvetica')
+    cbar_d.ax.tick_params(labelsize=28)
     cbar_d.set_ticks([0.84, 0.90])
     
     ax_d.set_xlabel('$w_{Behavior}$', fontsize=36, family='Helvetica')
