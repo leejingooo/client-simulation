@@ -110,34 +110,6 @@ LABEL_MAP = {
     "claudelarge": "Claude-Large"
 }
 
-# PIQSCA scores (sum of 3 ratings: process_of_the_interview, techniques, information_for_diagnosis)
-PIQSCA_SCORES = {
-    (6201, 3111): 12,  # 444 - gptsmaller
-    (6201, 3117): 10,  # 433 - gptsmaller
-    (6201, 1121): 15,  # 555 - gptlarge
-    (6201, 1123): 11,  # 434 - gptlarge
-    (6201, 3134): 6,   # 222 - claudesmaller
-    (6201, 3138): 9,   # 333 - claudesmaller
-    (6201, 1143): 11,  # 434 - claudelarge
-    (6201, 1145): 3,   # 111 - claudelarge
-    (6202, 3211): 3,   # 111 - gptsmaller
-    (6202, 3212): 9,   # 333 - gptsmaller
-    (6202, 1221): 6,   # 213 - gptlarge
-    (6202, 1222): 3,   # 111 - gptlarge
-    (6202, 3231): 3,   # 111 - claudesmaller
-    (6202, 3234): 7,   # 223 - claudesmaller
-    (6202, 1241): 6,   # 213 - claudelarge
-    (6202, 1242): 8,   # 332 - claudelarge
-    (6206, 3611): 11,  # 434 - gptsmaller
-    (6206, 3612): 8,   # 314 - gptsmaller
-    (6206, 1621): 13,  # 445 - gptlarge
-    (6206, 1622): 7,   # 322 - gptlarge
-    (6206, 3631): 6,   # 222 - claudesmaller
-    (6206, 3632): 10,  # 433 - claudesmaller
-    (6206, 1641): 11,  # 434 - claudelarge
-    (6206, 1642): 11,  # 434 - claudelarge
-}
-
 def get_model_from_exp(exp_num):
     """Identify model from experiment number."""
     return MODEL_BY_EXP.get(exp_num, 'unknown')
@@ -1033,8 +1005,8 @@ def load_piqsca_from_firebase(root_data):
     
     return piqsca_by_validator, validators_found
 
-def create_piqsca_correlation_plot_firebase(psyche_scores, piqsca_by_validator, figsize=(8, 8)):
-    """차세대 1-6: PSYCHE SCORE vs. PIQSCA correlation plots (Firebase data, by validator).
+def create_piqsca_correlation_plot_firebase(psyche_scores, piqsca_by_validator, figsize=(6, 6)):
+    """PSYCHE SCORE vs. PIQSCA correlation plots (Firebase data, by validator).
     
     Returns list of figures, one per validator.
     """
@@ -1115,17 +1087,17 @@ def create_piqsca_correlation_plot_firebase(psyche_scores, piqsca_by_validator, 
             correlation, p_value = stats.pearsonr(all_x, all_y)
             p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
             ax.text(0.3, 0.10, f'r = {correlation:.4f}, {p_text}',
-                   transform=ax.transAxes, fontsize=22, family='Helvetica')
+                   transform=ax.transAxes, fontsize=18, family='Helvetica')
         
         # 스타일링
-        ax.set_title(f'PSYCHE SCORE vs. PIQSCA\nValidator: {validator}', 
-                    fontsize=32, pad=20, family='Helvetica')
-        ax.set_xlabel('PSYCHE SCORE', fontsize=36, family='Helvetica')
-        ax.set_ylabel('PIQSCA', fontsize=36, family='Helvetica')
+        ax.set_title('PSYCHE SCORE vs. PIQSCA', 
+                    fontsize=28, pad=15, family='Helvetica')
+        ax.set_xlabel('PSYCHE SCORE', fontsize=24, family='Helvetica')
+        ax.set_ylabel('PIQSCA', fontsize=24, family='Helvetica')
         ax.set_yticks([3, 9, 15])
         ax.set_xticks([5, 30, 55])
-        ax.tick_params(labelsize=32)
-        ax.legend(loc='upper left', prop={'size': 18, 'weight': 'bold', 'family': 'Helvetica'})
+        ax.tick_params(labelsize=20)
+        ax.legend(loc='upper left', prop={'size': 14, 'weight': 'bold', 'family': 'Helvetica'})
         
         # 테두리
         for spine in ax.spines.values():
@@ -1990,16 +1962,16 @@ def create_weight_correlation_heatmaps(element_scores_psyche, element_scores_exp
     }
     return fig, stats_info
 
-def create_combined_figure_1x4(psyche_scores, avg_expert_scores, correlation_equal, correlation_fixed, weight_range):
+def create_combined_figure_1x4(psyche_scores, avg_expert_scores, piqsca_scores, correlation_equal, correlation_fixed, weight_range):
     """Combined Figure: 1×4 layout with (a) PSYCHE-Expert, (b) PSYCHE-PIQSCA, (c) Equal weights, (d) Fixed weights.
     
     Layout:
     - (a) PSYCHE SCORE vs. Expert score
-    - (b) PSYCHE SCORE vs. PIQSCA
+    - (b) PSYCHE SCORE vs. PIQSCA (Firebase data)
     - (c) Weight correlation - Equal weights
     - (d) Weight correlation - Expert weights fixed at (5,2,1)
     """
-    fig = plt.figure(figsize=(32, 8))
+    fig = plt.figure(figsize=(32, 16))
     gs = fig.add_gridspec(1, 4, wspace=0.3)
     
     # ========================================
@@ -2048,7 +2020,7 @@ def create_combined_figure_1x4(psyche_scores, avg_expert_scores, correlation_equ
         ax_a.text(0.3, 0.10, f'r = {correlation:.4f}\n{p_text}',
                  transform=ax_a.transAxes, fontsize=18, family='Helvetica')
     
-    ax_a.set_title('PSYCHE SCORE vs. Expert score', fontsize=28, pad=15, family='Helvetica', fontweight='bold')
+    ax_a.set_title('PSYCHE SCORE vs. Expert score', fontsize=28, pad=15, family='Helvetica')
     ax_a.set_xlabel('PSYCHE SCORE', fontsize=24, family='Helvetica')
     ax_a.set_ylabel('Expert score', fontsize=24, family='Helvetica')
     ax_a.set_yticks([5, 35, 65])
@@ -2065,16 +2037,15 @@ def create_combined_figure_1x4(psyche_scores, avg_expert_scores, correlation_equ
     # ========================================
     ax_b = fig.add_subplot(gs[0, 1])
     
-    # 데이터 준비
+    # 데이터 준비 - Firebase PIQSCA scores 사용
     data_by_model = {model: [] for model in COLOR_MAP.keys()}
     for exp in EXPERIMENT_NUMBERS:
-        if exp not in PIQSCA_SCORES:
+        if exp not in piqsca_scores or exp not in psyche_scores:
             continue
-        piqsca_score = PIQSCA_SCORES[exp]
-        if exp in psyche_scores:
-            psyche_score = psyche_scores[exp]
-            model = get_model_from_exp(exp[1])
-            data_by_model[model].append((psyche_score, piqsca_score))
+        piqsca_score = piqsca_scores[exp]
+        psyche_score = psyche_scores[exp]
+        model = get_model_from_exp(exp[1])
+        data_by_model[model].append((psyche_score, piqsca_score))
     
     # Scatter plot
     all_x, all_y = [], []
@@ -2109,13 +2080,13 @@ def create_combined_figure_1x4(psyche_scores, avg_expert_scores, correlation_equ
         ax_b.text(0.3, 0.10, f'r = {correlation:.4f}\n{p_text}',
                  transform=ax_b.transAxes, fontsize=18, family='Helvetica')
     
-    ax_b.set_title('PSYCHE SCORE vs. PIQSCA', fontsize=28, pad=15, family='Helvetica', fontweight='bold')
+    ax_b.set_title('PSYCHE SCORE vs. PIQSCA', fontsize=28, pad=15, family='Helvetica')
     ax_b.set_xlabel('PSYCHE SCORE', fontsize=24, family='Helvetica')
     ax_b.set_ylabel('PIQSCA', fontsize=24, family='Helvetica')
     ax_b.set_yticks([3, 9, 15])
     ax_b.set_xticks([5, 30, 55])
     ax_b.tick_params(labelsize=20)
-    ax_b.legend(loc='upper left', prop={'size': 14, 'family': 'Helvetica'})
+
     
     for spine in ax_b.spines.values():
         spine.set_color('black')
@@ -2134,7 +2105,7 @@ def create_combined_figure_1x4(psyche_scores, avg_expert_scores, correlation_equ
     
     ax_c.set_xlabel('$w_{Behavior}$', fontsize=24, family='Helvetica')
     ax_c.set_ylabel('$w_{Impulsivity}$', fontsize=24, family='Helvetica')
-    ax_c.set_title('Equal weights', fontsize=28, family='Helvetica', fontweight='bold', pad=15)
+    ax_c.set_title('Equal weights', fontsize=28, family='Helvetica', pad=15)
     ax_c.set_xticks(range(1, 11))
     ax_c.set_yticks(range(1, 11))
     ax_c.tick_params(labelsize=18)
@@ -2158,7 +2129,7 @@ def create_combined_figure_1x4(psyche_scores, avg_expert_scores, correlation_equ
     
     ax_d.set_xlabel('$w_{Behavior}$', fontsize=24, family='Helvetica')
     ax_d.set_ylabel('$w_{Impulsivity}$', fontsize=24, family='Helvetica')
-    ax_d.set_title('Expert weights fixed at (5,2,1)', fontsize=28, family='Helvetica', fontweight='bold', pad=15)
+    ax_d.set_title('Expert weights fixed at (5,2,1)', fontsize=28, family='Helvetica', pad=15)
     ax_d.set_xticks(range(1, 11))
     ax_d.set_yticks(range(1, 11))
     ax_d.tick_params(labelsize=18)
@@ -2438,7 +2409,7 @@ def main():
     st.markdown("## 📈 Figure 1: PSYCHE-Expert Correlation")
     
     tab_piqsca, tab1, tab1b, tab1c, tab_combined, tab_combined_v2, tab2, tab3, tab4 = st.tabs([
-        "1-5 & 1-6: PIQSCA",
+        "PIQSCA",
         "1-1: Average Expert", 
         "1-1b: Error Analysis (Raw)", 
         "1-1c: Error Analysis (Residual)",
@@ -2450,30 +2421,7 @@ def main():
     ])
     
     with tab_piqsca:
-        st.markdown("### Figure 1-5: PSYCHE SCORE vs. PIQSCA (Hardcoded Data)")
-        st.caption("PSYCHE SCORE와 PIQSCA (Psychiatric Interview Quality Scale for Conversational Agents) 간의 상관관계 분석")
-        
-        st.info("""
-        **PIQSCA 구성:**
-        - Process of the interview (1-5점)
-        - Techniques (1-5점)
-        - Information for diagnosis (1-5점)
-        - **총점 범위: 3-15점**
-        """)
-        
-        fig1_5 = create_piqsca_correlation_plot(psyche_scores)
-        st.pyplot(fig1_5)
-        
-        st.download_button(
-            label="📥 Download PNG (300 DPI)",
-            data=fig_to_bytes(fig1_5),
-            file_name="Fig1-5_PSYCHE_PIQSCA_Correlation.png",
-            mime="image/png"
-        )
-        plt.close(fig1_5)
-        
-        st.markdown("---")
-        st.markdown("### Figure 1-6: PSYCHE SCORE vs. PIQSCA (Firebase Data)")
+        st.markdown("### PSYCHE SCORE vs. PIQSCA")
         st.caption("Firebase에서 불러온 PIQSCA 데이터로 Validator별 Correlation 분석")
         
         # Load PIQSCA data from Firebase
@@ -2775,10 +2723,29 @@ def main():
             element_scores_psyche, element_scores_expert
         )
         
-        if st.button("Generate Combined Figure 1×4", key="combined_1x4"):
+        # Load PIQSCA data from Firebase for combined figure
+        with st.spinner("Loading PIQSCA data for combined figure..."):
+            piqsca_by_validator, validators_found = load_piqsca_from_firebase(root_snapshot)
+        
+        # Aggregate PIQSCA scores across validators (average)
+        piqsca_aggregated = {}
+        if piqsca_by_validator:
+            for validator, scores in piqsca_by_validator.items():
+                for exp, score in scores.items():
+                    if exp not in piqsca_aggregated:
+                        piqsca_aggregated[exp] = []
+                    piqsca_aggregated[exp].append(score)
+            
+            # Average across validators
+            piqsca_avg = {exp: np.mean(scores) for exp, scores in piqsca_aggregated.items()}
+        else:
+            piqsca_avg = {}
+            st.warning("⚠️ PIQSCA 데이터를 찾을 수 없어 Combined Figure 1×4를 생성할 수 없습니다.")
+        
+        if piqsca_avg and st.button("Generate Combined Figure 1×4", key="combined_1x4"):
             with st.spinner("Generating combined figure..."):
                 fig_combined_1x4 = create_combined_figure_1x4(
-                    psyche_scores, avg_expert_scores,
+                    psyche_scores, avg_expert_scores, piqsca_avg,
                     correlation_equal, correlation_fixed, weight_range
                 )
                 st.pyplot(fig_combined_1x4)
