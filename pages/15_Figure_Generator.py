@@ -57,6 +57,15 @@ EXPERIMENT_NUMBERS = [
 
 VALIDATORS = ["이강토", "김태환", "김광현", "김주오", "허율", "장재용"]
 
+# PIQSCA Validator for Combined Figure 1×4
+# Combined Figure에서 PIQSCA 데이터로 사용할 validator 이름
+PIQSCA_VALIDATOR = "임경호"
+
+# Combined Figure 1×4 Grid Width Ratios
+# 각 서브플롯의 상대적 너비 (a, b, c, d 순서)
+# 예: [1, 1, 1, 1] = 모두 동일, [2, 1, 1, 1] = 첫번째가 나머지보다 2배
+COMBINED_FIGURE_WIDTH_RATIOS = [0.8, 0.8, 1, 1]
+
 VALIDATOR_INITIALS = {
     "이강토": "A",
     "김태환": "B",
@@ -1972,7 +1981,7 @@ def create_combined_figure_1x4(psyche_scores, avg_expert_scores, piqsca_scores, 
     - (d) Weight correlation - Expert weights fixed at (5,2,1)
     """
     fig = plt.figure(figsize=(48, 8))
-    gs = fig.add_gridspec(1, 4, wspace=0.3)
+    gs = fig.add_gridspec(1, 4, wspace=0.3, width_ratios=COMBINED_FIGURE_WIDTH_RATIOS)
     
     # ========================================
     # (a) PSYCHE SCORE vs. Expert score
@@ -2017,16 +2026,16 @@ def create_combined_figure_1x4(psyche_scores, avg_expert_scores, piqsca_scores, 
         
         correlation, p_value = stats.pearsonr(all_x, all_y)
         p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
-        ax_a.text(0.3, 0.10, f'r = {correlation:.4f}\n{p_text}',
+        ax_a.text(0.3, 0.10, f'r = {correlation:.4f}, {p_text}',
                  transform=ax_a.transAxes, fontsize=18, family='Helvetica')
     
-    ax_a.set_title('PSYCHE SCORE vs. Expert score', fontsize=28, pad=15, family='Helvetica')
-    ax_a.set_xlabel('PSYCHE SCORE', fontsize=24, family='Helvetica')
-    ax_a.set_ylabel('Expert score', fontsize=24, family='Helvetica')
+    ax_a.set_title('PSYCHE SCORE vs. Expert score', fontsize=36, pad=20, family='Helvetica')
+    ax_a.set_xlabel('PSYCHE SCORE', fontsize=36, family='Helvetica')
+    ax_a.set_ylabel('Expert score', fontsize=36, family='Helvetica')
     ax_a.set_yticks([5, 35, 65])
     ax_a.set_xticks([5, 30, 55])
     ax_a.tick_params(labelsize=20)
-    ax_a.legend(loc='upper left', prop={'size': 14, 'family': 'Helvetica'})
+    ax_a.legend(loc='upper left', prop={'size': 18,'weight': 'bold', 'family': 'Helvetica'})
     
     for spine in ax_a.spines.values():
         spine.set_color('black')
@@ -2077,12 +2086,12 @@ def create_combined_figure_1x4(psyche_scores, avg_expert_scores, piqsca_scores, 
         
         correlation, p_value = stats.pearsonr(all_x, all_y)
         p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
-        ax_b.text(0.3, 0.10, f'r = {correlation:.4f}\n{p_text}',
+        ax_b.text(0.3, 0.10, f'r = {correlation:.4f}, {p_text}',
                  transform=ax_b.transAxes, fontsize=18, family='Helvetica')
     
-    ax_b.set_title('PSYCHE SCORE vs. PIQSCA', fontsize=28, pad=15, family='Helvetica')
-    ax_b.set_xlabel('PSYCHE SCORE', fontsize=24, family='Helvetica')
-    ax_b.set_ylabel('PIQSCA', fontsize=24, family='Helvetica')
+    ax_b.set_title('PSYCHE SCORE vs. PIQSCA', fontsize=36, pad=20, family='Helvetica')
+    ax_b.set_xlabel('PSYCHE SCORE', fontsize=36, family='Helvetica')
+    ax_b.set_ylabel('PIQSCA', fontsize=36, family='Helvetica')
     ax_b.set_yticks([3, 9, 15])
     ax_b.set_xticks([5, 30, 55])
     ax_b.tick_params(labelsize=20)
@@ -2729,25 +2738,19 @@ def main():
         with st.spinner("Loading PIQSCA data for combined figure..."):
             piqsca_by_validator, validators_found = load_piqsca_from_firebase(root_snapshot)
         
-        # Aggregate PIQSCA scores across validators (average)
-        piqsca_aggregated = {}
-        if piqsca_by_validator:
-            for validator, scores in piqsca_by_validator.items():
-                for exp, score in scores.items():
-                    if exp not in piqsca_aggregated:
-                        piqsca_aggregated[exp] = []
-                    piqsca_aggregated[exp].append(score)
-            
-            # Average across validators
-            piqsca_avg = {exp: np.mean(scores) for exp, scores in piqsca_aggregated.items()}
+        # Use single validator's PIQSCA data (configured at top of file)
+        piqsca_single = {}
+        if piqsca_by_validator and PIQSCA_VALIDATOR in piqsca_by_validator:
+            piqsca_single = piqsca_by_validator[PIQSCA_VALIDATOR]
+            st.info(f"ℹ️ Combined Figure 1×4에서 **{PIQSCA_VALIDATOR}**의 PIQSCA 데이터를 사용합니다. (상단 PIQSCA_VALIDATOR 설정에서 변경 가능)")
         else:
-            piqsca_avg = {}
-            st.warning("⚠️ PIQSCA 데이터를 찾을 수 없어 Combined Figure 1×4를 생성할 수 없습니다.")
+            available = ', '.join(validators_found) if validators_found else '없음'
+            st.warning(f"⚠️ '{PIQSCA_VALIDATOR}'의 PIQSCA 데이터를 찾을 수 없습니다. 사용 가능한 validator: {available}")
         
-        if piqsca_avg and st.button("Generate Combined Figure 1×4", key="combined_1x4"):
+        if piqsca_single and st.button("Generate Combined Figure 1×4", key="combined_1x4"):
             with st.spinner("Generating combined figure..."):
                 fig_combined_1x4 = create_combined_figure_1x4(
-                    psyche_scores, avg_expert_scores, piqsca_avg,
+                    psyche_scores, avg_expert_scores, piqsca_single,
                     correlation_equal, correlation_fixed, weight_range
                 )
                 st.pyplot(fig_combined_1x4)
