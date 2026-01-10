@@ -1971,7 +1971,7 @@ def create_combined_figure_1x4(psyche_scores, avg_expert_scores, piqsca_scores, 
     - (c) Weight correlation - Equal weights
     - (d) Weight correlation - Expert weights fixed at (5,2,1)
     """
-    fig = plt.figure(figsize=(32, 16))
+    fig = plt.figure(figsize=(48, 8))
     gs = fig.add_gridspec(1, 4, wspace=0.3)
     
     # ========================================
@@ -2102,6 +2102,7 @@ def create_combined_figure_1x4(psyche_scores, avg_expert_scores, piqsca_scores, 
     cbar_c = plt.colorbar(im_c, ax=ax_c)
     cbar_c.ax.set_ylabel('Correlation', fontsize=18, family='Helvetica')
     cbar_c.ax.tick_params(labelsize=16)
+    cbar_c.set_ticks([0.78, 0.88])
     
     ax_c.set_xlabel('$w_{Behavior}$', fontsize=24, family='Helvetica')
     ax_c.set_ylabel('$w_{Impulsivity}$', fontsize=24, family='Helvetica')
@@ -2126,6 +2127,7 @@ def create_combined_figure_1x4(psyche_scores, avg_expert_scores, piqsca_scores, 
     cbar_d = plt.colorbar(im_d, ax=ax_d)
     cbar_d.ax.set_ylabel('Correlation', fontsize=18, family='Helvetica')
     cbar_d.ax.tick_params(labelsize=16)
+    cbar_d.set_ticks([0.84, 0.90])
     
     ax_d.set_xlabel('$w_{Behavior}$', fontsize=24, family='Helvetica')
     ax_d.set_ylabel('$w_{Impulsivity}$', fontsize=24, family='Helvetica')
@@ -2457,7 +2459,7 @@ def main():
             
             for validator, fig in figs_1_6:
                 st.markdown(f"#### Validator: {validator}")
-                st.pyplot(fig)
+                st.pyplot(fig, use_container_width=False)
                 
                 st.download_button(
                     label=f"📥 Download {validator} Plot (PNG, 300 DPI)",
