@@ -2014,7 +2014,7 @@ def create_combined_figure_1x4(psyche_scores, avg_expert_scores, piqsca_scores, 
                       edgecolors='black',
                       linewidths=1.5)
     
-    # 회귀선
+    # 회귀선 및 95% CI
     if len(all_x) >= 2:
         all_x_arr = np.array(all_x)
         all_y_arr = np.array(all_y)
@@ -2022,20 +2022,36 @@ def create_combined_figure_1x4(psyche_scores, avg_expert_scores, piqsca_scores, 
         p = np.poly1d(z)
         x_line = np.linspace(min(all_x_arr), max(all_x_arr), 100)
         y_line = p(x_line)
-        ax_a.plot(x_line, y_line, '#3498db', linestyle='-', linewidth=2)
+        
+        # Calculate 95% confidence interval
+        n = len(all_x_arr)
+        y_pred = p(all_x_arr)
+        residuals = all_y_arr - y_pred
+        std_err = np.sqrt(np.sum(residuals**2) / (n - 2))
+        x_mean = np.mean(all_x_arr)
+        sxx = np.sum((all_x_arr - x_mean)**2)
+        se_line = std_err * np.sqrt(1/n + (x_line - x_mean)**2 / sxx)
+        
+        from scipy.stats import t as t_dist
+        t_val = t_dist.ppf(0.975, n - 2)
+        ci = t_val * se_line
+        
+        # Plot CI and line
+        ax_a.fill_between(x_line, y_line - ci, y_line + ci, alpha=0.2, color='#3498db', zorder=0)
+        ax_a.plot(x_line, y_line, '#3498db', linestyle='-', linewidth=2, zorder=1)
         
         correlation, p_value = stats.pearsonr(all_x, all_y)
         p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
         ax_a.text(0.3, 0.10, f'r = {correlation:.4f}, {p_text}',
-                 transform=ax_a.transAxes, fontsize=18, family='Helvetica')
+                 transform=ax_a.transAxes, fontsize=22, family='Helvetica')
     
     ax_a.set_title('PSYCHE SCORE vs. Expert score', fontsize=36, pad=20, family='Helvetica')
     ax_a.set_xlabel('PSYCHE SCORE', fontsize=36, family='Helvetica')
     ax_a.set_ylabel('Expert score', fontsize=36, family='Helvetica')
     ax_a.set_yticks([5, 35, 65])
     ax_a.set_xticks([5, 30, 55])
-    ax_a.tick_params(labelsize=20)
-    ax_a.legend(loc='upper left', prop={'size': 18,'weight': 'bold', 'family': 'Helvetica'})
+    ax_a.tick_params(labelsize=32)
+    ax_a.legend(loc='upper left', prop={'size': 18, 'weight': 'bold', 'family': 'Helvetica'})
     
     for spine in ax_a.spines.values():
         spine.set_color('black')
@@ -2074,7 +2090,7 @@ def create_combined_figure_1x4(psyche_scores, avg_expert_scores, piqsca_scores, 
                     edgecolors='black',
                     linewidths=1.5)
     
-    # 회귀선
+    # 회귀선 및 95% CI
     if len(all_x) >= 2:
         all_x_arr = np.array(all_x)
         all_y_arr = np.array(all_y)
@@ -2082,19 +2098,36 @@ def create_combined_figure_1x4(psyche_scores, avg_expert_scores, piqsca_scores, 
         p = np.poly1d(z)
         x_line = np.linspace(min(all_x_arr), max(all_x_arr), 100)
         y_line = p(x_line)
-        ax_b.plot(x_line, y_line, '#3498db', linestyle='-', linewidth=2)
+        
+        # Calculate 95% confidence interval
+        n = len(all_x_arr)
+        y_pred = p(all_x_arr)
+        residuals = all_y_arr - y_pred
+        std_err = np.sqrt(np.sum(residuals**2) / (n - 2))
+        x_mean = np.mean(all_x_arr)
+        sxx = np.sum((all_x_arr - x_mean)**2)
+        se_line = std_err * np.sqrt(1/n + (x_line - x_mean)**2 / sxx)
+        
+        from scipy.stats import t as t_dist
+        t_val = t_dist.ppf(0.975, n - 2)
+        ci = t_val * se_line
+        
+        # Plot CI and line
+        ax_b.fill_between(x_line, y_line - ci, y_line + ci, alpha=0.2, color='#3498db', zorder=0)
+        ax_b.plot(x_line, y_line, '#3498db', linestyle='-', linewidth=2, zorder=1)
         
         correlation, p_value = stats.pearsonr(all_x, all_y)
         p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
         ax_b.text(0.3, 0.10, f'r = {correlation:.4f}, {p_text}',
-                 transform=ax_b.transAxes, fontsize=18, family='Helvetica')
+                 transform=ax_b.transAxes, fontsize=22, family='Helvetica')
     
     ax_b.set_title('PSYCHE SCORE vs. PIQSCA', fontsize=36, pad=20, family='Helvetica')
     ax_b.set_xlabel('PSYCHE SCORE', fontsize=36, family='Helvetica')
     ax_b.set_ylabel('PIQSCA', fontsize=36, family='Helvetica')
     ax_b.set_yticks([3, 9, 15])
     ax_b.set_xticks([5, 30, 55])
-    ax_b.tick_params(labelsize=20)
+    ax_b.tick_params(labelsize=32)
+    ax_b.legend(loc='upper left', prop={'size': 18, 'weight': 'bold', 'family': 'Helvetica'})
 
     
     for spine in ax_b.spines.values():
@@ -2150,12 +2183,6 @@ def create_combined_figure_1x4(psyche_scores, avg_expert_scores, piqsca_scores, 
     for spine in ax_d.spines.values():
         spine.set_color('black')
         spine.set_linewidth(2)
-    
-    # Add panel labels
-    fig.text(0.02, 0.95, '(a)', fontsize=32, fontweight='bold', family='Helvetica')
-    fig.text(0.27, 0.95, '(b)', fontsize=32, fontweight='bold', family='Helvetica')
-    fig.text(0.52, 0.95, '(c)', fontsize=32, fontweight='bold', family='Helvetica')
-    fig.text(0.77, 0.95, '(d)', fontsize=32, fontweight='bold', family='Helvetica')
     
     plt.tight_layout()
     return fig
