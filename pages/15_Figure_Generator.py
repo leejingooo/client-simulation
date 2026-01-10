@@ -2478,7 +2478,7 @@ def main():
         
         # Load PIQSCA data from Firebase
         with st.spinner("Loading PIQSCA data from Firebase..."):
-            piqsca_by_validator, validators_found = load_piqsca_from_firebase(root_data)
+            piqsca_by_validator, validators_found = load_piqsca_from_firebase(root_snapshot)
         
         if piqsca_by_validator:
             st.success(f"✅ Found PIQSCA data for {len(validators_found)} validator(s): {', '.join(validators_found)}")
