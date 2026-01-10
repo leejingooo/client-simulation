@@ -2043,7 +2043,7 @@ def create_combined_figure_1x4(psyche_scores, avg_expert_scores, piqsca_scores, 
         correlation, p_value = stats.pearsonr(all_x, all_y)
         p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
         ax_a.text(0.3, 0.10, f'r = {correlation:.4f}, {p_text}',
-                 transform=ax_a.transAxes, fontsize=22, family='Helvetica')
+                 transform=ax_a.transAxes, fontsize=28, family='Helvetica')
     
     ax_a.set_title('PSYCHE SCORE vs. Expert score', fontsize=36, pad=20, family='Helvetica')
     ax_a.set_xlabel('PSYCHE SCORE', fontsize=36, family='Helvetica')
@@ -2051,7 +2051,7 @@ def create_combined_figure_1x4(psyche_scores, avg_expert_scores, piqsca_scores, 
     ax_a.set_yticks([5, 35, 65])
     ax_a.set_xticks([5, 30, 55])
     ax_a.tick_params(labelsize=32)
-    ax_a.legend(loc='upper left', prop={'size': 18, 'weight': 'bold', 'family': 'Helvetica'})
+    ax_a.legend(loc='upper left', prop={'size': 22, 'weight': 'bold', 'family': 'Helvetica'})
     
     for spine in ax_a.spines.values():
         spine.set_color('black')
@@ -2119,7 +2119,7 @@ def create_combined_figure_1x4(psyche_scores, avg_expert_scores, piqsca_scores, 
         correlation, p_value = stats.pearsonr(all_x, all_y)
         p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
         ax_b.text(0.3, 0.10, f'r = {correlation:.4f}, {p_text}',
-                 transform=ax_b.transAxes, fontsize=22, family='Helvetica')
+                 transform=ax_b.transAxes, fontsize=28, family='Helvetica')
     
     ax_b.set_title('PSYCHE SCORE vs. PIQSCA', fontsize=36, pad=20, family='Helvetica')
     ax_b.set_xlabel('PSYCHE SCORE', fontsize=36, family='Helvetica')
@@ -2127,7 +2127,6 @@ def create_combined_figure_1x4(psyche_scores, avg_expert_scores, piqsca_scores, 
     ax_b.set_yticks([3, 9, 15])
     ax_b.set_xticks([5, 30, 55])
     ax_b.tick_params(labelsize=32)
-    ax_b.legend(loc='upper left', prop={'size': 18, 'weight': 'bold', 'family': 'Helvetica'})
 
     
     for spine in ax_b.spines.values():
@@ -2142,16 +2141,16 @@ def create_combined_figure_1x4(psyche_scores, avg_expert_scores, piqsca_scores, 
     im_c = ax_c.imshow(correlation_equal, cmap='Greens', aspect='auto',
                        extent=[1, 10, 1, 10], origin='lower')
     cbar_c = plt.colorbar(im_c, ax=ax_c)
-    cbar_c.ax.set_ylabel('Correlation', fontsize=18, family='Helvetica')
-    cbar_c.ax.tick_params(labelsize=16)
+    cbar_c.ax.set_ylabel('Correlation', fontsize=36, family='Helvetica')
+    cbar_c.ax.tick_params(labelsize=32)
     cbar_c.set_ticks([0.78, 0.88])
     
-    ax_c.set_xlabel('$w_{Behavior}$', fontsize=24, family='Helvetica')
-    ax_c.set_ylabel('$w_{Impulsivity}$', fontsize=24, family='Helvetica')
-    ax_c.set_title('Equal weights', fontsize=28, family='Helvetica', pad=15)
+    ax_c.set_xlabel('$w_{Behavior}$', fontsize=36, family='Helvetica')
+    ax_c.set_ylabel('$w_{Impulsivity}$', fontsize=36, family='Helvetica')
+    ax_c.set_title('Equal weights', fontsize=36, family='Helvetica', pad=20)
     ax_c.set_xticks(range(1, 11))
     ax_c.set_yticks(range(1, 11))
-    ax_c.tick_params(labelsize=18)
+    ax_c.tick_params(labelsize=32)
     ax_c.grid(False)
     ax_c.plot(2, 5, marker='s', color='purple', markersize=8, label='(5, 2, 1)')
     
@@ -2167,16 +2166,16 @@ def create_combined_figure_1x4(psyche_scores, avg_expert_scores, piqsca_scores, 
     im_d = ax_d.imshow(correlation_fixed, cmap='Greens', aspect='auto',
                        extent=[1, 10, 1, 10], origin='lower')
     cbar_d = plt.colorbar(im_d, ax=ax_d)
-    cbar_d.ax.set_ylabel('Correlation', fontsize=18, family='Helvetica')
-    cbar_d.ax.tick_params(labelsize=16)
+    cbar_d.ax.set_ylabel('Correlation', fontsize=36, family='Helvetica')
+    cbar_d.ax.tick_params(labelsize=32)
     cbar_d.set_ticks([0.84, 0.90])
     
-    ax_d.set_xlabel('$w_{Behavior}$', fontsize=24, family='Helvetica')
-    ax_d.set_ylabel('$w_{Impulsivity}$', fontsize=24, family='Helvetica')
-    ax_d.set_title('Expert weights fixed at (5,2,1)', fontsize=28, family='Helvetica', pad=15)
+    ax_d.set_xlabel('$w_{Behavior}$', fontsize=36, family='Helvetica')
+    ax_d.set_ylabel('$w_{Impulsivity}$', fontsize=36, family='Helvetica')
+    ax_d.set_title('Expert weights fixed at (5,2,1)', fontsize=36, family='Helvetica', pad=20)
     ax_d.set_xticks(range(1, 11))
     ax_d.set_yticks(range(1, 11))
-    ax_d.tick_params(labelsize=18)
+    ax_d.tick_params(labelsize=32)
     ax_d.grid(False)
     ax_d.plot(2, 5, marker='s', color='purple', markersize=8, label='(5, 2, 1)')
     
