@@ -208,7 +208,7 @@ def display_piqsca_interface(conversation_data, exp_item, firebase_ref):
         process_score = st.radio(
             "Process of the interview 평가",
             [1, 2, 3, 4, 5],
-            key="process_score",
+            key=f"process_score_{client_number}_{exp_number}",
             horizontal=True,
             format_func=lambda x: f"{x}점",
             index=(current_responses['process_of_the_interview'] - 1) if current_responses['process_of_the_interview'] else None,
@@ -224,7 +224,7 @@ def display_piqsca_interface(conversation_data, exp_item, firebase_ref):
         techniques_score = st.radio(
             "Techniques 평가",
             [1, 2, 3, 4, 5],
-            key="techniques_score",
+            key=f"techniques_score_{client_number}_{exp_number}",
             horizontal=True,
             format_func=lambda x: f"{x}점",
             index=(current_responses['techniques'] - 1) if current_responses['techniques'] else None,
@@ -240,7 +240,7 @@ def display_piqsca_interface(conversation_data, exp_item, firebase_ref):
         information_score = st.radio(
             "Information for diagnosis 평가",
             [1, 2, 3, 4, 5],
-            key="information_score",
+            key=f"information_score_{client_number}_{exp_number}",
             horizontal=True,
             format_func=lambda x: f"{x}점",
             index=(current_responses['information_for_diagnosis'] - 1) if current_responses['information_for_diagnosis'] else None,

@@ -981,6 +981,162 @@ def create_piqsca_correlation_plot(psyche_scores, figsize=(8, 8)):
     plt.tight_layout()
     return fig
 
+# ================================
+# Figure 1-6: PSYCHE-PIQSCA Correlation (Firebase Data)
+# ================================
+def load_piqsca_from_firebase(root_data):
+    """로드 PIQSCA scores from Firebase by validator.
+    
+    Returns:
+    - piqsca_by_validator: {validator: {(client_num, exp_num): piqsca_score}}
+    - validators_found: list of validators who have PIQSCA data
+    """
+    piqsca_by_validator = {}
+    
+    # 모든 piqsca_ 키 수집
+    for key in (root_data or {}).keys():
+        if not key.startswith('piqsca_'):
+            continue
+        
+        # Parse key: piqsca_{validator_name}_{client_num}_{exp_num}
+        parts = key.split('_')
+        if len(parts) < 4:
+            continue
+        
+        # validator_name은 여러 단어일 수 있음 (e.g., piqsca_임경호_6201_1121)
+        # 마지막 2개가 client_num, exp_num
+        try:
+            exp_num = int(parts[-1])
+            client_num = int(parts[-2])
+            validator_name = '_'.join(parts[1:-2])  # piqsca 제외한 나머지
+        except ValueError:
+            continue
+        
+        # Load data
+        data = (root_data or {}).get(key, {})
+        if not data:
+            continue
+        
+        # Calculate PIQSCA score (sum of 3 ratings)
+        process = data.get('process_of_the_interview', 0)
+        techniques = data.get('techniques', 0)
+        information = data.get('information_for_diagnosis', 0)
+        piqsca_score = process + techniques + information
+        
+        # Store by validator
+        if validator_name not in piqsca_by_validator:
+            piqsca_by_validator[validator_name] = {}
+        
+        piqsca_by_validator[validator_name][(client_num, exp_num)] = piqsca_score
+    
+    validators_found = list(piqsca_by_validator.keys())
+    
+    return piqsca_by_validator, validators_found
+
+def create_piqsca_correlation_plot_firebase(psyche_scores, piqsca_by_validator, figsize=(8, 8)):
+    """차세대 1-6: PSYCHE SCORE vs. PIQSCA correlation plots (Firebase data, by validator).
+    
+    Returns list of figures, one per validator.
+    """
+    figures = []
+    
+    for validator, piqsca_scores in piqsca_by_validator.items():
+        fig, ax = plt.subplots(figsize=figsize)
+        
+        # 데이터 준비
+        data_by_model = {model: [] for model in COLOR_MAP.keys()}
+        
+        for exp in EXPERIMENT_NUMBERS:
+            if exp not in piqsca_scores:
+                continue
+            
+            piqsca_score = piqsca_scores[exp]
+            
+            # PSYCHE 점수 가져오기
+            if exp in psyche_scores:
+                psyche_score = psyche_scores[exp]
+                model = get_model_from_exp(exp[1])
+                data_by_model[model].append((psyche_score, piqsca_score))
+        
+        # Scatter plot
+        all_x, all_y = [], []
+        for model, points in data_by_model.items():
+            if not points:
+                continue
+            
+            xs = [p[0] for p in points]
+            ys = [p[1] for p in points]
+            all_x.extend(xs)
+            all_y.extend(ys)
+            
+            ax.scatter(xs, ys, 
+                      color=COLOR_MAP[model],
+                      marker=MARKER_MAP[model]['marker'],
+                      s=MARKER_MAP[model]['size'],
+                      label=LABEL_MAP[model],
+                      alpha=0.7,
+                      edgecolors='black',
+                      linewidths=1.5,
+                      zorder=3)
+        
+        # 회귀선 및 95% CI
+        if len(all_x) >= 2:
+            all_x_arr = np.array(all_x)
+            all_y_arr = np.array(all_y)
+            
+            # Linear regression
+            z = np.polyfit(all_x_arr, all_y_arr, 1)
+            p = np.poly1d(z)
+            
+            x_line = np.linspace(min(all_x_arr), max(all_x_arr), 100)
+            y_line = p(x_line)
+            
+            # Calculate 95% confidence interval
+            n = len(all_x_arr)
+            y_pred = p(all_x_arr)
+            residuals = all_y_arr - y_pred
+            std_err = np.sqrt(np.sum(residuals**2) / (n - 2))
+            
+            # Standard error of prediction
+            x_mean = np.mean(all_x_arr)
+            sxx = np.sum((all_x_arr - x_mean)**2)
+            se_line = std_err * np.sqrt(1/n + (x_line - x_mean)**2 / sxx)
+            
+            # 95% CI (t-distribution)
+            from scipy.stats import t as t_dist
+            t_val = t_dist.ppf(0.975, n - 2)
+            ci = t_val * se_line
+            
+            # Plot CI and line
+            ax.fill_between(x_line, y_line - ci, y_line + ci, alpha=0.2, color='#3498db', zorder=0)
+            ax.plot(x_line, y_line, '#3498db', linestyle='-', linewidth=2, zorder=1)
+            
+            # Correlation info
+            correlation, p_value = stats.pearsonr(all_x, all_y)
+            p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
+            ax.text(0.3, 0.10, f'r = {correlation:.4f}, {p_text}',
+                   transform=ax.transAxes, fontsize=22, family='Helvetica')
+        
+        # 스타일링
+        ax.set_title(f'PSYCHE SCORE vs. PIQSCA\nValidator: {validator}', 
+                    fontsize=32, pad=20, family='Helvetica')
+        ax.set_xlabel('PSYCHE SCORE', fontsize=36, family='Helvetica')
+        ax.set_ylabel('PIQSCA', fontsize=36, family='Helvetica')
+        ax.set_yticks([3, 9, 15])
+        ax.set_xticks([5, 30, 55])
+        ax.tick_params(labelsize=32)
+        ax.legend(loc='upper left', prop={'size': 18, 'weight': 'bold', 'family': 'Helvetica'})
+        
+        # 테두리
+        for spine in ax.spines.values():
+            spine.set_linewidth(2)
+            spine.set_edgecolor('black')
+        
+        plt.tight_layout()
+        figures.append((validator, fig))
+    
+    return figures
+
 def create_combined_correlation_figure(psyche_scores, avg_expert_scores, expert_data, psyche_category_scores, expert_category_scores):
     """Combined Figure: Validator-specific, Disease-specific, and Category-specific correlation plots.
     
@@ -2281,7 +2437,8 @@ def main():
     # ================================
     st.markdown("## 📈 Figure 1: PSYCHE-Expert Correlation")
     
-    tab1, tab1b, tab1c, tab_combined, tab_combined_v2, tab2, tab3, tab4 = st.tabs([
+    tab_piqsca, tab1, tab1b, tab1c, tab_combined, tab_combined_v2, tab2, tab3, tab4 = st.tabs([
+        "1-5 & 1-6: PIQSCA",
         "1-1: Average Expert", 
         "1-1b: Error Analysis (Raw)", 
         "1-1c: Error Analysis (Residual)",
@@ -2291,6 +2448,89 @@ def main():
         "1-3: By Disorder", 
         "1-4: By Category"
     ])
+    
+    with tab_piqsca:
+        st.markdown("### Figure 1-5: PSYCHE SCORE vs. PIQSCA (Hardcoded Data)")
+        st.caption("PSYCHE SCORE와 PIQSCA (Psychiatric Interview Quality Scale for Conversational Agents) 간의 상관관계 분석")
+        
+        st.info("""
+        **PIQSCA 구성:**
+        - Process of the interview (1-5점)
+        - Techniques (1-5점)
+        - Information for diagnosis (1-5점)
+        - **총점 범위: 3-15점**
+        """)
+        
+        fig1_5 = create_piqsca_correlation_plot(psyche_scores)
+        st.pyplot(fig1_5)
+        
+        st.download_button(
+            label="📥 Download PNG (300 DPI)",
+            data=fig_to_bytes(fig1_5),
+            file_name="Fig1-5_PSYCHE_PIQSCA_Correlation.png",
+            mime="image/png"
+        )
+        plt.close(fig1_5)
+        
+        st.markdown("---")
+        st.markdown("### Figure 1-6: PSYCHE SCORE vs. PIQSCA (Firebase Data)")
+        st.caption("Firebase에서 불러온 PIQSCA 데이터로 Validator별 Correlation 분석")
+        
+        # Load PIQSCA data from Firebase
+        with st.spinner("Loading PIQSCA data from Firebase..."):
+            piqsca_by_validator, validators_found = load_piqsca_from_firebase(root_data)
+        
+        if piqsca_by_validator:
+            st.success(f"✅ Found PIQSCA data for {len(validators_found)} validator(s): {', '.join(validators_found)}")
+            
+            # Show data summary
+            with st.expander("🔍 PIQSCA Data Summary"):
+                for validator, scores in piqsca_by_validator.items():
+                    st.write(f"**{validator}**: {len(scores)} experiments")
+                    # Show score distribution
+                    score_values = list(scores.values())
+                    if score_values:
+                        st.write(f"  - Range: {min(score_values)} - {max(score_values)}")
+                        st.write(f"  - Mean: {np.mean(score_values):.2f}")
+                        st.write(f"  - Std: {np.std(score_values):.2f}")
+            
+            st.info("""
+            **PIQSCA 구성:**
+            - Process of the interview (1-5점)
+            - Techniques (1-5점)
+            - Information for diagnosis (1-5점)
+            - **총점 범위: 3-15점**
+            
+            **데이터 출처:** Firebase `piqsca_{validator_name}_{client_num}_{exp_num}`
+            """)
+            
+            # Generate figures for each validator
+            figs_1_6 = create_piqsca_correlation_plot_firebase(psyche_scores, piqsca_by_validator)
+            
+            for validator, fig in figs_1_6:
+                st.markdown(f"#### Validator: {validator}")
+                st.pyplot(fig)
+                
+                st.download_button(
+                    label=f"📥 Download {validator} Plot (PNG, 300 DPI)",
+                    data=fig_to_bytes(fig),
+                    file_name=f"Fig1-6_PIQSCA_Correlation_{validator}.png",
+                    mime="image/png",
+                    key=f"download_1_6_{validator}"
+                )
+                plt.close(fig)
+                st.markdown("---")
+        else:
+            st.warning("⚠️ No PIQSCA data found in Firebase. Looking for keys like `piqsca_{validator_name}_{client_num}_{exp_num}`")
+            st.info("""
+            **Expected Firebase structure:**
+            ```
+            piqsca_임경호_6201_1121:
+              process_of_the_interview: 5
+              techniques: 5
+              information_for_diagnosis: 5
+            ```
+            """)
     
     with tab1:
         st.markdown("### Figure 1-1: Average Expert Score")
@@ -2520,33 +2760,6 @@ def main():
             plt.close(fig1_4)
         else:
             st.warning("Element-level 데이터가 없습니다. Category별 분석을 위해서는 element 점수가 필요합니다.")
-    
-    st.markdown("---")
-    
-    # ================================
-    # Figure 1-5: PSYCHE-PIQSCA Correlation
-    # ================================
-    st.markdown("## 📊 Figure 1-5: PSYCHE SCORE vs. PIQSCA")
-    st.caption("PSYCHE SCORE와 PIQSCA (Psychiatric Interview Quality Scale for Conversational Agents) 간의 상관관계 분석")
-    
-    st.info("""
-    **PIQSCA 구성:**
-    - Process of the interview (1-5점)
-    - Techniques (1-5점)
-    - Information for diagnosis (1-5점)
-    - **총점 범위: 3-15점**
-    """)
-    
-    fig1_5 = create_piqsca_correlation_plot(psyche_scores)
-    st.pyplot(fig1_5)
-    
-    st.download_button(
-        label="📥 Download PNG (300 DPI)",
-        data=fig_to_bytes(fig1_5),
-        file_name="Fig1-5_PSYCHE_PIQSCA_Correlation.png",
-        mime="image/png"
-    )
-    plt.close(fig1_5)
     
     st.markdown("---")
     
