@@ -2152,7 +2152,7 @@ def create_combined_figure_1x4(psyche_scores, avg_expert_scores, piqsca_scores, 
     ax_c.set_yticks(range(1, 11))
     ax_c.tick_params(labelsize=32)
     ax_c.grid(False)
-    ax_c.plot(2, 5, marker='s', color='purple', markersize=8, label='(5, 2, 1)')
+    ax_c.plot(2, 5, marker='s', color='purple', markersize=12, label='(5, 2, 1)')
     
     for spine in ax_c.spines.values():
         spine.set_color('black')
@@ -2177,7 +2177,7 @@ def create_combined_figure_1x4(psyche_scores, avg_expert_scores, piqsca_scores, 
     ax_d.set_yticks(range(1, 11))
     ax_d.tick_params(labelsize=32)
     ax_d.grid(False)
-    ax_d.plot(2, 5, marker='s', color='purple', markersize=8, label='(5, 2, 1)')
+    ax_d.plot(2, 5, marker='s', color='purple', markersize=12, label='(5, 2, 1)')
     
     for spine in ax_d.spines.values():
         spine.set_color('black')
