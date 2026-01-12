@@ -575,6 +575,7 @@ for speaker, message in st.session_state.conversation_generator:
   - **EXPERIMENT_NUMBERS preset**: Same 24 experiments as expert validation (3 disorders × 4 models × 2 reps)
   - **Usage**: Select figure type → configure parameters → generate → download
   - **Critical**: All matplotlib/seaborn plots use `rcParams['font.family'] = 'Helvetica'` for consistency
+- `pages/15_Figure_Generator_Lite.py`: Lightweight version of figure generator with simplified interface
 - `pages/16_MFC_Viewer.py`: MFC (Multi-faceted Construct) inspection and verification tool
   - **Purpose**: View and verify MFC components (Profile, History, Behavior) stored in Firebase
   - **Client-Disorder mapping**:
@@ -620,6 +621,9 @@ for speaker, message in st.session_state.conversation_generator:
   - **Critical**: Depends on 19_MFC_Copier (in 연구자용 격리 폴더 3) to initially clone 6201→6301 data
   - **Use case**: Creating new patient variations without affecting validated research cohort (6201-6207)
   - **Related pages**: Page 16 (MFC Viewer for read-only inspection), Page 19 (MFC Copier for cloning)
+- `pages/19_Case_Analysis_6201_1145.py`: Detailed case analysis for specific experiment (client 6201, exp 1145)
+  - **Purpose**: Deep-dive analysis of individual experiment results for publication case studies
+  - **Features**: Conversation analysis, construct comparison, scoring breakdown
 - `pages/21_System_Prompt_Test.py`: Interactive system prompt editor and SP testing interface
   - **Purpose**: Real-time system prompt editing and immediate SP behavioral testing without affecting production
   - **Two modes**: 
@@ -647,6 +651,17 @@ for speaker, message in st.session_state.conversation_generator:
   - **Workflow**: Same as validation pages - SP Construct generation followed by expert scoring interface
   - **Target client**: 6301 (new MDD patient created via page 18 MFC Editor)
   - **Note**: Part of paper revision - testing new patient cohort and updated system prompts
+- `pages/22_MDD재실험_검증_결과_뷰어.py`: Validation results viewer for 6301 client experiments
+  - **Purpose**: View and analyze validation results from 6 expert validators for client 6301 re-experiments
+  - **Validators**: 이강토, 김태환, 김광현, 김주오, 허율, 장재용
+  - **Features**:
+    - Display all validation results grouped by validator
+    - Show SP validation data (construct reviews)
+    - View conversation logs between validators and SP
+    - Track validation progress per validator
+  - **Data sources**: `sp_validation_*_6301_*`, `sp_conversation_*_6301_*`, `validation_progress_*` keys
+  - **Use case**: Monitor and analyze expert validation completion for 6301 re-experiment study
+  - **Related pages**: Page 10 (10_재실험), Page 02 (SP validation interface)
 - `pages/연구자용 격리 폴더 (연구모드시 페이지 복원)/`: Research-mode pages
   - Contains disorder-specific experiment pages: `01_experiment(MDD|BD|OCD)_<model>_<type>.py`
   - Contains unified experiment pages with client selection: `01_unified_<model>_<type>.py`
