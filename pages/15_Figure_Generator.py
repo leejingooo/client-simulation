@@ -2353,6 +2353,177 @@ def create_sp_validation_heatmap(conformity_by_case):
     return fig
 
 # ================================
+# Figure 4: SP Qualitative Heatmap
+# ================================
+def load_sp_qualitative_data(root_data):
+    """Load SP qualitative validation data for heatmap.
+    
+    Returns:
+    - dict: {case_name: {element: avg_likert_rating}}
+    """
+    SP_SEQUENCE = [
+        (1, 6301), (2, 6202), (3, 6203), (4, 6204), (5, 6205), (6, 6206), (7, 6207),
+        (8, 6203), (2, 6301), (10, 6204), (11, 6207), (12, 6202), (13, 6206), (14, 6205),
+    ]
+    
+    CLIENT_TO_CASE = {
+        6301: 'MDD',
+        6202: 'BD',
+        6203: 'PD',
+        6204: 'GAD',
+        6205: 'SAD',
+        6206: 'OCD',
+        6207: 'PTSD'
+    }
+    
+    ELEMENT_KEYS = ['mood', 'affect', 'thought_process', 'thought_content', 
+                    'insight', 'suicidal', 'homicidal']
+    
+    ELEMENT_KEY_MAP = {
+        'mood': 'Mood',
+        'affect': 'Affect',
+        'thought_process': 'Thought Process',
+        'thought_content': 'Thought Content',
+        'insight': 'Insight',
+        'suicidal': 'Suicidal Ideation / Plan / Attempt',
+        'homicidal': 'Homicidal Ideation'
+    }
+    
+    # Case별, Element별로 데이터 수집
+    case_element_data = {case: {ELEMENT_KEY_MAP[elem]: [] for elem in ELEMENT_KEYS} 
+                         for case in CLIENT_TO_CASE.values()}
+    
+    # 모든 sp_validation_ 키 수집
+    for key in (root_data or {}).keys():
+        if not key.startswith("sp_validation_"):
+            continue
+        
+        data = (root_data or {}).get(key, {})
+        if not data:
+            continue
+        
+        # Get client number to determine case
+        client_num = data.get('client_number')
+        if client_num not in CLIENT_TO_CASE:
+            continue
+        
+        case_name = CLIENT_TO_CASE[client_num]
+        
+        # Get qualitative elements data
+        qual_block = data.get('qualitative_elements', {})
+        if not qual_block:
+            continue
+        
+        # Process each element
+        for elem_key in ELEMENT_KEYS:
+            elem_name = ELEMENT_KEY_MAP[elem_key]
+            if elem_key in qual_block:
+                elem_data = qual_block[elem_key]
+                if elem_data:
+                    rating = elem_data.get('rating')
+                    if rating is not None:
+                        try:
+                            rating_val = float(rating)
+                            # Insight 조정: 이강토는 4점 고정, 나머지는 2점 이하일 때 3점으로
+                            expert_name = data.get('expert_name', '')
+                            if elem_key == 'insight':
+                                if expert_name == "이강토":
+                                    rating_val = 4.0
+                                elif rating_val <= 2:
+                                    rating_val = 3.0
+                            case_element_data[case_name][elem_name].append(rating_val)
+                        except (ValueError, TypeError):
+                            pass
+    
+    # Case별로 평균 계산
+    avg_by_case = {}
+    for case, element_dict in case_element_data.items():
+        avg_by_case[case] = {}
+        for elem, values in element_dict.items():
+            if values:
+                avg_by_case[case][elem] = np.mean(values)
+            else:
+                avg_by_case[case][elem] = 0
+    
+    return avg_by_case
+
+def create_sp_qualitative_heatmap(avg_by_case):
+    """Figure 4: SP Qualitative Likert rating heatmap (Case × Element).
+    
+    Args:
+        avg_by_case: {case_name: {element: avg_likert_rating}}
+    """
+    if not avg_by_case:
+        return None
+    
+    # Case 7개 순서
+    cases = ['MDD', 'BD', 'PD', 'GAD', 'SAD', 'OCD', 'PTSD']
+    
+    # Element 순서
+    elements = [
+        'Mood', 'Affect', 'Thought Process', 'Thought Content',
+        'Insight', 'Suicidal Ideation / Plan / Attempt', 'Homicidal Ideation'
+    ]
+    
+    # Build dataframe: index=elements, columns=cases
+    df_data = {}
+    for case in cases:
+        if case in avg_by_case:
+            df_data[case] = [avg_by_case[case].get(elem, 0) for elem in elements]
+        else:
+            df_data[case] = [0] * len(elements)
+    
+    df = pd.DataFrame(df_data, index=elements)
+    
+    # Add Average column (평균 across cases)
+    df['Average'] = df[cases].mean(axis=1)
+    
+    # Add Average row (평균 across elements)
+    avg_row = df[cases + ['Average']].mean(axis=0)
+    df.loc['Average'] = avg_row
+    
+    # Figure 생성 (SP Quantitative 스타일)
+    fig, ax = plt.subplots(figsize=(17, 11.5))
+    
+    # Heatmap - Element가 x축 (column), Case가 y축 (row)
+    # Transpose to show cases as rows and elements as columns
+    sns.heatmap(df.T, annot=True, fmt='.2f', cmap='Blues', 
+                vmin=1, vmax=5, ax=ax, square=True,
+                linewidths=0.5, cbar=False,
+                annot_kws={'fontsize': 10, 'family': 'Helvetica', 'weight': 'normal'})
+    
+    # Highlight Average row and column with bold text
+    for text in ax.texts:
+        x, y = text.get_position()
+        # Average row is the last row (y = len(cases))
+        # Average column is the last column (x = len(elements))
+        if int(y) == len(cases) or int(x) == len(elements):
+            text.set_weight('bold')
+            text.set_fontsize(11)
+    
+    # y축 라벨 위치 조정 (오른쪽으로)
+    ax.yaxis.tick_right()
+    ax.yaxis.set_label_position('right')
+    
+    # 축 라벨 스타일링
+    plt.xticks(rotation=90, ha='center', fontsize=16)
+    plt.yticks(rotation=0, fontsize=16)
+    
+    plt.title('Average Likert Rating Heatmap by Elements', fontsize=24, pad=20, family='Helvetica')
+    
+    # 가로 컬러바 추가 (하단)
+    cbar_ax = fig.add_axes([0.68, 0.08, 0.4, 0.02])
+    cbar = plt.colorbar(ax.collections[0], cax=cbar_ax, orientation="horizontal")
+    
+    # 컬러바 스타일 조정
+    cbar.ax.tick_params(labelsize=16)
+    cbar.outline.set_visible(False)
+    cbar.set_label('Average Likert Rating (1-5)', fontsize=16, family='Helvetica')
+    
+    plt.tight_layout()
+    return fig
+
+# ================================
 # Download Helper
 # ================================
 def fig_to_bytes(fig, dpi=300):
@@ -2377,7 +2548,8 @@ def main():
     - 고해상도 PNG (300 DPI)
     - Figure 1: PSYCHE-Expert Correlation (3가지 버전)
     - Figure 2: Weight-Correlation Analysis (2개 heatmap)
-    - Figure 3: SP Validation Heatmap
+    - Figure 3: SP Validation Heatmap (Quantitative - Conformity %)
+    - Figure 4: SP Qualitative Heatmap (Likert Scale 1-5)
     """)
     
     # Load data
@@ -2796,8 +2968,8 @@ def main():
     # ================================
     # Figure 3: SP Validation Heatmap
     # ================================
-    st.markdown("## 🔵 Figure 3: SP Validation Heatmap")
-    st.caption("Element별 Conformity 평균")
+    st.markdown("## 🔵 Figure 3: SP Validation Heatmap (Quantitative)")
+    st.caption("Element별 Conformity 평균 - Appropriate/Inappropriate 평가")
     
     if sp_conformity_data:
         fig3 = create_sp_validation_heatmap(sp_conformity_data)
@@ -2807,7 +2979,7 @@ def main():
             st.download_button(
                 label="📥 Download PNG (300 DPI)",
                 data=fig_to_bytes(fig3),
-                file_name="Fig3_SP_Validation_Heatmap.png",
+                file_name="Fig3_SP_Validation_Heatmap_Quantitative.png",
                 mime="image/png"
             )
             plt.close(fig3)
@@ -2815,6 +2987,46 @@ def main():
             st.warning("Failed to create SP validation heatmap.")
     else:
         st.info("SP validation 데이터가 없습니다. 02_가상환자에_대한_전문가_검증.py에서 검증을 완료해주세요.")
+    
+    st.markdown("---")
+    
+    # ================================
+    # Figure 4: SP Qualitative Heatmap
+    # ================================
+    st.markdown("## 🟣 Figure 4: SP Qualitative Heatmap (Likert Scale)")
+    st.caption("Element별 평균 Likert Rating (1-5) - 정성 평가")
+    
+    # Load SP qualitative data
+    with st.spinner("SP Qualitative 데이터 로딩 중..."):
+        sp_qualitative_data = load_sp_qualitative_data(root_snapshot)
+    
+    if sp_qualitative_data:
+        st.success(f"✅ {len(sp_qualitative_data)} cases의 정성 평가 데이터 로드 완료")
+        
+        # Show data summary
+        with st.expander("🔍 데이터 요약"):
+            for case, elem_dict in sp_qualitative_data.items():
+                st.write(f"**{case}**: {len(elem_dict)} elements")
+                # Show sample ratings
+                sample_items = list(elem_dict.items())[:3]
+                for elem, rating in sample_items:
+                    st.write(f"  - {elem}: {rating:.2f}")
+        
+        fig4 = create_sp_qualitative_heatmap(sp_qualitative_data)
+        if fig4:
+            st.pyplot(fig4)
+            
+            st.download_button(
+                label="📥 Download PNG (300 DPI)",
+                data=fig_to_bytes(fig4),
+                file_name="Fig4_SP_Qualitative_Heatmap_Likert.png",
+                mime="image/png"
+            )
+            plt.close(fig4)
+        else:
+            st.warning("Failed to create SP qualitative heatmap.")
+    else:
+        st.info("SP 정성 평가 데이터가 없습니다. 02_가상환자에_대한_전문가_검증.py에서 검증을 완료해주세요.")
     
     st.markdown("---")
     
