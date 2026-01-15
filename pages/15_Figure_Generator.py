@@ -2518,14 +2518,15 @@ def create_sp_qualitative_heatmap(avg_by_case):
     
     plt.title('Average Likert Rating Heatmap by Elements', fontsize=24, pad=20, family='Helvetica')
     
-    # 가로 컬러바 추가 (하단)
-    cbar_ax = fig.add_axes([0.68, 0.08, 0.4, 0.02])
-    cbar = plt.colorbar(ax.collections[0], cax=cbar_ax, orientation="horizontal")
+    # 세로 컬러바 추가 (오른쪽)
+    # [left, bottom, width, height]
+    cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
+    cbar = plt.colorbar(ax.collections[0], cax=cbar_ax, orientation="vertical")
     
     # 컬러바 스타일 조정
     cbar.ax.tick_params(labelsize=16)
     cbar.outline.set_visible(False)
-    cbar.set_label('Average Likert Rating (1-5)', fontsize=16, family='Helvetica')
+    cbar.set_label('Average Likert Rating (1-5)', fontsize=16, family='Helvetica', rotation=270, labelpad=30)
     
     plt.tight_layout()
     return fig
