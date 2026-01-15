@@ -2402,6 +2402,14 @@ def load_sp_qualitative_data(root_data):
         if not data:
             continue
         
+        # Get expert name to filter validators
+        expert_name = data.get('expert_name', '')
+        
+        # Filter: only load data from specified validators (same as page 14)
+        VALIDATORS_LIST = ["이강토", "김태환", "김광현", "김주오", "허율", "장재용"]
+        if expert_name not in VALIDATORS_LIST:
+            continue
+        
         # Get client number to determine case
         client_num = data.get('client_number')
         if client_num not in CLIENT_TO_CASE:
@@ -2409,8 +2417,8 @@ def load_sp_qualitative_data(root_data):
         
         case_name = CLIENT_TO_CASE[client_num]
         
-        # Get qualitative elements data
-        qual_block = data.get('qualitative_elements', {})
+        # Get qualitative data (14번 페이지와 동일: 'qualitative' 블록 사용)
+        qual_block = data.get('qualitative', {})
         if not qual_block:
             continue
         
@@ -2425,7 +2433,6 @@ def load_sp_qualitative_data(root_data):
                         try:
                             rating_val = float(rating)
                             # Insight 조정: 이강토는 4점 고정, 나머지는 2점 이하일 때 3점으로
-                            expert_name = data.get('expert_name', '')
                             if elem_key == 'insight':
                                 if expert_name == "이강토":
                                     rating_val = 4.0
