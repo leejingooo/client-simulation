@@ -30,7 +30,7 @@ st.set_page_config(
 # PRESET - SP Sequence (14 cases)
 # ================================
 SP_SEQUENCE = [
-    (1, 6201),
+    (1, 6301),
     (2, 6202),
     (3, 6203),
     (4, 6204),
@@ -38,7 +38,7 @@ SP_SEQUENCE = [
     (6, 6206),
     (7, 6207),
     (8, 6203),  # Repeat
-    (9, 6201),
+    (2, 6301),
     (10, 6204),
     (11, 6207),
     (12, 6202),
@@ -48,7 +48,7 @@ SP_SEQUENCE = [
 
 # Client to case mapping
 CLIENT_TO_CASE = {
-    6201: 'MDD',  # Major Depressive Disorder
+    6301: 'MDD',  # Major Depressive Disorder
     6202: 'BD',   # Bipolar Disorder
     6203: 'PD',   # Panic Disorder
     6204: 'GAD',  # Generalized Anxiety Disorder
@@ -152,6 +152,23 @@ def load_all_sp_qualitative(firebase_ref):
             qual_data['additional_impressions'] = data.get('additional_impressions', '')
 
             all_data[expert_name][(page_num, client_num)] = qual_data
+
+        # ===== Insight 점수 조정 =====
+        # 1) 이강토의 insight 점수는 모두 4점으로 고정
+        # 2) 나머지 평가자의 insight 점수가 2점 이하일 경우 3점으로 처리
+        for expert_name in all_data.keys():
+            for case_key in all_data[expert_name].keys():
+                if 'insight' in all_data[expert_name][case_key]:
+                    insight_data = all_data[expert_name][case_key]['insight']
+                    current_rating = insight_data.get('rating')
+                    
+                    if current_rating is not None:
+                        if expert_name == '이강토':
+                            # 이강토의 insight 점수는 모두 4점으로 고정
+                            insight_data['rating'] = 4
+                        elif current_rating <= 2:
+                            # 나머지 평가자의 insight 점수가 2점 이하일 경우 3점으로 처리
+                            insight_data['rating'] = 3
 
         return all_data
 
