@@ -2520,7 +2520,7 @@ def create_sp_qualitative_heatmap(avg_by_case):
     
     # 세로 컬러바 추가 (오른쪽)
     # [left, bottom, width, height]
-    cbar_ax = fig.add_axes([0.8, 0.2, 0.02, 0.4])
+    cbar_ax = fig.add_axes([0.8, 0.5, 0.02, 0.4])
     cbar = plt.colorbar(ax.collections[0], cax=cbar_ax, orientation="vertical")
     
     # 컬러바 스타일 조정
