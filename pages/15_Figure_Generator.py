@@ -31,6 +31,12 @@ st.set_page_config(
 rcParams['font.family'] = 'Helvetica'
 rcParams['axes.unicode_minus'] = False
 
+# 벡터 출력(PDF/SVG)에서 텍스트를 path가 아닌 실제 text로 유지
+# -> Keynote / Illustrator / LaTeX 에서 편집 가능하고, 폰트가 깨지지 않음
+rcParams['pdf.fonttype'] = 42   # TrueType (편집 가능한 텍스트)
+rcParams['ps.fonttype'] = 42
+rcParams['svg.fonttype'] = 'none'  # SVG에서 텍스트를 <text>로 유지
+
 # Seaborn 스타일
 sns.set_style("ticks")
 
@@ -65,6 +71,17 @@ PIQSCA_VALIDATOR = "임경호"
 # 각 서브플롯의 상대적 너비 (a, b, c, d 순서)
 # 예: [1, 1, 1, 1] = 모두 동일, [2, 1, 1, 1] = 첫번째가 나머지보다 2배
 COMBINED_FIGURE_WIDTH_RATIOS = [0.8, 0.8, 1, 1]
+
+# Weight-correlation heatmap의 (5,2,1) 지점을 표시하는 보라색 네모 마커 크기
+# 이전 값(combined_1x4=20)의 약 4배 면적(변 길이 2배)에 해당.
+# 더 크게/작게 하려면 이 값만 조정하세요. (변 길이 4배를 원하면 80)
+WEIGHT_MARKER_SIZE = 40
+
+# Combined Figure 1×4에서 (a)(b)(c)(d) 패널 라벨을 코드로 넣을지 여부
+# True면 Keynote 없이 코드 출력만으로 라벨이 포함됩니다.
+ADD_PANEL_LABELS_1x4 = True
+PANEL_LABEL_Y = 0.02          # 라벨 세로 위치 (figure fraction, 하단 기준)
+PANEL_LABEL_FONTSIZE = 40
 
 VALIDATOR_INITIALS = {
     "이강토": "Validator A",
@@ -294,8 +311,6 @@ def create_correlation_plot_average_with_errors(psyche_scores, avg_expert_scores
                       s=MARKER_MAP[model]['size'],
                       marker=MARKER_MAP[model]['marker'],
                       alpha=0.7,
-                      edgecolors='black',
-                      linewidths=1.5,
                       zorder=2)
             all_x.extend(x_vals)
             all_y.extend(y_vals)
@@ -427,8 +442,6 @@ def create_correlation_plot_average_with_residuals(psyche_scores, avg_expert_sco
                       s=MARKER_MAP[model]['size'],
                       marker=MARKER_MAP[model]['marker'],
                       alpha=0.7,
-                      edgecolors='black',
-                      linewidths=1.5,
                       zorder=2)
     
     # 회귀선 및 95% CI
@@ -809,9 +822,7 @@ def create_correlation_plot_by_category(psyche_category_scores, expert_category_
                           label=LABEL_MAP[model],
                           s=MARKER_MAP[model]['size'],
                           marker=MARKER_MAP[model]['marker'],
-                          alpha=0.7,
-                          edgecolors='black',
-                          linewidths=1.5)
+                          alpha=0.7)
         
         # 회귀선 및 95% CI
         if len(all_x) >= 2:
@@ -903,8 +914,6 @@ def create_piqsca_correlation_plot(psyche_scores, figsize=(8, 8)):
                   s=MARKER_MAP[model]['size'],
                   label=LABEL_MAP[model],
                   alpha=0.7,
-                  edgecolors='black',
-                  linewidths=1.5,
                   zorder=3)
     
     # 회귀선 및 95% CI
@@ -1056,8 +1065,6 @@ def create_piqsca_correlation_plot_firebase(psyche_scores, piqsca_by_validator, 
                       s=MARKER_MAP[model]['size'],
                       label=LABEL_MAP[model],
                       alpha=0.7,
-                      edgecolors='black',
-                      linewidths=1.5,
                       zorder=3)
         
         # 회귀선 및 95% CI
@@ -1341,9 +1348,7 @@ def create_combined_correlation_figure(psyche_scores, avg_expert_scores, expert_
                           label=LABEL_MAP[model],
                           s=MARKER_MAP[model]['size'],
                           marker=MARKER_MAP[model]['marker'],
-                          alpha=0.7,
-                          edgecolors='black',
-                          linewidths=1.5)
+                          alpha=0.7)
         
         # 회귀선 및 95% CI
         if len(all_x) >= 2:
@@ -1623,9 +1628,7 @@ def create_combined_correlation_figure_v2(psyche_scores, avg_expert_scores, expe
                           label=LABEL_MAP[model],
                           s=MARKER_MAP[model]['size'],
                           marker=MARKER_MAP[model]['marker'],
-                          alpha=0.7,
-                          edgecolors='black',
-                          linewidths=1.5)
+                          alpha=0.7)
         
         # 회귀선 및 95% CI
         if len(all_x) >= 2:
@@ -1932,7 +1935,7 @@ def create_weight_correlation_heatmaps(element_scores_psyche, element_scores_exp
     ax1.set_yticks(range(1, 11))
     ax1.tick_params(labelsize=22)
     ax1.grid(False)
-    ax1.plot(2, 5, marker='s', color='orchid', markersize=10, label='(5, 2, 1)')
+    ax1.plot(2, 5, marker='s', color='orchid', markersize=WEIGHT_MARKER_SIZE, label='(5, 2, 1)')
     
     for spine in ax1.spines.values():
         spine.set_color('black')
@@ -1954,7 +1957,7 @@ def create_weight_correlation_heatmaps(element_scores_psyche, element_scores_exp
     ax2.set_yticks(range(1, 11))
     ax2.tick_params(labelsize=22)
     ax2.grid(False)
-    ax2.plot(2, 5, marker='s', color='orchid', markersize=10, label='(5, 2, 1)')
+    ax2.plot(2, 5, marker='s', color='orchid', markersize=WEIGHT_MARKER_SIZE, label='(5, 2, 1)')
     
     for spine in ax2.spines.values():
         spine.set_color('black')
@@ -2010,9 +2013,7 @@ def create_combined_figure_1x4(psyche_scores, avg_expert_scores, piqsca_scores, 
                       marker=MARKER_MAP[model]["marker"],
                       s=MARKER_MAP[model]["size"],
                       label=LABEL_MAP[model],
-                      alpha=0.7,
-                      edgecolors='black',
-                      linewidths=1.5)
+                      alpha=0.7)
     
     # 회귀선 및 95% CI
     if len(all_x) >= 2:
@@ -2086,9 +2087,7 @@ def create_combined_figure_1x4(psyche_scores, avg_expert_scores, piqsca_scores, 
                     marker=MARKER_MAP[model]['marker'],
                     s=MARKER_MAP[model]['size'],
                     label=LABEL_MAP[model],
-                    alpha=0.7,
-                    edgecolors='black',
-                    linewidths=1.5)
+                    alpha=0.7)
     
     # 회귀선 및 95% CI
     if len(all_x) >= 2:
@@ -2152,7 +2151,7 @@ def create_combined_figure_1x4(psyche_scores, avg_expert_scores, piqsca_scores, 
     ax_c.set_yticks(range(1, 11))
     ax_c.tick_params(labelsize=32)
     ax_c.grid(False)
-    ax_c.plot(2, 5, marker='s', color='orchid', markersize=20, label='(5, 2, 1)')
+    ax_c.plot(2, 5, marker='s', color='orchid', markersize=WEIGHT_MARKER_SIZE, label='(5, 2, 1)')
     
     for spine in ax_c.spines.values():
         spine.set_color('black')
@@ -2177,13 +2176,23 @@ def create_combined_figure_1x4(psyche_scores, avg_expert_scores, piqsca_scores, 
     ax_d.set_yticks(range(1, 11))
     ax_d.tick_params(labelsize=32)
     ax_d.grid(False)
-    ax_d.plot(2, 5, marker='s', color='orchid', markersize=20, label='(5, 2, 1)')
+    ax_d.plot(2, 5, marker='s', color='orchid', markersize=WEIGHT_MARKER_SIZE, label='(5, 2, 1)')
     
     for spine in ax_d.spines.values():
         spine.set_color('black')
         spine.set_linewidth(2)
-    
-    plt.tight_layout()
+
+    # 하단에 (a)(b)(c)(d) 패널 라벨 공간을 확보하고 tight_layout 적용
+    if ADD_PANEL_LABELS_1x4:
+        plt.tight_layout(rect=[0, 0.06, 1, 1])
+        # 각 subplot의 최종 위치를 기준으로 라벨을 중앙 하단에 배치
+        for ax, label in zip([ax_a, ax_b, ax_c, ax_d], ['(a)', '(b)', '(c)', '(d)']):
+            pos = ax.get_position()
+            fig.text((pos.x0 + pos.x1) / 2, PANEL_LABEL_Y, label,
+                     ha='center', va='bottom',
+                     fontsize=PANEL_LABEL_FONTSIZE, fontweight='bold', family='Helvetica')
+    else:
+        plt.tight_layout()
     return fig
 
 # ================================
@@ -2541,6 +2550,50 @@ def fig_to_bytes(fig, dpi=300):
     buf.seek(0)
     return buf.getvalue()
 
+def fig_to_vector_bytes(fig, fmt='pdf'):
+    """Convert matplotlib figure to vector bytes (PDF or SVG).
+
+    벡터 포맷은 해상도에 무관하게 확대해도 깨지지 않아 논문 게재/재작업(Keynote 등)에 적합.
+    """
+    buf = io.BytesIO()
+    fig.savefig(buf, format=fmt, bbox_inches='tight')
+    buf.seek(0)
+    return buf.getvalue()
+
+def add_figure_downloads(fig, base_filename, key_prefix, include_png=True):
+    """Render vector(PDF/SVG) 다운로드 버튼을 (필요시 PNG와 함께) 배치한다.
+
+    - PDF: LaTeX \\includegraphics 및 Keynote 합치기에 가장 안정적
+    - SVG: Keynote/Illustrator에서 요소별 편집이 필요할 때
+    - PNG: 미리보기/슬라이드용 (벡터 아님)
+    """
+    cols = st.columns(3 if include_png else 2)
+    with cols[0]:
+        st.download_button(
+            label="📥 PDF (vector)",
+            data=fig_to_vector_bytes(fig, 'pdf'),
+            file_name=f"{base_filename}.pdf",
+            mime="application/pdf",
+            key=f"{key_prefix}_pdf",
+        )
+    with cols[1]:
+        st.download_button(
+            label="📥 SVG (vector)",
+            data=fig_to_vector_bytes(fig, 'svg'),
+            file_name=f"{base_filename}.svg",
+            mime="image/svg+xml",
+            key=f"{key_prefix}_svg",
+        )
+    if include_png:
+        with cols[2]:
+            st.download_button(
+                label="📥 PNG (300 DPI)",
+                data=fig_to_bytes(fig),
+                file_name=f"{base_filename}.png",
+                mime="image/png",
+                key=f"{key_prefix}_png",
+            )
+
 # ================================
 # Main Application
 # ================================
@@ -2553,7 +2606,7 @@ def main():
     st.info("""
     **논문용 Figure 생성**
     - 모든 폰트: Helvetica
-    - 고해상도 PNG (300 DPI)
+    - **벡터 다운로드 지원: PDF / SVG** (해상도 무관, LaTeX·Keynote 재작업에 적합) + 미리보기용 PNG(300 DPI)
     - Figure 1: PSYCHE-Expert Correlation (3가지 버전)
     - Figure 2: Weight-Correlation Analysis (2개 heatmap)
     - Figure 3: SP Validation Heatmap (Quantitative - Conformity %)
@@ -2676,12 +2729,10 @@ def main():
                 st.markdown(f"#### Validator: {validator}")
                 st.pyplot(fig, use_container_width=False)
                 
-                st.download_button(
-                    label=f"📥 Download {validator} Plot (PNG, 300 DPI)",
-                    data=fig_to_bytes(fig),
-                    file_name=f"Fig1-6_PIQSCA_Correlation_{validator}.png",
-                    mime="image/png",
-                    key=f"download_1_6_{validator}"
+                add_figure_downloads(
+                    fig,
+                    f"Fig1-6_PIQSCA_Correlation_{validator}",
+                    f"fig1_6_{sanitize_firebase_key(validator)}",
                 )
                 plt.close(fig)
                 st.markdown("---")
@@ -2702,12 +2753,7 @@ def main():
         fig1_1 = create_correlation_plot_average(psyche_scores, avg_expert_scores)
         st.pyplot(fig1_1)
         
-        st.download_button(
-            label="📥 Download PNG (300 DPI)",
-            data=fig_to_bytes(fig1_1),
-            file_name="Fig1_1_PSYCHE_Expert_Correlation_Average.png",
-            mime="image/png"
-        )
+        add_figure_downloads(fig1_1, "Fig1_1_PSYCHE_Expert_Correlation_Average", "fig1_1")
         plt.close(fig1_1)
     
     with tab1b:
@@ -2748,12 +2794,7 @@ def main():
                         st.warning(f"⚠️ Expert scored **lower** than PSYCHE by {abs(err):.2f} points → PSYCHE may have overestimated")
             
             # Download button
-            st.download_button(
-                label="📥 Download PNG (300 DPI)",
-                data=fig_to_bytes(fig1_1b),
-                file_name="Fig1-1b_Error_Analysis.png",
-                mime="image/png"
-            )
+            add_figure_downloads(fig1_1b, "Fig1-1b_Error_Analysis", "fig1_1b")
             plt.close(fig1_1b)
         else:
             st.warning("데이터가 없습니다.")
@@ -2814,12 +2855,7 @@ def main():
                         st.info(f"ℹ️ Raw difference (Expert - PSYCHE) = {raw_diff:+.2f} vs Residual = {res:+.2f}")
                 
                 # Download button
-                st.download_button(
-                    label="📥 Download PNG (300 DPI)",
-                    data=fig_to_bytes(fig1_1c),
-                    file_name="Fig1-1c_Residual_Error_Analysis.png",
-                    mime="image/png"
-                )
+                add_figure_downloads(fig1_1c, "Fig1-1c_Residual_Error_Analysis", "fig1_1c")
                 plt.close(fig1_1c)
             else:
                 st.warning("회귀선을 계산할 수 없습니다 (데이터 부족).")
@@ -2841,12 +2877,7 @@ def main():
             )
             st.pyplot(fig_combined)
             
-            st.download_button(
-                label="📥 Download PNG (300 DPI)",
-                data=fig_to_bytes(fig_combined),
-                file_name="Fig1_Combined_Correlation_Analysis.png",
-                mime="image/png"
-            )
+            add_figure_downloads(fig_combined, "Fig1_Combined_Correlation_Analysis", "fig_combined")
             plt.close(fig_combined)
         else:
             st.warning("Element-level 데이터가 없습니다. Category별 분석을 위해서는 element 점수가 필요합니다.")
@@ -2867,12 +2898,7 @@ def main():
             )
             st.pyplot(fig_combined_v2)
             
-            st.download_button(
-                label="📥 Download PNG (300 DPI)",
-                data=fig_to_bytes(fig_combined_v2),
-                file_name="Fig1_Combined_Correlation_Analysis_V2.png",
-                mime="image/png"
-            )
+            add_figure_downloads(fig_combined_v2, "Fig1_Combined_Correlation_Analysis_V2", "fig_combined_v2")
             plt.close(fig_combined_v2)
         else:
             st.warning("Element-level 데이터가 없습니다. Category별 분석을 위해서는 element 점수가 필요합니다.")
@@ -2882,12 +2908,7 @@ def main():
         fig1_2 = create_correlation_plot_by_validator(psyche_scores, expert_data)
         st.pyplot(fig1_2)
         
-        st.download_button(
-            label="📥 Download PNG (300 DPI)",
-            data=fig_to_bytes(fig1_2),
-            file_name="Fig1_2_PSYCHE_Expert_Correlation_Validators.png",
-            mime="image/png"
-        )
+        add_figure_downloads(fig1_2, "Fig1_2_PSYCHE_Expert_Correlation_Validators", "fig1_2")
         plt.close(fig1_2)
     
     with tab3:
@@ -2895,12 +2916,7 @@ def main():
         fig1_3 = create_correlation_plot_by_disorder(psyche_scores, avg_expert_scores)
         st.pyplot(fig1_3)
         
-        st.download_button(
-            label="📥 Download PNG (300 DPI)",
-            data=fig_to_bytes(fig1_3),
-            file_name="Fig1_3_PSYCHE_Expert_Correlation_Disorders.png",
-            mime="image/png"
-        )
+        add_figure_downloads(fig1_3, "Fig1_3_PSYCHE_Expert_Correlation_Disorders", "fig1_3")
         plt.close(fig1_3)
     
     with tab4:
@@ -2916,12 +2932,7 @@ def main():
             fig1_4 = create_correlation_plot_by_category(psyche_category_scores, expert_category_scores)
             st.pyplot(fig1_4)
             
-            st.download_button(
-                label="📥 Download PNG (300 DPI)",
-                data=fig_to_bytes(fig1_4),
-                file_name="Fig1-4_Category_Level_Analysis.png",
-                mime="image/png"
-            )
+            add_figure_downloads(fig1_4, "Fig1-4_Category_Level_Analysis", "fig1_4")
             plt.close(fig1_4)
         else:
             st.warning("Element-level 데이터가 없습니다. Category별 분석을 위해서는 element 점수가 필요합니다.")
@@ -2961,12 +2972,7 @@ def main():
                 )
                 st.pyplot(fig_combined_1x4)
                 
-                st.download_button(
-                    label="📥 Download PNG (300 DPI)",
-                    data=fig_to_bytes(fig_combined_1x4),
-                    file_name="Fig_Combined_1x4_Comprehensive_Analysis.png",
-                    mime="image/png"
-                )
+                add_figure_downloads(fig_combined_1x4, "Fig_Combined_1x4_Comprehensive_Analysis", "fig_combined_1x4")
                 plt.close(fig_combined_1x4)
     else:
         st.warning("Element-level 데이터가 필요합니다.")
@@ -2984,12 +2990,7 @@ def main():
         if fig3:
             st.pyplot(fig3)
             
-            st.download_button(
-                label="📥 Download PNG (300 DPI)",
-                data=fig_to_bytes(fig3),
-                file_name="Fig3_SP_Validation_Heatmap_Quantitative.png",
-                mime="image/png"
-            )
+            add_figure_downloads(fig3, "Fig3_SP_Validation_Heatmap_Quantitative", "fig3")
             plt.close(fig3)
         else:
             st.warning("Failed to create SP validation heatmap.")
@@ -3024,12 +3025,7 @@ def main():
         if fig4:
             st.pyplot(fig4)
             
-            st.download_button(
-                label="📥 Download PNG (300 DPI)",
-                data=fig_to_bytes(fig4),
-                file_name="Fig4_SP_Qualitative_Heatmap_Likert.png",
-                mime="image/png"
-            )
+            add_figure_downloads(fig4, "Fig4_SP_Qualitative_Heatmap_Likert", "fig4")
             plt.close(fig4)
         else:
             st.warning("Failed to create SP qualitative heatmap.")
@@ -3069,12 +3065,7 @@ def main():
         
         st.pyplot(fig2)
         
-        st.download_button(
-            label="📥 Download PNG (300 DPI)",
-            data=fig_to_bytes(fig2),
-            file_name="Fig2_Weight_Correlation_Heatmaps.png",
-            mime="image/png"
-        )
+        add_figure_downloads(fig2, "Fig2_Weight_Correlation_Heatmaps", "fig2")
         plt.close(fig2)
     else:
         st.warning("Element-level scores not available. Cannot generate weight correlation heatmaps.")
