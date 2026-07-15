@@ -63,12 +63,12 @@ EXPERIMENT_NUMBERS = [
 VALIDATORS = ["이강토", "김태환", "김광현", "김주오", "허율", "장재용"]
 
 VALIDATOR_INITIALS = {
-    "이강토": "A",
-    "김태환": "B",
-    "김광현": "C",
-    "김주오": "D",
-    "허율": "E",
-    "장재용": "F"
+    "이강토": "Validator A",
+    "김태환": "Validator B",
+    "김광현": "Validator C",
+    "김주오": "Validator D",
+    "허율": "Validator E",
+    "장재용": "Validator F"
 }
 
 DISORDER_MAP = {6201: "mdd", 6202: "bd", 6206: "ocd"}
