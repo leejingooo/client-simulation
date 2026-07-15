@@ -488,7 +488,7 @@ def create_correlation_plot_average(psyche_scores, avg_expert_scores, figsize=(8
         correlation, p_value = stats.pearsonr(all_x, all_y)
         p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
         ax.text(0.3, 0.10, f'r = {correlation:.4f}, {p_text}',
-               transform=ax.transAxes, fontsize=22, family='Helvetica')
+               transform=ax.transAxes, fontsize=32, family='Helvetica')
     
     # 스타일링
     ax.set_title('PSYCHE SCORE vs. Expert score', fontsize=36, pad=20, family='Helvetica')
@@ -851,7 +851,7 @@ def create_weight_correlation_heatmaps(element_scores_psyche, element_scores_exp
     }
     return fig, stats_info
 
-def create_piqsca_correlation_plot_firebase(psyche_scores, piqsca_by_validator, figsize=(6, 6)):
+def create_piqsca_correlation_plot_firebase(psyche_scores, piqsca_by_validator, figsize=(8, 8)):
     """PSYCHE SCORE vs. PIQSCA correlation plots (Firebase data, by validator).
     
     Returns list of figures, one per validator.
@@ -931,7 +931,7 @@ def create_piqsca_correlation_plot_firebase(psyche_scores, piqsca_by_validator, 
             correlation, p_value = stats.pearsonr(all_x, all_y)
             p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
             ax.text(0.3, 0.10, f'r = {correlation:.4f}, {p_text}',
-                   transform=ax.transAxes, fontsize=22, family='Helvetica')
+                   transform=ax.transAxes, fontsize=32, family='Helvetica')
         
         # 스타일링
         ax.set_title('PSYCHE SCORE vs. PIQSCA', 
