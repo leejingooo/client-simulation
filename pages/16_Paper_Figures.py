@@ -95,7 +95,7 @@ LABEL_MAP = {
 }
 
 # (5,2,1) 보라색 네모 마커 크기 (fig7). 값만 바꾸면 조정됨.
-WEIGHT_MARKER_SIZE = 40
+WEIGHT_MARKER_SIZE = 30
 
 
 def get_model_from_exp(exp_num):
@@ -941,7 +941,6 @@ def create_piqsca_correlation_plot_firebase(psyche_scores, piqsca_by_validator, 
         ax.set_yticks([3, 9, 15])
         ax.set_xticks([5, 30, 55])
         ax.tick_params(labelsize=20)
-        ax.legend(loc='upper left', prop={'size': 14, 'weight': 'bold', 'family': 'Helvetica'})
         
         # 테두리
         for spine in ax.spines.values():
