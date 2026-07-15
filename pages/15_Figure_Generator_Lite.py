@@ -419,7 +419,7 @@ def create_combined_correlation_figure(psyche_scores, avg_expert_scores, expert_
                    transform=ax.transAxes, fontsize=18, family='Helvetica')
         
         # 스타일링
-        ax.set_title(VALIDATOR_INITIALS[validator], fontsize=24, fontweight='bold', family='Helvetica')
+        ax.set_title("Validator f'VALIDATOR_INITIALS[validator]'", fontsize=24, fontweight='bold', family='Helvetica')
         ax.set_xlabel('PSYCHE SCORE', fontsize=22, family='Helvetica')
         ax.set_ylabel('Expert score', fontsize=22, family='Helvetica')
         ax.set_yticks([5, 35, 65])
