@@ -31,6 +31,11 @@ st.set_page_config(
 rcParams['font.family'] = 'Helvetica'
 rcParams['axes.unicode_minus'] = False
 
+# 벡터 출력(PDF/SVG)에서 텍스트를 실제 text로 유지 (Keynote/Illustrator/LaTeX 편집 가능)
+rcParams['pdf.fonttype'] = 42
+rcParams['ps.fonttype'] = 42
+rcParams['svg.fonttype'] = 'none'
+
 # Seaborn 스타일
 sns.set_style("ticks")
 
@@ -843,46 +848,44 @@ def create_combined_correlation_figure_v2(psyche_scores, avg_expert_scores, expe
             if points:
                 x_vals = [p[0] for p in points]
                 y_vals = [p[1] for p in points]
-                ax.scatter(x_vals, y_vals, 
+                ax.scatter(x_vals, y_vals,
                           color=COLOR_MAP[model],
                           label=LABEL_MAP[model],
                           s=MARKER_MAP[model]['size'],
                           marker=MARKER_MAP[model]['marker'],
-                          alpha=0.7,
-                          edgecolors='black',
-                          linewidths=1.5)
-        
+                          alpha=0.7)
+
         # 회귀선 및 95% CI
         if len(all_x) >= 2:
             all_x_arr = np.array(all_x)
             all_y_arr = np.array(all_y)
-            
+
             z = np.polyfit(all_x_arr, all_y_arr, 1)
             p = np.poly1d(z)
             x_line = np.linspace(min(all_x_arr), max(all_x_arr), 100)
             y_line = p(x_line)
-            
+
             n = len(all_x_arr)
             y_pred = p(all_x_arr)
             residuals = all_y_arr - y_pred
             std_err = np.sqrt(np.sum(residuals**2) / (n - 2))
-            
+
             x_mean = np.mean(all_x_arr)
             sxx = np.sum((all_x_arr - x_mean)**2)
             se_line = std_err * np.sqrt(1/n + (x_line - x_mean)**2 / sxx)
-            
+
             from scipy.stats import t as t_dist
             t_val = t_dist.ppf(0.975, n - 2)
             ci = t_val * se_line
-            
+
             ax.fill_between(x_line, y_line - ci, y_line + ci, alpha=0.15, color='#3498db')
             ax.plot(x_line, y_line, '#3498db', linestyle='-', linewidth=2)
-            
+
             correlation, p_value = stats.pearsonr(all_x, all_y)
             p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
             ax.text(0.3, 0.10, f'r = {correlation:.4f}, {p_text}',
                    transform=ax.transAxes, fontsize=22, family='Helvetica')
-        
+
         # 스타일링
         ax.set_title(category_labels[category], fontsize=30, fontweight='bold', family='Helvetica', pad=20)
         # xlabel은 모두 표시 (아래쪽 가장자리)
@@ -892,14 +895,14 @@ def create_combined_correlation_figure_v2(psyche_scores, avg_expert_scores, expe
             ax.set_ylabel('Expert score', fontsize=28, family='Helvetica')
         ax.tick_params(labelsize=26)
         ax.grid(False)
-        
+
         for spine in ax.spines.values():
             spine.set_color('black')
             spine.set_linewidth(2)
-    
+
     # (c) 마커 추가
     fig.text(0.02, 0.23, '(c)', fontsize=32, fontweight='bold', family='Helvetica')
-    
+
     return fig
 
 # ================================
@@ -911,6 +914,29 @@ def fig_to_bytes(fig, dpi=300):
     fig.savefig(buf, format='png', dpi=dpi, bbox_inches='tight')
     buf.seek(0)
     return buf.getvalue()
+
+def fig_to_vector_bytes(fig, fmt='pdf'):
+    """Convert matplotlib figure to vector bytes (PDF or SVG)."""
+    buf = io.BytesIO()
+    fig.savefig(buf, format=fmt, bbox_inches='tight')
+    buf.seek(0)
+    return buf.getvalue()
+
+def download_row(fig, base_filename, key_prefix):
+    """PDF/SVG(벡터) + PNG(미리보기) 다운로드 버튼 배치."""
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.download_button("📥 PDF (vector)", fig_to_vector_bytes(fig, 'pdf'),
+                           file_name=f"{base_filename}.pdf", mime="application/pdf",
+                           key=f"{key_prefix}_pdf")
+    with c2:
+        st.download_button("📥 SVG (vector)", fig_to_vector_bytes(fig, 'svg'),
+                           file_name=f"{base_filename}.svg", mime="image/svg+xml",
+                           key=f"{key_prefix}_svg")
+    with c3:
+        st.download_button("📥 PNG (300 DPI)", fig_to_bytes(fig),
+                           file_name=f"{base_filename}.png", mime="image/png",
+                           key=f"{key_prefix}_png")
 
 # ================================
 # Main Application
@@ -1041,13 +1067,8 @@ def main():
                     psyche_category_scores, expert_category_scores
                 )
                 st.pyplot(fig_combined_v2)
-                
-                st.download_button(
-                    label="📥 Download PNG (300 DPI)",
-                    data=fig_to_bytes(fig_combined_v2),
-                    file_name="Fig1_Combined_Correlation_Analysis_V2.png",
-                    mime="image/png"
-                )
+
+                download_row(fig_combined_v2, "Fig1_Combined_Correlation_Analysis_V2", "fig_combined_v2")
                 plt.close(fig_combined_v2)
         else:
             st.warning("Element-level 데이터가 없습니다. Category별 분석을 위해서는 element 점수가 필요합니다.")
