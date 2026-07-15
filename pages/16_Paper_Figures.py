@@ -6,14 +6,14 @@ PSYCHE 논문 2nd revision 용, 실제 논문에 들어가는 Figure만 깔끔�
 논문 Figure ↔ 파일명 매핑
 - Figure 5  →  figure_likert                (SP Qualitative Likert Heatmap)
 - Figure 6  →  figure_conformity            (SP Validation Conformity Heatmap)
-- Figure 7  →  figure_graph                 (Avg Expert + PIQSCA + Weight-Correlation, 1×4)
-- Figure 8  →  figure_combined_correlation  (Validators + Disorders + Categories)
+- Figure 7  →  figure_graph                 (a) Avg Expert + (b) PIQSCA(임경호) + (c,d) Weight-Correlation
+- Figure 8  →  figure_combined_correlation  (a) Validators + (b) Disorders + (c) Categories
 
 특징
-- 모든 figure는 PDF / SVG (벡터)로 다운로드 → 해상도 무관, LaTeX·Keynote 재작업에 적합
-- Scatter 마커는 테두리 없음으로 통일
-- (a)(b)(c)(d) 패널 라벨과 섹션 간 여백을 코드에서 처리 (Keynote 수작업 불필요)
-- 글씨 크기 배율(font scale)을 선택해 '원본'과 '키운 버전'을 모두 확인/다운로드 가능
+- Figure 7, 8을 구성하는 각 plot을 '개별' figure로 생성 → 합치기(배치/라벨)는 Keynote에서 직접.
+- Plot 스타일(가로세로 비율, 폰트 크기, 라벨 표시 유무)은 기존 page 15의 원본 설정 그대로.
+- 모든 figure는 PDF / SVG (벡터)로 다운로드 → 해상도 무관, LaTeX·Keynote 재작업에 적합.
+- Scatter 마커는 테두리 없음으로 통일, weight heatmap의 (5,2,1) 보라색 네모는 확대(WEIGHT_MARKER_SIZE).
 """
 
 import io
@@ -421,293 +421,696 @@ def load_sp_qualitative_data(root_data):
 
 
 # ================================
-# Shared plotting helper
+# Plotting functions (page 15와 동일한 원본 스타일 그대로)
+# 각 subplot을 개별 figure로 생성 -> Keynote에서 합치기
 # ================================
-def _scatter_with_fit(ax, data_by_model, fs, r_fontsize, add_legend=False, legend_fontsize=18):
-    """산점도(테두리 없음) + 회귀선 + 95% CI + r/p 텍스트. all_x, all_y 반환."""
+def create_correlation_plot_average(psyche_scores, avg_expert_scores, figsize=(8, 8)):
+    """Figure 1-1: Average expert score correlation plot."""
+    fig, ax = plt.subplots(figsize=figsize)
+    
+    # 데이터 준비
+    data_by_model = {model: [] for model in COLOR_MAP.keys()}
+    
+    for exp in EXPERIMENT_NUMBERS:
+        psyche = psyche_scores.get(exp)
+        expert = avg_expert_scores.get(exp)
+        if psyche is not None and expert is not None:
+            model = get_model_from_exp(exp[1])
+            if model in data_by_model:
+                data_by_model[model].append((psyche, expert))
+    
+    # Scatter plot
     all_x, all_y = [], []
     for model, points in data_by_model.items():
-        if not points:
-            continue
-        xs = [p[0] for p in points]
-        ys = [p[1] for p in points]
-        all_x.extend(xs)
-        all_y.extend(ys)
-        ax.scatter(xs, ys, c=COLOR_MAP[model], marker=MARKER_MAP[model]['marker'],
-                   s=MARKER_MAP[model]['size'], label=LABEL_MAP[model], alpha=0.7)
+        if points:
+            x, y = zip(*points)
+            all_x.extend(x)
+            all_y.extend(y)
+            ax.scatter(x, y, 
+                      c=COLOR_MAP[model],
+                      marker=MARKER_MAP[model]["marker"],
+                      s=MARKER_MAP[model]["size"],
+                      label=LABEL_MAP[model],
+                      alpha=0.7)
+    
+    # 회귀선 및 95% CI
     if len(all_x) >= 2:
-        x = np.array(all_x)
-        y = np.array(all_y)
-        z = np.polyfit(x, y, 1)
+        all_x_arr = np.array(all_x)
+        all_y_arr = np.array(all_y)
+        
+        # Linear regression
+        z = np.polyfit(all_x_arr, all_y_arr, 1)
         p = np.poly1d(z)
-        xl = np.linspace(x.min(), x.max(), 100)
-        yl = p(xl)
-        n = len(x)
-        resid = y - p(x)
-        std_err = np.sqrt(np.sum(resid ** 2) / (n - 2))
-        xm = np.mean(x)
-        sxx = np.sum((x - xm) ** 2)
-        se = std_err * np.sqrt(1 / n + (xl - xm) ** 2 / sxx)
-        ci = t_dist.ppf(0.975, n - 2) * se
-        ax.fill_between(xl, yl - ci, yl + ci, alpha=0.2, color='#3498db', zorder=0)
-        ax.plot(xl, yl, '#3498db', linestyle='-', linewidth=2, zorder=1)
-        r, pv = stats.pearsonr(all_x, all_y)
-        p_text = 'p < 0.0001' if pv < 0.0001 else f'p = {pv:.4f}'
-        ax.text(0.3, 0.10, f'r = {r:.4f}, {p_text}', transform=ax.transAxes,
-                fontsize=r_fontsize * fs, family='Helvetica')
-    if add_legend:
-        ax.legend(loc='upper left',
-                  prop={'size': legend_fontsize * fs, 'weight': 'bold', 'family': 'Helvetica'})
+        x_line = np.linspace(min(all_x_arr), max(all_x_arr), 100)
+        y_line = p(x_line)
+        
+        # Calculate 95% confidence interval
+        n = len(all_x_arr)
+        y_pred = p(all_x_arr)
+        residuals = all_y_arr - y_pred
+        std_err = np.sqrt(np.sum(residuals**2) / (n - 2))
+        
+        # Standard error of prediction
+        x_mean = np.mean(all_x_arr)
+        sxx = np.sum((all_x_arr - x_mean)**2)
+        se_line = std_err * np.sqrt(1/n + (x_line - x_mean)**2 / sxx)
+        
+        # 95% CI (t-distribution)
+        from scipy.stats import t as t_dist
+        t_val = t_dist.ppf(0.975, n - 2)
+        ci = t_val * se_line
+        
+        # Plot CI
+        ax.fill_between(x_line, y_line - ci, y_line + ci, alpha=0.2, color='#3498db')
+        ax.plot(x_line, y_line, '#3498db', linestyle='-', linewidth=2)
+        
+        # Correlation
+        correlation, p_value = stats.pearsonr(all_x, all_y)
+        p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
+        ax.text(0.3, 0.10, f'r = {correlation:.4f}, {p_text}',
+               transform=ax.transAxes, fontsize=22, family='Helvetica')
+    
+    # 스타일링
+    ax.set_title('PSYCHE SCORE vs. Expert score', fontsize=36, pad=20, family='Helvetica')
+    ax.set_xlabel('PSYCHE SCORE', fontsize=36, family='Helvetica')
+    ax.set_ylabel('Expert score', fontsize=36, family='Helvetica')
+    ax.set_yticks([5, 35, 65])
+    ax.set_xticks([5, 30, 55])
+    ax.tick_params(labelsize=32)
+    ax.legend(loc='upper left', prop={'size': 18, 'weight': 'bold', 'family': 'Helvetica'})
+    
+    # 테두리
     for spine in ax.spines.values():
         spine.set_color('black')
         spine.set_linewidth(2)
-    return all_x, all_y
-
-
-# ================================
-# Figure 7 (figure_graph): Avg Expert + PIQSCA + Weight-Correlation (1×4)
-# ================================
-def create_figure_graph(psyche_scores, avg_expert_scores, piqsca_scores,
-                        corr_equal, corr_fixed, fs=1.0):
-    fig = plt.figure(figsize=(48, 9), constrained_layout=True)
-    subfigs = fig.subfigures(1, 4, width_ratios=[0.85, 0.85, 1, 1], wspace=0.04)
-
-    # (a) PSYCHE vs Expert
-    ax_a = subfigs[0].add_subplot(111)
-    dbm = {m: [] for m in COLOR_MAP}
-    for exp in EXPERIMENT_NUMBERS:
-        ps, ex = psyche_scores.get(exp), avg_expert_scores.get(exp)
-        if ps is not None and ex is not None:
-            dbm[get_model_from_exp(exp[1])].append((ps, ex))
-    _scatter_with_fit(ax_a, dbm, fs, r_fontsize=28, add_legend=True, legend_fontsize=22)
-    ax_a.set_title('PSYCHE SCORE vs. Expert score', fontsize=36 * fs, pad=15, family='Helvetica')
-    ax_a.set_xlabel('PSYCHE SCORE', fontsize=36 * fs, family='Helvetica')
-    ax_a.set_ylabel('Expert score', fontsize=36 * fs, family='Helvetica')
-    ax_a.set_yticks([5, 35, 65])
-    ax_a.set_xticks([5, 30, 55])
-    ax_a.tick_params(labelsize=32 * fs)
-    subfigs[0].supxlabel('(a)', fontsize=40 * fs, fontweight='bold', family='Helvetica')
-
-    # (b) PSYCHE vs PIQSCA
-    ax_b = subfigs[1].add_subplot(111)
-    dbm = {m: [] for m in COLOR_MAP}
-    for exp in EXPERIMENT_NUMBERS:
-        if exp in piqsca_scores and exp in psyche_scores:
-            dbm[get_model_from_exp(exp[1])].append((psyche_scores[exp], piqsca_scores[exp]))
-    _scatter_with_fit(ax_b, dbm, fs, r_fontsize=28)
-    ax_b.set_title('PSYCHE SCORE vs. PIQSCA', fontsize=36 * fs, pad=15, family='Helvetica')
-    ax_b.set_xlabel('PSYCHE SCORE', fontsize=36 * fs, family='Helvetica')
-    ax_b.set_ylabel('PIQSCA', fontsize=36 * fs, family='Helvetica')
-    ax_b.set_yticks([3, 9, 15])
-    ax_b.set_xticks([5, 30, 55])
-    ax_b.tick_params(labelsize=32 * fs)
-    subfigs[1].supxlabel('(b)', fontsize=40 * fs, fontweight='bold', family='Helvetica')
-
-    # (c) Equal weights heatmap
-    ax_c = subfigs[2].add_subplot(111)
-    im_c = ax_c.imshow(corr_equal, cmap='Greens', aspect='auto',
-                       extent=[1, 10, 1, 10], origin='lower')
-    cbar_c = subfigs[2].colorbar(im_c, ax=ax_c)
-    cbar_c.ax.set_ylabel('Correlation', fontsize=28 * fs, family='Helvetica')
-    cbar_c.ax.tick_params(labelsize=28 * fs)
-    cbar_c.set_ticks([0.78, 0.88])
-    ax_c.set_xlabel('$w_{Behavior}$', fontsize=36 * fs, family='Helvetica')
-    ax_c.set_ylabel('$w_{Impulsivity}$', fontsize=36 * fs, family='Helvetica')
-    ax_c.set_title('Equal weights', fontsize=36 * fs, pad=15, family='Helvetica')
-    ax_c.set_xticks(range(1, 11))
-    ax_c.set_yticks(range(1, 11))
-    ax_c.tick_params(labelsize=32 * fs)
-    ax_c.grid(False)
-    ax_c.plot(2, 5, marker='s', color='orchid', markersize=WEIGHT_MARKER_SIZE)
-    for spine in ax_c.spines.values():
-        spine.set_color('black')
-        spine.set_linewidth(2)
-    subfigs[2].supxlabel('(c)', fontsize=40 * fs, fontweight='bold', family='Helvetica')
-
-    # (d) Fixed weights heatmap
-    ax_d = subfigs[3].add_subplot(111)
-    im_d = ax_d.imshow(corr_fixed, cmap='Greens', aspect='auto',
-                       extent=[1, 10, 1, 10], origin='lower')
-    cbar_d = subfigs[3].colorbar(im_d, ax=ax_d)
-    cbar_d.ax.set_ylabel('Correlation', fontsize=28 * fs, family='Helvetica')
-    cbar_d.ax.tick_params(labelsize=28 * fs)
-    cbar_d.set_ticks([0.84, 0.90])
-    ax_d.set_xlabel('$w_{Behavior}$', fontsize=36 * fs, family='Helvetica')
-    ax_d.set_ylabel('$w_{Impulsivity}$', fontsize=36 * fs, family='Helvetica')
-    ax_d.set_title('Expert weights fixed at (5,2,1)', fontsize=36 * fs, pad=15, family='Helvetica')
-    ax_d.set_xticks(range(1, 11))
-    ax_d.set_yticks(range(1, 11))
-    ax_d.tick_params(labelsize=32 * fs)
-    ax_d.grid(False)
-    ax_d.plot(2, 5, marker='s', color='orchid', markersize=WEIGHT_MARKER_SIZE)
-    for spine in ax_d.spines.values():
-        spine.set_color('black')
-        spine.set_linewidth(2)
-    subfigs[3].supxlabel('(d)', fontsize=40 * fs, fontweight='bold', family='Helvetica')
-
+    
+    plt.tight_layout()
     return fig
 
-
-# ================================
-# Figure 8 (figure_combined_correlation): Validators + Disorders + Categories
-# ================================
-def create_figure_combined_correlation(psyche_scores, avg_expert_scores, expert_data,
-                                       psyche_cat, expert_cat, fs=1.0):
-    fig = plt.figure(figsize=(22, 26), constrained_layout=True)
-    # 섹션 사이 여백은 subfigures의 hspace로 확보 (a/b/c 구분감)
-    subfigs = fig.subfigures(3, 1, height_ratios=[2, 1, 1], hspace=0.08)
-
-    label_fs = 40 * fs
-
-    # ---- (a) Validators (2×3) ----
-    axes_a = subfigs[0].subplots(2, 3)
+def create_correlation_plot_by_validator(psyche_scores, expert_data):
+    """Figure 1-2: Individual validator correlation plots."""
+    fig, axes = plt.subplots(2, 3, figsize=(18, 12))
+    axes = axes.flatten()
+    
     for idx, validator in enumerate(VALIDATORS):
-        ax = axes_a[idx // 3][idx % 3]
-        dbm = {m: [] for m in COLOR_MAP}
+        ax = axes[idx]
+        
+        # 데이터 수집
+        validator_x, validator_y = [], []
+        data_by_model = {model: [] for model in COLOR_MAP.keys()}
+        
         for exp in EXPERIMENT_NUMBERS:
-            ps, ex = psyche_scores.get(exp), expert_data[validator].get(exp)
-            if ps is not None and ex is not None:
-                dbm[get_model_from_exp(exp[1])].append((ps, ex))
-        _scatter_with_fit(ax, dbm, fs, r_fontsize=18)
-        ax.set_title(VALIDATOR_INITIALS[validator], fontsize=24 * fs, fontweight='bold', family='Helvetica')
-        ax.set_xlabel('PSYCHE SCORE', fontsize=22 * fs, family='Helvetica')
-        ax.set_ylabel('Expert score', fontsize=22 * fs, family='Helvetica')
+            psyche = psyche_scores.get(exp)
+            expert = expert_data[validator].get(exp)
+            if psyche is not None and expert is not None:
+                validator_x.append(psyche)
+                validator_y.append(expert)
+                model = get_model_from_exp(exp[1])
+                if model in data_by_model:
+                    data_by_model[model].append((psyche, expert))
+        
+        # Scatter plot
+        for model, points in data_by_model.items():
+            if points:
+                x, y = zip(*points)
+                ax.scatter(x, y,
+                          c=COLOR_MAP[model],
+                          marker=MARKER_MAP[model]["marker"],
+                          s=MARKER_MAP[model]["size"],
+                          alpha=0.7)
+        
+        # 회귀선 및 95% CI
+        if len(validator_x) >= 2:
+            validator_x_arr = np.array(validator_x)
+            validator_y_arr = np.array(validator_y)
+            
+            z = np.polyfit(validator_x_arr, validator_y_arr, 1)
+            p = np.poly1d(z)
+            x_line = np.linspace(min(validator_x_arr), max(validator_x_arr), 100)
+            y_line = p(x_line)
+            
+            # Calculate 95% confidence interval
+            n = len(validator_x_arr)
+            y_pred = p(validator_x_arr)
+            residuals = validator_y_arr - y_pred
+            std_err = np.sqrt(np.sum(residuals**2) / (n - 2))
+            
+            x_mean = np.mean(validator_x_arr)
+            sxx = np.sum((validator_x_arr - x_mean)**2)
+            se_line = std_err * np.sqrt(1/n + (x_line - x_mean)**2 / sxx)
+            
+            from scipy.stats import t as t_dist
+            t_val = t_dist.ppf(0.975, n - 2)
+            ci = t_val * se_line
+            
+            ax.fill_between(x_line, y_line - ci, y_line + ci, alpha=0.2, color='#3498db')
+            ax.plot(x_line, y_line, '#3498db', linestyle='-', linewidth=2)
+            
+            correlation, p_value = stats.pearsonr(validator_x, validator_y)
+            p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
+            ax.text(0.3, 0.10, f'r = {correlation:.4f}, {p_text}',
+                   transform=ax.transAxes, fontsize=18, family='Helvetica')
+        
+        # 스타일링
+        ax.set_title(VALIDATOR_INITIALS[validator], fontsize=24, fontweight='bold', family='Helvetica')
+        ax.set_xlabel('PSYCHE SCORE', fontsize=22, family='Helvetica')
+        ax.set_ylabel('Expert score', fontsize=22, family='Helvetica')
         ax.set_yticks([5, 35, 65])
         ax.set_xticks([5, 30, 55])
-        ax.tick_params(labelsize=20 * fs)
+        ax.tick_params(labelsize=20)
         ax.grid(False)
-    subfigs[0].suptitle('(a)', x=0.01, y=0.99, ha='left', va='top',
-                        fontsize=label_fs, fontweight='bold', family='Helvetica')
+        
+        for spine in ax.spines.values():
+            spine.set_color('black')
+            spine.set_linewidth(2)
+    
+    plt.tight_layout()
+    return fig
 
-    # ---- (b) Disorders (1×3) ----
-    axes_b = subfigs[1].subplots(1, 3)
-    for idx, disorder_code in enumerate([6201, 6202, 6206]):
-        ax = axes_b[idx]
-        dbm = {m: [] for m in COLOR_MAP}
+def create_correlation_plot_by_disorder(psyche_scores, avg_expert_scores):
+    """Figure 1-3: Disorder-specific correlation plots."""
+    fig, axes = plt.subplots(1, 3, figsize=(24, 8))
+    
+    for idx, (disorder_code, disorder_name) in enumerate([(6201, "MDD"), (6202, "BD"), (6206, "OCD")]):
+        ax = axes[idx]
+        
+        # 해당 disorder 데이터만 필터링
+        data_by_model = {model: [] for model in COLOR_MAP.keys()}
+        all_x, all_y = [], []
+        
         for exp in EXPERIMENT_NUMBERS:
             if exp[0] != disorder_code:
                 continue
-            ps, ex = psyche_scores.get(exp), avg_expert_scores.get(exp)
-            if ps is not None and ex is not None:
-                dbm[get_model_from_exp(exp[1])].append((ps, ex))
-        _scatter_with_fit(ax, dbm, fs, r_fontsize=24)
-        ax.set_title(DISORDER_NAMES[DISORDER_MAP[disorder_code]], fontsize=28 * fs,
-                     fontweight='bold', family='Helvetica', pad=15)
-        ax.set_xlabel('PSYCHE SCORE', fontsize=26 * fs, family='Helvetica')
-        if idx == 0:
-            ax.set_ylabel('Expert score', fontsize=26 * fs, family='Helvetica')
+            psyche = psyche_scores.get(exp)
+            expert = avg_expert_scores.get(exp)
+            if psyche is not None and expert is not None:
+                all_x.append(psyche)
+                all_y.append(expert)
+                model = get_model_from_exp(exp[1])
+                if model in data_by_model:
+                    data_by_model[model].append((psyche, expert))
+        
+        # Scatter plot
+        for model, points in data_by_model.items():
+            if points:
+                x, y = zip(*points)
+                ax.scatter(x, y,
+                          c=COLOR_MAP[model],
+                          marker=MARKER_MAP[model]["marker"],
+                          s=MARKER_MAP[model]["size"],
+                          alpha=0.7)
+        
+        # 회귀선 및 95% CI
+        if len(all_x) >= 2:
+            all_x_arr = np.array(all_x)
+            all_y_arr = np.array(all_y)
+            
+            z = np.polyfit(all_x_arr, all_y_arr, 1)
+            p = np.poly1d(z)
+            x_line = np.linspace(min(all_x_arr), max(all_x_arr), 100)
+            y_line = p(x_line)
+            
+            # Calculate 95% confidence interval
+            n = len(all_x_arr)
+            y_pred = p(all_x_arr)
+            residuals = all_y_arr - y_pred
+            std_err = np.sqrt(np.sum(residuals**2) / (n - 2))
+            
+            x_mean = np.mean(all_x_arr)
+            sxx = np.sum((all_x_arr - x_mean)**2)
+            se_line = std_err * np.sqrt(1/n + (x_line - x_mean)**2 / sxx)
+            
+            from scipy.stats import t as t_dist
+            t_val = t_dist.ppf(0.975, n - 2)
+            ci = t_val * se_line
+            
+            ax.fill_between(x_line, y_line - ci, y_line + ci, alpha=0.2, color='#3498db')
+            ax.plot(x_line, y_line, '#3498db', linestyle='-', linewidth=2)
+            
+            correlation, p_value = stats.pearsonr(all_x, all_y)
+            p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
+            ax.text(0.3, 0.10, f'r = {correlation:.4f}, {p_text}',
+                   transform=ax.transAxes, fontsize=24, family='Helvetica')
+        
+        # 스타일링 (1-1과 동일)
+        ax.set_title(DISORDER_NAMES[DISORDER_MAP[disorder_code]], fontsize=36, fontweight='bold', family='Helvetica', pad=20)
+        ax.set_xlabel('PSYCHE SCORE', fontsize=36, family='Helvetica')
+        ax.set_ylabel('Expert score', fontsize=36, family='Helvetica')
         ax.set_yticks([5, 35, 65])
         ax.set_xticks([5, 30, 55])
-        ax.tick_params(labelsize=24 * fs)
+        ax.tick_params(labelsize=32)
         ax.grid(False)
-    subfigs[1].suptitle('(b)', x=0.01, y=0.99, ha='left', va='top',
-                        fontsize=label_fs, fontweight='bold', family='Helvetica')
-
-    # ---- (c) Categories (1×3) ----
-    categories = ['Subjective', 'Impulsivity', 'Behavior']
-    cat_labels = {'Subjective': 'Subjective Information', 'Impulsivity': 'Impulsivity',
-                  'Behavior': 'MFC-Behavior'}
-    axes_c = subfigs[2].subplots(1, 3)
-    for idx, category in enumerate(categories):
-        ax = axes_c[idx]
-        dbm = {m: [] for m in COLOR_MAP}
-        for exp in EXPERIMENT_NUMBERS:
-            if exp not in psyche_cat:
-                continue
-            ps = psyche_cat[exp][category]
-            e_scores = [expert_cat[v][exp][category] for v in VALIDATORS if exp in expert_cat[v]]
-            if not e_scores:
-                continue
-            dbm[get_model_from_exp(exp[1])].append((ps, np.mean(e_scores)))
-        _scatter_with_fit(ax, dbm, fs, r_fontsize=24)
-        ax.set_title(cat_labels[category], fontsize=28 * fs, fontweight='bold',
-                     family='Helvetica', pad=15)
-        ax.set_xlabel('PSYCHE SCORE', fontsize=26 * fs, family='Helvetica')
-        if idx == 0:
-            ax.set_ylabel('Expert score', fontsize=26 * fs, family='Helvetica')
-        ax.tick_params(labelsize=24 * fs)
-        ax.grid(False)
-    subfigs[2].suptitle('(c)', x=0.01, y=0.99, ha='left', va='top',
-                        fontsize=label_fs, fontweight='bold', family='Helvetica')
-
+        
+        for spine in ax.spines.values():
+            spine.set_color('black')
+            spine.set_linewidth(2)
+    
+    plt.tight_layout()
     return fig
 
+def create_correlation_plot_by_category(psyche_category_scores, expert_category_scores):
+    """Figure 1-4: Category-level correlation analysis (Subjective, Impulsivity, Behavior)."""
+    fig, axes = plt.subplots(1, 3, figsize=(24, 8))
+    
+    categories = ['Subjective', 'Impulsivity', 'Behavior']
+    category_labels = {
+        'Subjective': 'Subjective Information',
+        'Impulsivity': 'Impulsivity',
+        'Behavior': 'MFC-Behavior'
+    }
+    
+    for idx, category in enumerate(categories):
+        ax = axes[idx]
+        
+        # 데이터 수집 - validator별 평균
+        data_by_model = {model: [] for model in COLOR_MAP.keys()}
+        all_x, all_y = [], []
+        
+        for exp in EXPERIMENT_NUMBERS:
+            if exp not in psyche_category_scores:
+                continue
+            
+            psyche_score = psyche_category_scores[exp][category]
+            
+            # Expert score - average across all validators
+            expert_scores = []
+            for validator in VALIDATORS:
+                if exp in expert_category_scores[validator]:
+                    expert_scores.append(expert_category_scores[validator][exp][category])
+            
+            if not expert_scores:
+                continue
+            
+            expert_score = np.mean(expert_scores)
+            model = get_model_from_exp(exp[1])
+            
+            data_by_model[model].append((psyche_score, expert_score))
+            all_x.append(psyche_score)
+            all_y.append(expert_score)
+        
+        # Scatter plot
+        for model, points in data_by_model.items():
+            if points:
+                x_vals = [p[0] for p in points]
+                y_vals = [p[1] for p in points]
+                ax.scatter(x_vals, y_vals, 
+                          color=COLOR_MAP[model],
+                          label=LABEL_MAP[model],
+                          s=MARKER_MAP[model]['size'],
+                          marker=MARKER_MAP[model]['marker'],
+                          alpha=0.7)
+        
+        # 회귀선 및 95% CI
+        if len(all_x) >= 2:
+            all_x_arr = np.array(all_x)
+            all_y_arr = np.array(all_y)
+            
+            z = np.polyfit(all_x_arr, all_y_arr, 1)
+            p = np.poly1d(z)
+            x_line = np.linspace(min(all_x_arr), max(all_x_arr), 100)
+            y_line = p(x_line)
+            
+            # Calculate 95% confidence interval
+            n = len(all_x_arr)
+            y_pred = p(all_x_arr)
+            residuals = all_y_arr - y_pred
+            std_err = np.sqrt(np.sum(residuals**2) / (n - 2))
+            
+            x_mean = np.mean(all_x_arr)
+            sxx = np.sum((all_x_arr - x_mean)**2)
+            se_line = std_err * np.sqrt(1/n + (x_line - x_mean)**2 / sxx)
+            
+            from scipy.stats import t as t_dist
+            t_val = t_dist.ppf(0.975, n - 2)
+            ci = t_val * se_line
+            
+            ax.fill_between(x_line, y_line - ci, y_line + ci, alpha=0.2, color='#3498db')
+            ax.plot(x_line, y_line, '#3498db', linestyle='-', linewidth=2)
+            
+            # Correlation
+            correlation, p_value = stats.pearsonr(all_x, all_y)
+            p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
+            ax.text(0.3, 0.10, f'r = {correlation:.4f}, {p_text}',
+                   transform=ax.transAxes, fontsize=24, family='Helvetica')
+        
+        # 스타일링
+        ax.set_title(category_labels[category], fontsize=36, fontweight='bold', family='Helvetica', pad=20)
+        ax.set_xlabel('PSYCHE SCORE', fontsize=36, family='Helvetica')
+        ax.set_ylabel('Expert score', fontsize=36, family='Helvetica')
+        ax.tick_params(labelsize=32)
+        ax.grid(False)
+        
+        # # Legend only on first subplot
+        # if idx == 0:
+        #     ax.legend(loc='lower right', prop={'size': 18, 'weight': 'bold', 'family': 'Helvetica'})
+        
+        for spine in ax.spines.values():
+            spine.set_color('black')
+            spine.set_linewidth(2)
+    
+    plt.tight_layout()
+    return fig
 
-# ================================
-# Figure 6 (figure_conformity): SP Validation Conformity Heatmap
-# ================================
-def create_figure_conformity(conformity_by_case, fs=1.0):
+def create_weight_correlation_heatmaps(element_scores_psyche, element_scores_expert_dict):
+    """Figure 2: Weight-correlation analysis heatmaps."""
+    # Calculate correlations (cached)
+    correlation_equal, correlation_fixed, weight_range = calculate_weight_correlations(
+        element_scores_psyche, element_scores_expert_dict
+    )
+    
+    n_weights = len(weight_range)
+    
+    # Figure 생성
+    fig, axes = plt.subplots(1, 2, figsize=(20, 8))
+    
+    # Find max and min correlation for equal weights
+    max_corr = np.max(correlation_equal)
+    min_corr = np.min(correlation_equal)
+    max_idx = np.unravel_index(np.argmax(correlation_equal), correlation_equal.shape)
+    min_idx = np.unravel_index(np.argmin(correlation_equal), correlation_equal.shape)
+    
+    # Convert indices to weight values
+    # max_idx[1] is j (column) for w_behavior, max_idx[0] is reversed i (row) for w_impulsivity
+    max_w_beh = weight_range[max_idx[1]]
+    max_w_imp = weight_range[n_weights - 1 - max_idx[0]]
+    min_w_beh = weight_range[min_idx[1]]
+    min_w_imp = weight_range[n_weights - 1 - min_idx[0]]
+    
+    # Heatmap 1 - Equal weights
+    ax1 = axes[0]
+    im1 = ax1.imshow(correlation_equal, cmap='Greens', aspect='auto',
+                     extent=[1, 10, 1, 10], origin='lower')
+    cbar1 = plt.colorbar(im1, ax=ax1)
+    cbar1.ax.set_ylabel('Correlation', fontsize=24, family='Helvetica')
+    cbar1.ax.tick_params(labelsize=24)
+    cbar1.set_ticks([0.78, 0.88])  # Example code 스타일: 2개만 표기
+    
+    ax1.set_xlabel('$w_{Behavior}$', fontsize=32, family='Helvetica')
+    ax1.set_ylabel('$w_{Impulsivity}$', fontsize=32, family='Helvetica')
+    ax1.set_title('Equal weights', fontsize=32, family='Helvetica')
+    ax1.set_xticks(range(1, 11))
+    ax1.set_yticks(range(1, 11))
+    ax1.tick_params(labelsize=22)
+    ax1.grid(False)
+    ax1.plot(2, 5, marker='s', color='orchid', markersize=WEIGHT_MARKER_SIZE, label='(5, 2, 1)')
+    
+    for spine in ax1.spines.values():
+        spine.set_color('black')
+        spine.set_linewidth(1)
+    
+    # Heatmap 2 - Expert weights fixed at (5,2,1)
+    ax2 = axes[1]
+    im2 = ax2.imshow(correlation_fixed, cmap='Greens', aspect='auto',
+                     extent=[1, 10, 1, 10], origin='lower')
+    cbar2 = plt.colorbar(im2, ax=ax2)
+    cbar2.ax.set_ylabel('Correlation', fontsize=24, family='Helvetica')
+    cbar2.ax.tick_params(labelsize=24)
+    cbar2.set_ticks([0.84, 0.90])  # Example code 스타일: 2개만 표기
+    
+    ax2.set_xlabel('$w_{Behavior}$', fontsize=32, family='Helvetica')
+    ax2.set_ylabel('$w_{Impulsivity}$', fontsize=32, family='Helvetica')
+    ax2.set_title('Expert weights fixed at (5,2,1)', fontsize=32, family='Helvetica')
+    ax2.set_xticks(range(1, 11))
+    ax2.set_yticks(range(1, 11))
+    ax2.tick_params(labelsize=22)
+    ax2.grid(False)
+    ax2.plot(2, 5, marker='s', color='orchid', markersize=WEIGHT_MARKER_SIZE, label='(5, 2, 1)')
+    
+    for spine in ax2.spines.values():
+        spine.set_color('black')
+        spine.set_linewidth(1)
+    
+    plt.tight_layout()
+    
+    # Return figure and stats info
+    stats_info = {
+        'max_corr': max_corr,
+        'max_weights': (max_w_imp, max_w_beh, 1.0),
+        'min_corr': min_corr,
+        'min_weights': (min_w_imp, min_w_beh, 1.0)
+    }
+    return fig, stats_info
+
+def create_piqsca_correlation_plot_firebase(psyche_scores, piqsca_by_validator, figsize=(6, 6)):
+    """PSYCHE SCORE vs. PIQSCA correlation plots (Firebase data, by validator).
+    
+    Returns list of figures, one per validator.
+    """
+    figures = []
+    
+    for validator, piqsca_scores in piqsca_by_validator.items():
+        fig, ax = plt.subplots(figsize=figsize)
+        
+        # 데이터 준비
+        data_by_model = {model: [] for model in COLOR_MAP.keys()}
+        
+        for exp in EXPERIMENT_NUMBERS:
+            if exp not in piqsca_scores:
+                continue
+            
+            piqsca_score = piqsca_scores[exp]
+            
+            # PSYCHE 점수 가져오기
+            if exp in psyche_scores:
+                psyche_score = psyche_scores[exp]
+                model = get_model_from_exp(exp[1])
+                data_by_model[model].append((psyche_score, piqsca_score))
+        
+        # Scatter plot
+        all_x, all_y = [], []
+        for model, points in data_by_model.items():
+            if not points:
+                continue
+            
+            xs = [p[0] for p in points]
+            ys = [p[1] for p in points]
+            all_x.extend(xs)
+            all_y.extend(ys)
+            
+            ax.scatter(xs, ys, 
+                      color=COLOR_MAP[model],
+                      marker=MARKER_MAP[model]['marker'],
+                      s=MARKER_MAP[model]['size'],
+                      label=LABEL_MAP[model],
+                      alpha=0.7,
+                      zorder=3)
+        
+        # 회귀선 및 95% CI
+        if len(all_x) >= 2:
+            all_x_arr = np.array(all_x)
+            all_y_arr = np.array(all_y)
+            
+            # Linear regression
+            z = np.polyfit(all_x_arr, all_y_arr, 1)
+            p = np.poly1d(z)
+            
+            x_line = np.linspace(min(all_x_arr), max(all_x_arr), 100)
+            y_line = p(x_line)
+            
+            # Calculate 95% confidence interval
+            n = len(all_x_arr)
+            y_pred = p(all_x_arr)
+            residuals = all_y_arr - y_pred
+            std_err = np.sqrt(np.sum(residuals**2) / (n - 2))
+            
+            # Standard error of prediction
+            x_mean = np.mean(all_x_arr)
+            sxx = np.sum((all_x_arr - x_mean)**2)
+            se_line = std_err * np.sqrt(1/n + (x_line - x_mean)**2 / sxx)
+            
+            # 95% CI (t-distribution)
+            from scipy.stats import t as t_dist
+            t_val = t_dist.ppf(0.975, n - 2)
+            ci = t_val * se_line
+            
+            # Plot CI and line
+            ax.fill_between(x_line, y_line - ci, y_line + ci, alpha=0.2, color='#3498db', zorder=0)
+            ax.plot(x_line, y_line, '#3498db', linestyle='-', linewidth=2, zorder=1)
+            
+            # Correlation info
+            correlation, p_value = stats.pearsonr(all_x, all_y)
+            p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
+            ax.text(0.3, 0.10, f'r = {correlation:.4f}, {p_text}',
+                   transform=ax.transAxes, fontsize=18, family='Helvetica')
+        
+        # 스타일링
+        ax.set_title('PSYCHE SCORE vs. PIQSCA', 
+                    fontsize=28, pad=15, family='Helvetica')
+        ax.set_xlabel('PSYCHE SCORE', fontsize=24, family='Helvetica')
+        ax.set_ylabel('PIQSCA', fontsize=24, family='Helvetica')
+        ax.set_yticks([3, 9, 15])
+        ax.set_xticks([5, 30, 55])
+        ax.tick_params(labelsize=20)
+        ax.legend(loc='upper left', prop={'size': 14, 'weight': 'bold', 'family': 'Helvetica'})
+        
+        # 테두리
+        for spine in ax.spines.values():
+            spine.set_linewidth(2)
+            spine.set_edgecolor('black')
+        
+        plt.tight_layout()
+        figures.append((validator, fig))
+    
+    return figures
+
+def create_sp_validation_heatmap(conformity_by_case):
+    """Figure 3: SP Validation conformity heatmap (Case × Element).
+    
+    Args:
+        conformity_by_case: {case_name: {element: conformity_percent}}
+    """
     if not conformity_by_case:
         return None
+    
+    # Case 7개 순서
     cases = ['MDD', 'BD', 'PD', 'GAD', 'SAD', 'OCD', 'PTSD']
-    elements = list(list(conformity_by_case.values())[0].keys())
-    df = pd.DataFrame({case: [conformity_by_case.get(case, {}).get(e, 0) for e in elements]
-                       for case in cases}, index=elements)
+    
+    # DataFrame 생성 - 각 case가 row, 각 element가 column
+    # Get all elements from first case
+    first_case = list(conformity_by_case.values())[0]
+    elements = list(first_case.keys())
+    
+    # Build dataframe: index=elements, columns=cases
+    df_data = {}
+    for case in cases:
+        if case in conformity_by_case:
+            df_data[case] = [conformity_by_case[case].get(elem, 0) for elem in elements]
+        else:
+            df_data[case] = [0] * len(elements)
+    
+    df = pd.DataFrame(df_data, index=elements)
+    
+    # OCD 행의 "Thought content" 열 값을 100으로 고정
     if 'Thought content' in df.index and 'OCD' in df.columns:
         df.loc['Thought content', 'OCD'] = 100
+    
+    # Add Average column (평균 across cases)
     df['Average'] = df[cases].mean(axis=1)
-    df.loc['Average'] = df[cases + ['Average']].mean(axis=0)
-
+    
+    # Add Average row (평균 across elements)
+    avg_row = df[cases + ['Average']].mean(axis=0)
+    df.loc['Average'] = avg_row
+    
+    # Figure 생성 (example code 스타일)
     fig, ax = plt.subplots(figsize=(17, 11.5))
-    sns.heatmap(df.T, annot=True, fmt='.0f', cmap='Blues', vmin=0, vmax=100, ax=ax,
-                square=True, linewidths=0.5, cbar=False,
-                annot_kws={'fontsize': 10 * fs, 'family': 'Helvetica'})
+    
+    # Heatmap - Element가 x축 (column), Case가 y축 (row)
+    # Transpose to show cases as rows and elements as columns
+    sns.heatmap(df.T, annot=True, fmt='.0f', cmap='Blues', 
+                vmin=0, vmax=100, ax=ax, square=True,
+                linewidths=0.5, cbar=False,
+                annot_kws={'fontsize': 10, 'family': 'Helvetica', 'weight': 'normal'})
+    
+    # Highlight Average row and column with bold text
+    # Get heatmap text objects and make Average entries bold
     for text in ax.texts:
+        # Get position to check if it's in Average row or column
         x, y = text.get_position()
+        # Average row is the last row (y = len(cases))
+        # Average column is the last column (x = len(elements))
         if int(y) == len(cases) or int(x) == len(elements):
             text.set_weight('bold')
-            text.set_fontsize(11 * fs)
+            text.set_fontsize(11)
+    
+    # y축 라벨 위치 조정 (오른쪽으로)
     ax.yaxis.tick_right()
     ax.yaxis.set_label_position('right')
-    plt.xticks(rotation=90, ha='center', fontsize=16 * fs)
-    plt.yticks(rotation=0, fontsize=16 * fs)
-    plt.title('Conformity Heatmap by Elements', fontsize=24 * fs, pad=20, family='Helvetica')
+    
+    # 축 라벨 스타일링 (example code 스타일)
+    plt.xticks(rotation=90, ha='center', fontsize=16)
+    plt.yticks(rotation=0, fontsize=16)
+    
+    plt.title('Conformity Heatmap by Elements', fontsize=24, pad=20, family='Helvetica')
+    
+    # 가로 컬러바 추가 (하단)
+    # [left, bottom, width, height]
     cbar_ax = fig.add_axes([0.68, 0.08, 0.4, 0.02])
     cbar = plt.colorbar(ax.collections[0], cax=cbar_ax, orientation="horizontal")
-    cbar.ax.tick_params(labelsize=16 * fs)
-    cbar.outline.set_visible(False)
-    cbar.set_label('Conformity (%)', fontsize=16 * fs, family='Helvetica')
+    
+    # 컬러바 스타일 조정
+    cbar.ax.tick_params(labelsize=16)
+    cbar.outline.set_visible(False)  # 테두리 제거
+    cbar.set_label('Conformity (%)', fontsize=16, family='Helvetica')
+    
     plt.tight_layout()
     return fig
 
-
-# ================================
-# Figure 5 (figure_likert): SP Qualitative Likert Heatmap
-# ================================
-def create_figure_likert(avg_by_case, fs=1.0):
+def create_sp_qualitative_heatmap(avg_by_case):
+    """Figure 4: SP Qualitative Likert rating heatmap (Case × Element).
+    
+    Args:
+        avg_by_case: {case_name: {element: avg_likert_rating}}
+    """
     if not avg_by_case:
         return None
+    
+    # Case 7개 순서
     cases = ['MDD', 'BD', 'PD', 'GAD', 'SAD', 'OCD', 'PTSD']
-    elements = ['Mood', 'Affect', 'Thought Process', 'Thought Content',
-                'Insight', 'Suicidal Ideation / Plan / Attempt', 'Homicidal Ideation']
-    df = pd.DataFrame({case: [avg_by_case.get(case, {}).get(e, 0) for e in elements]
-                       for case in cases}, index=elements)
+    
+    # Element 순서
+    elements = [
+        'Mood', 'Affect', 'Thought Process', 'Thought Content',
+        'Insight', 'Suicidal Ideation / Plan / Attempt', 'Homicidal Ideation'
+    ]
+    
+    # Build dataframe: index=elements, columns=cases
+    df_data = {}
+    for case in cases:
+        if case in avg_by_case:
+            df_data[case] = [avg_by_case[case].get(elem, 0) for elem in elements]
+        else:
+            df_data[case] = [0] * len(elements)
+    
+    df = pd.DataFrame(df_data, index=elements)
+    
+    # Add Average column (평균 across cases)
     df['Average'] = df[cases].mean(axis=1)
-    df.loc['Average'] = df[cases + ['Average']].mean(axis=0)
-
+    
+    # Add Average row (평균 across elements)
+    avg_row = df[cases + ['Average']].mean(axis=0)
+    df.loc['Average'] = avg_row
+    
+    # Figure 생성 (SP Quantitative 스타일)
     fig, ax = plt.subplots(figsize=(17, 11.5))
-    sns.heatmap(df.T, annot=True, fmt='.2f', cmap='Blues', vmin=1, vmax=5, ax=ax,
-                square=True, linewidths=0.5, cbar=False,
-                annot_kws={'fontsize': 10 * fs, 'family': 'Helvetica'})
+    
+    # Heatmap - Element가 x축 (column), Case가 y축 (row)
+    # Transpose to show cases as rows and elements as columns
+    sns.heatmap(df.T, annot=True, fmt='.2f', cmap='Blues', 
+                vmin=1, vmax=5, ax=ax, square=True,
+                linewidths=0.5, cbar=False,
+                annot_kws={'fontsize': 10, 'family': 'Helvetica', 'weight': 'normal'})
+    
+    # Highlight Average row and column with bold text
     for text in ax.texts:
         x, y = text.get_position()
+        # Average row is the last row (y = len(cases))
+        # Average column is the last column (x = len(elements))
         if int(y) == len(cases) or int(x) == len(elements):
             text.set_weight('bold')
-            text.set_fontsize(11 * fs)
+            text.set_fontsize(11)
+    
+    # y축 라벨 위치 조정 (오른쪽으로)
     ax.yaxis.tick_right()
     ax.yaxis.set_label_position('right')
-    plt.xticks(rotation=90, ha='center', fontsize=16 * fs)
-    plt.yticks(rotation=0, fontsize=16 * fs)
-    plt.title('Average Likert Rating Heatmap by Elements', fontsize=24 * fs, pad=20, family='Helvetica')
+    
+    # 축 라벨 스타일링
+    plt.xticks(rotation=90, ha='center', fontsize=16)
+    plt.yticks(rotation=0, fontsize=16)
+    
+    plt.title('Average Likert Rating Heatmap by Elements', fontsize=24, pad=20, family='Helvetica')
+    
+    # 세로 컬러바 추가 (오른쪽)
+    # [left, bottom, width, height]
     cbar_ax = fig.add_axes([0.8, 0.5, 0.02, 0.4])
     cbar = plt.colorbar(ax.collections[0], cax=cbar_ax, orientation="vertical")
-    cbar.ax.tick_params(labelsize=16 * fs)
+    
+    # 컬러바 스타일 조정
+    cbar.ax.tick_params(labelsize=16)
     cbar.outline.set_visible(False)
-    cbar.set_label('Average Likert Rating (1-5)', fontsize=16 * fs, family='Helvetica',
-                   rotation=270, labelpad=30)
+    cbar.set_label('Average Likert Rating (1-5)', fontsize=16, family='Helvetica', rotation=270, labelpad=30)
+    
     plt.tight_layout()
     return fig
-
 
 # ================================
 # Download helpers
@@ -739,21 +1142,23 @@ def download_row(fig, base_filename, key_prefix):
                            key=f"{key_prefix}_png")
 
 
+
 # ================================
 # Main
 # ================================
 def main():
     plt.close('all')
     st.title("📄 Paper Figures (PSYCHE 2nd revision)")
-    st.caption("논문에 실제로 들어가는 Figure 5–8만 생성합니다. 모두 벡터(PDF/SVG)로 다운로드하세요.")
-
-    # 글씨 크기 배율 선택 (원본 / 키운 버전)
-    scale_map = {"원본 (1.0×)": 1.0, "크게 (1.25×)": 1.25, "더 크게 (1.5×)": 1.5}
-    scale_label = st.radio(
-        "글씨 크기 (font scale) — 원본과 키운 버전을 바꿔가며 확인/다운로드하세요",
-        list(scale_map.keys()), horizontal=True,
+    st.caption("논문에 들어가는 Figure만 개별 plot으로 생성합니다. "
+               "합치기(배치/라벨)는 Keynote에서 직접 하세요. 모두 벡터(PDF/SVG)로 다운로드.")
+    st.info(
+        "**파일명 ↔ 논문 Figure**\n\n"
+        "- Figure 5 → `figure_likert` (SP Qualitative Likert heatmap)\n"
+        "- Figure 6 → `figure_conformity` (SP Validation conformity heatmap)\n"
+        "- Figure 7 → `figure_graph` = (a) Avg Expert + (b) PIQSCA(임경호) + (c,d) Weight-Correlation\n"
+        "- Figure 8 → `figure_combined_correlation` = (a) Validators + (b) Disorder + (c) Category\n\n"
+        "각 구성 plot을 따로 다운받아 Keynote에서 figure_graph / figure_combined_correlation로 합치세요."
     )
-    fs = scale_map[scale_label]
     st.markdown("---")
 
     with st.spinner("Firebase 데이터 로딩 중..."):
@@ -764,13 +1169,14 @@ def main():
         element_psyche, element_expert = load_element_scores(root)
         conformity_data = load_sp_validation_data(root)
         qualitative_data = load_sp_qualitative_data(root)
+        piqsca_by_validator, piqsca_found = load_piqsca_from_firebase(root)
     st.success("✅ 데이터 로딩 완료")
 
     # ---------- Figure 5 ----------
     st.header("Figure 5 — `figure_likert`")
     st.caption("SP Qualitative Likert Heatmap (1–5)")
     if qualitative_data:
-        fig5 = create_figure_likert(qualitative_data, fs=fs)
+        fig5 = create_sp_qualitative_heatmap(qualitative_data)
         if fig5:
             st.pyplot(fig5)
             download_row(fig5, "figure_likert", "fig5")
@@ -783,7 +1189,7 @@ def main():
     st.header("Figure 6 — `figure_conformity`")
     st.caption("SP Validation Conformity Heatmap (%)")
     if conformity_data:
-        fig6 = create_figure_conformity(conformity_data, fs=fs)
+        fig6 = create_sp_validation_heatmap(conformity_data)
         if fig6:
             st.pyplot(fig6)
             download_row(fig6, "figure_conformity", "fig6")
@@ -792,36 +1198,62 @@ def main():
         st.info("SP validation 데이터가 없습니다.")
     st.markdown("---")
 
-    # ---------- Figure 7 ----------
-    st.header("Figure 7 — `figure_graph`")
-    st.caption("(a) PSYCHE vs Expert · (b) PSYCHE vs PIQSCA · (c) Equal weights · (d) Fixed weights")
+    # ---------- Figure 7 (개별 plot 3개) ----------
+    st.header("Figure 7 — `figure_graph` (개별 plot)")
+    st.caption("(a) Avg Expert · (b) PIQSCA(임경호) · (c,d) Weight-Correlation")
+
+    st.subheader("(a) PSYCHE SCORE vs. Expert score")
+    fig7a = create_correlation_plot_average(psyche_scores, avg_expert_scores)
+    st.pyplot(fig7a)
+    download_row(fig7a, "figure_graph_a_expert", "fig7a")
+    plt.close(fig7a)
+
+    st.subheader("(b) PSYCHE SCORE vs. PIQSCA (임경호)")
+    piqsca_single = piqsca_by_validator.get(PIQSCA_VALIDATOR, {})
+    if piqsca_single:
+        figs_b = create_piqsca_correlation_plot_firebase(psyche_scores, {PIQSCA_VALIDATOR: piqsca_single})
+        if figs_b:
+            _, fig7b = figs_b[0]
+            st.pyplot(fig7b)
+            download_row(fig7b, "figure_graph_b_piqsca", "fig7b")
+            plt.close(fig7b)
+    else:
+        st.warning(f"⚠️ '{PIQSCA_VALIDATOR}'의 PIQSCA 데이터를 찾을 수 없습니다. "
+                   f"사용 가능: {', '.join(piqsca_found) if piqsca_found else '없음'}")
+
+    st.subheader("(c,d) Weight-Correlation Analysis")
     if element_psyche and element_expert:
-        corr_equal, corr_fixed, _ = calculate_weight_correlations(element_psyche, element_expert)
-        piqsca_by_validator, found = load_piqsca_from_firebase(root)
-        piqsca_single = piqsca_by_validator.get(PIQSCA_VALIDATOR, {})
-        if not piqsca_single:
-            st.warning(f"⚠️ '{PIQSCA_VALIDATOR}'의 PIQSCA 데이터를 찾을 수 없습니다. "
-                       f"사용 가능: {', '.join(found) if found else '없음'}")
-        else:
-            fig7 = create_figure_graph(psyche_scores, avg_expert_scores, piqsca_single,
-                                       corr_equal, corr_fixed, fs=fs)
-            st.pyplot(fig7)
-            download_row(fig7, "figure_graph", "fig7")
-            plt.close(fig7)
+        fig7cd, _ = create_weight_correlation_heatmaps(element_psyche, element_expert)
+        st.pyplot(fig7cd)
+        download_row(fig7cd, "figure_graph_cd_weights", "fig7cd")
+        plt.close(fig7cd)
     else:
         st.info("Element-level 데이터가 필요합니다.")
     st.markdown("---")
 
-    # ---------- Figure 8 ----------
-    st.header("Figure 8 — `figure_combined_correlation`")
+    # ---------- Figure 8 (개별 plot 3개) ----------
+    st.header("Figure 8 — `figure_combined_correlation` (개별 plot)")
     st.caption("(a) Individual Validators · (b) By Disorder · (c) Category-Level")
+
+    st.subheader("(a) Individual Validators")
+    fig8a = create_correlation_plot_by_validator(psyche_scores, expert_data)
+    st.pyplot(fig8a)
+    download_row(fig8a, "figure_combined_correlation_a_validators", "fig8a")
+    plt.close(fig8a)
+
+    st.subheader("(b) By Disorder")
+    fig8b = create_correlation_plot_by_disorder(psyche_scores, avg_expert_scores)
+    st.pyplot(fig8b)
+    download_row(fig8b, "figure_combined_correlation_b_disorder", "fig8b")
+    plt.close(fig8b)
+
+    st.subheader("(c) Category-Level")
     if element_psyche and element_expert:
         psyche_cat, expert_cat = calculate_category_scores(element_psyche, element_expert)
-        fig8 = create_figure_combined_correlation(psyche_scores, avg_expert_scores, expert_data,
-                                                  psyche_cat, expert_cat, fs=fs)
-        st.pyplot(fig8)
-        download_row(fig8, "figure_combined_correlation", "fig8")
-        plt.close(fig8)
+        fig8c = create_correlation_plot_by_category(psyche_cat, expert_cat)
+        st.pyplot(fig8c)
+        download_row(fig8c, "figure_combined_correlation_c_category", "fig8c")
+        plt.close(fig8c)
     else:
         st.info("Element-level 데이터가 필요합니다.")
 
