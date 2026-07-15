@@ -923,24 +923,24 @@ def create_piqsca_correlation_plot_firebase(psyche_scores, piqsca_by_validator, 
             t_val = t_dist.ppf(0.975, n - 2)
             ci = t_val * se_line
             
-            # Plot CI and line
-            ax.fill_between(x_line, y_line - ci, y_line + ci, alpha=0.2, color='#3498db', zorder=0)
-            ax.plot(x_line, y_line, '#3498db', linestyle='-', linewidth=2, zorder=1)
+            # Plot CI
+            ax.fill_between(x_line, y_line - ci, y_line + ci, alpha=0.2, color='#3498db')
+            ax.plot(x_line, y_line, '#3498db', linestyle='-', linewidth=2)
             
             # Correlation info
             correlation, p_value = stats.pearsonr(all_x, all_y)
             p_text = 'p < 0.0001' if p_value < 0.0001 else f'p = {p_value:.4f}'
             ax.text(0.3, 0.10, f'r = {correlation:.4f}, {p_text}',
-                   transform=ax.transAxes, fontsize=18, family='Helvetica')
+                   transform=ax.transAxes, fontsize=22, family='Helvetica')
         
         # 스타일링
         ax.set_title('PSYCHE SCORE vs. PIQSCA', 
-                    fontsize=28, pad=15, family='Helvetica')
-        ax.set_xlabel('PSYCHE SCORE', fontsize=24, family='Helvetica')
-        ax.set_ylabel('PIQSCA', fontsize=24, family='Helvetica')
+                    fontsize=36, pad=20, family='Helvetica')
+        ax.set_xlabel('PSYCHE SCORE', fontsize=36, family='Helvetica')
+        ax.set_ylabel('PIQSCA', fontsize=36, family='Helvetica')
         ax.set_yticks([3, 9, 15])
         ax.set_xticks([5, 30, 55])
-        ax.tick_params(labelsize=20)
+        ax.tick_params(labelsize=32)
         
         # 테두리
         for spine in ax.spines.values():
